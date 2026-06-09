@@ -558,9 +558,96 @@
       opacity: 1;
     }
 
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .receiving-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 390px;
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .receiving-support-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .receiving-table { min-width: 1040px; }
+
+    .sample-detail-card .decision-block h4 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sample-action-row {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .sample-action-row .btn:first-child,
+    .sample-action-row .btn:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .task-card {
+      padding: 13px;
+      border: 1px solid #edf2f5;
+      border-radius: 13px;
+      background: #fff;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .task-card strong {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+      color: #263f52;
+    }
+
+    .task-card small {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .template-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .template-chip {
+      border: 1px solid #d6e7ef;
+      border-radius: 999px;
+      padding: 9px 12px;
+      color: #25475d;
+      background: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      transition: 0.16s ease;
+    }
+
+    .template-chip:hover {
+      border-color: #8fcfe3;
+      color: var(--primary-dark);
+      background: #eef9fd;
+    }
+
     @media (max-width: 1180px) {
       .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant { grid-template-columns: 1fr; }
+      .section-grid, .queue-layout, .assistant, .receiving-layout { grid-template-columns: 1fr; }
+      .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ai-card { position: static; }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .flow-step::after { display: none; }
@@ -577,12 +664,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .critical-grid, .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .critical-grid, .flow, .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .critical-grid, .flow { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -608,8 +695,8 @@
     <aside class="sidebar" aria-label="左侧导航栏">
       <p class="nav-title">功能导航</p>
       <ul class="nav-list">
-        <li class="nav-item active"><span class="nav-icon">⌂</span>工作台</li>
-        <li class="nav-item"><span class="nav-icon">▣</span>样本签收</li>
+        <li class="nav-item active" data-view-target="dashboard"><span class="nav-icon">⌂</span>工作台</li>
+        <li class="nav-item" data-view-target="receiving"><span class="nav-icon">▣</span>样本签收</li>
         <li class="nav-item"><span class="nav-icon">◎</span>AI 预审</li>
         <li class="nav-item"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item"><span class="nav-icon">!</span>危急值中心</li>
@@ -622,6 +709,7 @@
     </aside>
 
     <main>
+      <div class="view active" id="dashboardView">
       <section class="hero" aria-label="工作台说明">
         <div class="hero-card">
           <p class="eyebrow">● 审核技师工作台</p>
@@ -787,6 +875,156 @@
           </div>
         </div>
       </section>
+      </div>
+
+      <div class="view" id="receivingView">
+        <section class="hero" aria-label="样本签收工作台说明">
+          <div class="hero-card">
+            <p class="eyebrow">● 样本签收工作台</p>
+            <h2>把前处理风险拦截在进入检测流程之前</h2>
+            <p>面向检验科前处理 / 签收人员，集中展示今日待签收样本、异常提醒、退样模板、补采任务和签收记录。所有内容均为模拟数据，用于验证岗位任务台流程。</p>
+          </div>
+          <div class="guardrail">
+            <strong>签收安全边界</strong>
+            <span>签收建议仅作为规则提示；退样、补采与异常标记仍需由实验室人员结合样本实物确认。</span>
+          </div>
+        </section>
+
+        <section class="metrics receiving-metrics" aria-label="今日待签收样本统计">
+          <article class="metric-card">
+            <div class="metric-label">今日待签收 <span>总量</span></div>
+            <div class="metric-value">48</div>
+            <div class="metric-trend">普通样本 31 · 急诊样本 17</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">可直接签收 <span class="badge badge-a">正常</span></div>
+            <div class="metric-value">29</div>
+            <div class="metric-trend">条码、容器、时效均通过</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">异常待确认 <span class="badge badge-b">待判定</span></div>
+            <div class="metric-value">13</div>
+            <div class="metric-trend">建议优先核对容器与样本量</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">建议退样 <span class="badge badge-c">高风险</span></div>
+            <div class="metric-value">4</div>
+            <div class="metric-trend">已匹配退样原因模板</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">补采任务 <span class="badge badge-info">待生成</span></div>
+            <div class="metric-value">6</div>
+            <div class="metric-trend">儿科、急诊优先提醒</div>
+          </article>
+        </section>
+
+        <section class="receiving-layout" aria-label="样本签收核心任务区">
+          <div class="panel" aria-label="待签收样本列表">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">待签收样本列表</h3>
+                <p class="panel-subtitle">点击任一模拟样本，右侧样本详情卡片将同步更新。</p>
+              </div>
+              <span class="badge badge-gray">模拟队列</span>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table class="receiving-table">
+                  <thead>
+                    <tr>
+                      <th>样本号</th>
+                      <th>患者来源</th>
+                      <th>检验项目</th>
+                      <th>样本类型</th>
+                      <th>采样时间</th>
+                      <th>送达时间</th>
+                      <th>样本状态</th>
+                      <th>建议动作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="receivingTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="ai-card sample-detail-card" aria-label="样本详情卡片">
+            <div class="ai-card-top">
+              <h3 id="receivingCardSample">样本详情卡片</h3>
+              <p id="receivingCardMeta">请选择左侧样本查看签收建议</p>
+            </div>
+            <div class="decision-block">
+              <h4>样本基本信息</h4>
+              <p id="receivingBasicInfo">--</p>
+            </div>
+            <div class="decision-block">
+              <h4>系统规则判断</h4>
+              <ul id="receivingRuleCheck"></ul>
+            </div>
+            <div class="decision-block">
+              <h4>AI 风险提示 · 结论</h4>
+              <p id="receivingAiConclusion">--</p>
+            </div>
+            <div class="decision-block">
+              <h4>AI 风险提示 · 命中规则</h4>
+              <ul id="receivingAiRules"></ul>
+            </div>
+            <div class="decision-block">
+              <h4>AI 风险提示 · 建议动作</h4>
+              <p id="receivingAiAction">--</p>
+            </div>
+            <div class="action-row sample-action-row">
+              <button class="btn" data-receiving-action="确认签收">确认签收</button>
+              <button class="btn secondary" data-receiving-action="标记异常">标记异常</button>
+              <button class="btn danger" data-receiving-action="生成退样">生成退样</button>
+              <button class="btn secondary" data-receiving-action="生成补采任务">生成补采任务</button>
+              <button class="btn secondary" data-receiving-action="查看流转记录">查看流转记录</button>
+            </div>
+          </aside>
+        </section>
+
+        <section class="receiving-support-grid" aria-label="样本签收辅助任务区">
+          <div class="panel" aria-label="异常样本提醒">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">异常样本提醒</h3>
+                <p class="panel-subtitle">按签收优先级展示需要前处理人员介入的模拟提醒。</p>
+              </div>
+            </div>
+            <div class="panel-body task-list" id="exceptionList"></div>
+          </div>
+
+          <div class="panel" aria-label="退样原因模板">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">退样原因模板</h3>
+                <p class="panel-subtitle">点击模板可生成模拟提示，便于后续表单化。</p>
+              </div>
+            </div>
+            <div class="panel-body template-list" id="rejectTemplateList"></div>
+          </div>
+
+          <div class="panel" aria-label="补采任务提醒">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">补采任务提醒</h3>
+                <p class="panel-subtitle">汇总由异常样本触发的模拟补采沟通事项。</p>
+              </div>
+            </div>
+            <div class="panel-body task-list" id="recollectList"></div>
+          </div>
+
+          <div class="panel" aria-label="签收操作记录">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">签收操作记录</h3>
+                <p class="panel-subtitle">记录最近模拟操作，辅助追溯签收岗位动作。</p>
+              </div>
+            </div>
+            <div class="panel-body task-list" id="receivingLogList"></div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
@@ -868,6 +1106,127 @@
       }
     ];
 
+
+
+    const receivingSamples = [
+      {
+        id: "R-260609-0018",
+        source: "门诊",
+        project: "肝肾功能 + 电解质",
+        type: "血清 / 黄头管",
+        collectedAt: "08:12",
+        arrivedAt: "08:31",
+        status: "正常",
+        statusClass: "badge-a",
+        action: "确认签收",
+        basic: "门诊模拟样本，血清黄头管，条码清晰，采样至送达 19 分钟。",
+        ruleCheck: ["条码号与申请单一致", "容器类型符合生化项目要求", "送检时效在 2 小时规则内"],
+        conclusion: "样本可进入签收流程，未发现前处理拦截风险。",
+        aiRules: ["样本状态为正常", "容器、样本类型与检验项目匹配", "采样时间和送达时间完整且未超限"],
+        aiAction: "建议确认签收，并进入离心 / 分拣后续流程。"
+      },
+      {
+        id: "R-260609-0027",
+        source: "急诊",
+        project: "凝血四项",
+        type: "枸橼酸钠抗凝 / 蓝头管",
+        collectedAt: "07:42",
+        arrivedAt: "08:58",
+        status: "送检超时",
+        statusClass: "badge-b",
+        action: "标记异常并联系科室",
+        basic: "急诊模拟样本，凝血项目对时效敏感，采样至送达 76 分钟。",
+        ruleCheck: ["凝血项目送检间隔超过模拟建议值", "条码信息完整", "容器类型与项目匹配"],
+        conclusion: "暂不建议直接签收，存在送检时效风险。",
+        aiRules: ["命中凝血项目送检超时规则", "急诊来源需优先反馈", "未发现条码或容器冲突"],
+        aiAction: "建议标记异常，联系急诊确认采样和运输情况；必要时生成补采任务。"
+      },
+      {
+        id: "R-260609-0031",
+        source: "住院",
+        project: "糖化血红蛋白",
+        type: "血清 / 黄头管",
+        collectedAt: "08:20",
+        arrivedAt: "08:44",
+        status: "容器不匹配",
+        statusClass: "badge-c",
+        action: "生成退样",
+        basic: "住院模拟样本，申请项目需要 EDTA 抗凝全血，但当前登记为血清黄头管。",
+        ruleCheck: ["项目与容器类型不匹配", "条码可识别", "送达时间在模拟规则范围内"],
+        conclusion: "不建议签收，容器类型错误可能导致检测结果无效。",
+        aiRules: ["糖化血红蛋白项目需 EDTA 抗凝全血", "当前容器登记为黄头管", "容器错误属于退样高优先级规则"],
+        aiAction: "建议生成退样，原因选择“容器类型错误”，并同步生成补采提醒。"
+      },
+      {
+        id: "R-260609-0046",
+        source: "儿科门诊",
+        project: "血常规 + CRP",
+        type: "EDTA 全血 / 紫头管",
+        collectedAt: "09:03",
+        arrivedAt: "09:15",
+        status: "样本量不足",
+        statusClass: "badge-c",
+        action: "生成补采任务",
+        basic: "儿科模拟样本，紫头管样本量低于项目最低检测量。",
+        ruleCheck: ["样本量低于模拟最低阈值", "容器类型正确", "条码和采样时间完整"],
+        conclusion: "不建议直接签收上机，样本量不足可能导致检测失败或结果偏差。",
+        aiRules: ["血常规 + CRP 联合项目需满足最低样本量", "当前样本量登记不足", "儿科来源需减少重复沟通并明确补采项目"],
+        aiAction: "建议生成补采任务，备注采集量要求，并保留原样本异常记录。"
+      },
+      {
+        id: "R-260609-0052",
+        source: "体检中心",
+        project: "血脂四项",
+        type: "血清 / 黄头管",
+        collectedAt: "08:55",
+        arrivedAt: "09:21",
+        status: "疑似溶血",
+        statusClass: "badge-b",
+        action: "人工复核外观",
+        basic: "体检模拟样本，系统记录离心后外观疑似溶血，需人工确认。",
+        ruleCheck: ["外观标记疑似溶血", "血脂项目受溶血影响需评估", "条码、容器、时效均通过"],
+        conclusion: "建议人工复核样本外观后再决定签收或退样。",
+        aiRules: ["命中疑似溶血提醒", "检验项目对样本质量有要求", "其余基础签收规则通过"],
+        aiAction: "建议标记异常并复核外观；若确认溶血，生成退样或补采任务。"
+      },
+      {
+        id: "R-260609-0068",
+        source: "住院",
+        project: "尿常规",
+        type: "随机尿 / 尿杯",
+        collectedAt: "--",
+        arrivedAt: "09:36",
+        status: "信息不完整",
+        statusClass: "badge-b",
+        action: "补全信息",
+        basic: "住院模拟样本，送达时间完整，但采样时间缺失。",
+        ruleCheck: ["采样时间缺失", "容器类型与尿常规匹配", "条码可识别但申请备注不完整"],
+        conclusion: "暂不建议直接签收，需要补全采样时间以判断时效。",
+        aiRules: ["命中信息不完整规则", "尿液样本需要采样时间评估稳定性", "未发现容器不匹配"],
+        aiAction: "建议联系病区补全采样时间；无法确认时按科室规则生成退样或补采。"
+      }
+    ];
+
+    const rejectTemplates = ["样本量不足", "容器类型错误", "送检时间超限", "条码信息不一致", "样本污染或疑似污染", "采集要求不符合规范"];
+
+    const exceptionAlerts = [
+      { title: "容器不匹配", badge: "高优先级", badgeClass: "badge-c", detail: "R-260609-0031 糖化血红蛋白登记为黄头管，建议退样并补采。" },
+      { title: "样本量不足", badge: "需补采", badgeClass: "badge-c", detail: "R-260609-0046 儿科样本量不足，需明确补采量要求。" },
+      { title: "疑似溶血", badge: "待复核", badgeClass: "badge-b", detail: "R-260609-0052 需人工复核离心后外观。" }
+    ];
+
+    const recollectTasks = [
+      { title: "儿科门诊补采", badge: "待联系", badgeClass: "badge-b", detail: "血常规 + CRP 样本量不足，建议优先通知采血窗口。" },
+      { title: "住院病区补采", badge: "待确认", badgeClass: "badge-info", detail: "糖化血红蛋白容器错误，需重新采集 EDTA 抗凝全血。" },
+      { title: "急诊凝血复核", badge: "时效风险", badgeClass: "badge-b", detail: "凝血四项送检超时，需确认是否重采。" }
+    ];
+
+    const receivingLogs = [
+      { title: "09:42 确认签收", badge: "已记录", badgeClass: "badge-a", detail: "模拟样本 R-260609-0012 已进入分拣流程。" },
+      { title: "09:35 标记异常", badge: "待处理", badgeClass: "badge-b", detail: "模拟样本 R-260609-0009 条码信息待核对。" },
+      { title: "09:28 生成退样", badge: "已生成", badgeClass: "badge-c", detail: "模拟样本 R-260609-0004 退样原因为送检时间超限。" }
+    ];
+
     const questions = [
       {
         question: "这条结果为什么没有自动放行？",
@@ -888,6 +1247,7 @@
     ];
 
     const sampleTable = document.getElementById("sampleTable");
+    const receivingTable = document.getElementById("receivingTable");
     const questionList = document.getElementById("questionList");
     const toast = document.getElementById("toast");
     let toastTimer;
@@ -930,6 +1290,75 @@
       document.getElementById("cardAction").textContent = sample.action;
     }
 
+
+
+    function renderReceivingSamples() {
+      receivingTable.innerHTML = receivingSamples.map((sample, index) => `
+        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+          <td><strong>${sample.id}</strong></td>
+          <td>${sample.source}</td>
+          <td>${sample.project}</td>
+          <td>${sample.type}</td>
+          <td>${sample.collectedAt}</td>
+          <td>${sample.arrivedAt}</td>
+          <td><span class="badge ${sample.statusClass}">${sample.status}</span></td>
+          <td>${sample.action}</td>
+        </tr>
+      `).join("");
+
+      receivingTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectReceivingSample(Number(row.dataset.index)));
+      });
+    }
+
+    function selectReceivingSample(index) {
+      const sample = receivingSamples[index];
+      document.querySelectorAll("#receivingTable tr").forEach(row => row.classList.remove("selected"));
+      document.querySelector(`#receivingTable tr[data-index="${index}"]`).classList.add("selected");
+
+      document.getElementById("receivingCardSample").textContent = `${sample.id} · ${sample.project}`;
+      document.getElementById("receivingCardMeta").textContent = `${sample.source} / ${sample.type} / ${sample.status}`;
+      document.getElementById("receivingBasicInfo").textContent = sample.basic;
+      document.getElementById("receivingRuleCheck").innerHTML = sample.ruleCheck.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("receivingAiConclusion").textContent = sample.conclusion;
+      document.getElementById("receivingAiRules").innerHTML = sample.aiRules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("receivingAiAction").textContent = sample.aiAction;
+    }
+
+    function renderTaskCards(containerId, items) {
+      document.getElementById(containerId).innerHTML = items.map(item => `
+        <div class="task-card">
+          <strong>${item.title}<span class="badge ${item.badgeClass}">${item.badge}</span></strong>
+          <small>${item.detail}</small>
+        </div>
+      `).join("");
+    }
+
+    function renderRejectTemplates() {
+      document.getElementById("rejectTemplateList").innerHTML = rejectTemplates.map(template => `
+        <button class="template-chip" type="button" data-template="${template}">${template}</button>
+      `).join("");
+
+      document.querySelectorAll("[data-template]").forEach(button => {
+        button.addEventListener("click", () => showToast(`已选择模拟退样原因模板：${button.dataset.template}`));
+      });
+    }
+
+    function switchView(target) {
+      document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
+      document.getElementById("receivingView").classList.toggle("active", target === "receiving");
+
+      document.querySelectorAll("[data-view-target]").forEach(item => {
+        item.classList.toggle("active", item.dataset.viewTarget === target);
+      });
+
+      if (target === "receiving") {
+        selectReceivingSample(0);
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     function renderQuestions() {
       questionList.innerHTML = questions.map((item, index) => `
         <button class="question-btn" data-index="${index}" type="button">${item.question}</button>
@@ -962,10 +1391,27 @@
       });
     });
 
+    document.querySelectorAll("[data-receiving-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentSample = document.getElementById("receivingCardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.receivingAction}，当前样本：${currentSample}`);
+      });
+    });
+
+    document.querySelectorAll("[data-view-target]").forEach(item => {
+      item.addEventListener("click", () => switchView(item.dataset.viewTarget));
+    });
+
     document.getElementById("currentDate").textContent = formatDate(new Date());
     renderSamples();
+    renderReceivingSamples();
+    renderTaskCards("exceptionList", exceptionAlerts);
+    renderRejectTemplates();
+    renderTaskCards("recollectList", recollectTasks);
+    renderTaskCards("receivingLogList", receivingLogs);
     renderQuestions();
     selectSample(0);
+    selectReceivingSample(0);
   </script>
 </body>
 </html>
