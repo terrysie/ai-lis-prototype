@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-LIS 实验室信息管理系统</title>
+  <style>
+    :root {
+      --bg: #f4f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fbfd;
+      --text: #203040;
+      --muted: #6c7a89;
+      --line: #dce7ef;
+      --primary: #0b7fab;
+      --primary-dark: #075e80;
+      --primary-soft: #e5f6fb;
+      --success: #138a5e;
+      --success-soft: #e7f7ef;
+      --warning: #b77805;
+      --warning-soft: #fff5db;
+      --danger: #c83d3d;
+      --danger-soft: #fff0f0;
+      --purple: #6d5bd0;
+      --shadow: 0 16px 40px rgba(22, 51, 71, 0.08);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(17, 147, 196, 0.13), transparent 32rem),
+        linear-gradient(135deg, #f7fbfd 0%, var(--bg) 48%, #eef5f9 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 252px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      min-height: 72px;
+      padding: 0 28px;
+      color: #fff;
+      background: linear-gradient(90deg, #064766 0%, #0b7fab 58%, #1598bd 100%);
+      box-shadow: 0 10px 28px rgba(5, 80, 109, 0.22);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(255,255,255,0.34);
+      border-radius: 13px;
+      background: rgba(255,255,255,0.15);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 760;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      font-size: 12px;
+      opacity: 0.84;
+    }
+
+    .topbar-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .sidebar {
+      padding: 24px 18px;
+      border-right: 1px solid var(--line);
+      background: rgba(255,255,255,0.78);
+      backdrop-filter: blur(16px);
+    }
+
+    .nav-title {
+      margin: 0 0 12px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 14px;
+      color: #365066;
+      cursor: pointer;
+      transition: 0.18s ease;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+
+    .nav-icon {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: #eef5f8;
+      font-size: 16px;
+    }
+
+    .sidebar-note {
+      margin-top: 24px;
+      padding: 16px;
+      border: 1px solid #cfe7f2;
+      border-radius: var(--radius-md);
+      background: linear-gradient(180deg, #f7fcfe, #eaf8fd);
+      color: #35566a;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    main {
+      min-width: 0;
+      padding: 26px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 20px;
+    }
+
+    .hero-card {
+      padding: 24px;
+      border: 1px solid rgba(178, 211, 225, 0.76);
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, #ffffff 0%, #f4fbfe 72%, #e9f8fd 100%);
+      box-shadow: var(--shadow);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      color: var(--primary-dark);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .hero h2 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.02em;
+    }
+
+    .hero p {
+      max-width: 820px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .guardrail {
+      display: grid;
+      align-content: center;
+      width: 260px;
+      padding: 20px;
+      border-radius: var(--radius-lg);
+      color: #fff;
+      background: linear-gradient(145deg, #194e66, #0b7fab);
+      box-shadow: var(--shadow);
+    }
+
+    .guardrail strong { font-size: 15px; }
+    .guardrail span { margin-top: 8px; font-size: 13px; line-height: 1.6; opacity: 0.9; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .metric-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metric-value {
+      margin-top: 10px;
+      font-size: 30px;
+      font-weight: 820;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-trend {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(255,255,255,0.92);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-soft);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 780;
+    }
+
+    .panel-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .panel-body { padding: 20px; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(98px, 1fr));
+      gap: 12px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 104px;
+      padding: 14px;
+      border: 1px solid #d7e8ef;
+      border-radius: var(--radius-md);
+      background: #fff;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 39px;
+      right: -13px;
+      z-index: 1;
+      color: #8fb5c4;
+      font-weight: 900;
+    }
+
+    .flow-step strong { display: block; font-size: 14px; }
+    .flow-step span { display: block; margin-top: 7px; color: var(--muted); font-size: 12px; }
+    .flow-step b { display: block; margin-top: 10px; color: var(--primary-dark); font-size: 20px; }
+
+    .queue-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 760px;
+    }
+
+    th, td {
+      padding: 13px 12px;
+      border-bottom: 1px solid #edf2f5;
+      text-align: left;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th {
+      color: #5f7181;
+      background: #f7fafc;
+      font-weight: 760;
+    }
+
+    tbody tr {
+      cursor: pointer;
+      transition: 0.16s ease;
+    }
+
+    tbody tr:hover, tbody tr.selected {
+      background: #eef9fd;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 92px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .badge-a { color: var(--success); background: var(--success-soft); }
+    .badge-b { color: var(--warning); background: var(--warning-soft); }
+    .badge-c { color: var(--danger); background: var(--danger-soft); }
+    .badge-info { color: var(--primary-dark); background: var(--primary-soft); }
+    .badge-gray { color: #52616f; background: #eef2f5; }
+
+    .ai-card {
+      position: sticky;
+      top: 92px;
+      border: 1px solid #cfe7f2;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(180deg, #ffffff, #f4fbfe);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .ai-card-top {
+      padding: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, #075e80, #0f95bd);
+    }
+
+    .ai-card-top h3 { margin: 0; font-size: 17px; }
+    .ai-card-top p { margin: 7px 0 0; opacity: 0.85; font-size: 12px; }
+
+    .decision-block {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .decision-block h4 {
+      margin: 0 0 8px;
+      color: #52616f;
+      font-size: 13px;
+    }
+
+    .decision-block p, .decision-block ul {
+      margin: 0;
+      color: #263f52;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .decision-block ul { padding-left: 18px; }
+
+    .action-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      padding: 16px 18px 18px;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px 13px;
+      color: #fff;
+      background: var(--primary);
+      cursor: pointer;
+      font-weight: 760;
+      transition: 0.16s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(11, 127, 171, 0.18); }
+    .btn.secondary { color: var(--primary-dark); background: var(--primary-soft); }
+    .btn.danger { background: var(--danger); }
+
+    .critical-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .critical-card {
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .critical-card strong { display: block; font-size: 24px; }
+    .critical-card span { display: block; margin-top: 6px; color: var(--muted); font-size: 13px; }
+    .critical-card.danger { border-color: #ffd0d0; background: var(--danger-soft); }
+    .critical-card.warning { border-color: #ffe2a2; background: var(--warning-soft); }
+    .critical-card.success { border-color: #bfe8d3; background: var(--success-soft); }
+
+    .critical-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .critical-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      padding: 13px;
+      border: 1px solid #edf2f5;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .critical-item b { color: #263f52; }
+    .critical-item small { color: var(--muted); }
+
+    .assistant {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .question-btn {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d6e7ef;
+      border-radius: 13px;
+      color: #25475d;
+      background: #fff;
+      text-align: left;
+      cursor: pointer;
+      transition: 0.16s ease;
+    }
+
+    .question-btn:hover, .question-btn.active {
+      border-color: #8fcfe3;
+      background: #eef9fd;
+    }
+
+    .answer-box {
+      min-height: 178px;
+      padding: 18px;
+      border: 1px dashed #b7d6e2;
+      border-radius: var(--radius-md);
+      background: #fbfdfe;
+      line-height: 1.8;
+    }
+
+    .answer-box h4 { margin: 0 0 8px; }
+    .answer-box p { margin: 0; color: #365066; }
+
+    .toast {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 50;
+      max-width: min(420px, calc(100vw - 48px));
+      padding: 14px 16px;
+      border-radius: 14px;
+      color: #fff;
+      background: rgba(6, 71, 102, 0.96);
+      box-shadow: 0 18px 38px rgba(6, 71, 102, 0.24);
+      transform: translateY(24px);
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.22s ease;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    @media (max-width: 1180px) {
+      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant { grid-template-columns: 1fr; }
+      .ai-card { position: static; }
+      .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .flow-step::after { display: none; }
+      .guardrail { width: auto; }
+    }
+
+    @media (max-width: 820px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; padding: 16px; }
+      .brand h1 { white-space: normal; font-size: 18px; }
+      .topbar-meta { justify-content: flex-start; }
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); padding: 14px; }
+      .nav-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sidebar-note { display: none; }
+      main { padding: 16px; }
+      .hero { grid-template-columns: 1fr; }
+      .metrics, .critical-grid, .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .panel-header { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 520px) {
+      .nav-list, .metrics, .critical-grid, .flow { grid-template-columns: 1fr; }
+      .metric-value { font-size: 26px; }
+      .hero h2 { font-size: 23px; }
+      .critical-item { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="系统名称">
+        <div class="brand-mark">AI</div>
+        <div>
+          <h1>AI-LIS 实验室信息管理系统</h1>
+          <p>智能预审 · 自动放行 · 危急值闭环 · 内部智能助手</p>
+        </div>
+      </div>
+      <div class="topbar-meta">
+        <span class="meta-pill">当前角色：<strong>审核技师</strong></span>
+        <span class="meta-pill">当前日期：<strong id="currentDate">--</strong></span>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="左侧导航栏">
+      <p class="nav-title">功能导航</p>
+      <ul class="nav-list">
+        <li class="nav-item active"><span class="nav-icon">⌂</span>工作台</li>
+        <li class="nav-item"><span class="nav-icon">▣</span>样本签收</li>
+        <li class="nav-item"><span class="nav-icon">◎</span>AI 预审</li>
+        <li class="nav-item"><span class="nav-icon">✓</span>结果审核</li>
+        <li class="nav-item"><span class="nav-icon">!</span>危急值中心</li>
+        <li class="nav-item"><span class="nav-icon">◈</span>质控看板</li>
+        <li class="nav-item"><span class="nav-icon">⚙</span>系统设置</li>
+      </ul>
+      <div class="sidebar-note">
+        <strong>原型说明</strong><br />本页面仅使用模拟数据，不包含真实患者信息；AI 仅做筛选、解释、催办与排序辅助。
+      </div>
+    </aside>
+
+    <main>
+      <section class="hero" aria-label="工作台说明">
+        <div class="hero-card">
+          <p class="eyebrow">● 审核技师工作台</p>
+          <h2>让检验结果先被 AI 分层，再由人完成最终把关</h2>
+          <p>系统将样本按自动放行、快速复核、重点复核分层展示，并把危急值通知状态和闭环进度集中在同一工作台，减少审核技师在多个系统之间切换。</p>
+        </div>
+        <div class="guardrail">
+          <strong>医疗责任边界</strong>
+          <span>AI 不替代最终医疗责任人；所有建议均需符合实验室规则、质控状态和人工审核流程。</span>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="首页核心指标">
+        <article class="metric-card">
+          <div class="metric-label">今日接收样本 <span>总量</span></div>
+          <div class="metric-value">1,286</div>
+          <div class="metric-trend">较昨日 +8.4%</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">AI 可自动放行 <span class="badge badge-a">A 类</span></div>
+          <div class="metric-value">742</div>
+          <div class="metric-trend">预计节省审核 4.1 小时</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">快速复核 <span class="badge badge-b">B 类</span></div>
+          <div class="metric-value">318</div>
+          <div class="metric-trend">轻微异常或规则需确认</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">重点复核 <span class="badge badge-c">C 类</span></div>
+          <div class="metric-value">61</div>
+          <div class="metric-trend">优先进入人工审核队列</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">未闭环危急值 <span class="badge badge-c">待处理</span></div>
+          <div class="metric-value">7</div>
+          <div class="metric-trend">2 条即将超时</div>
+        </article>
+      </section>
+
+      <section class="panel" aria-label="样本流转概览">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">样本流转概览</h3>
+            <p class="panel-subtitle">从接单到发布的关键节点，用于快速定位积压环节。</p>
+          </div>
+          <span class="badge badge-info">实时模拟</span>
+        </div>
+        <div class="panel-body flow">
+          <div class="flow-step"><strong>接单</strong><span>医嘱进入 LIS</span><b>1,362</b></div>
+          <div class="flow-step"><strong>采样</strong><span>条码完成绑定</span><b>1,331</b></div>
+          <div class="flow-step"><strong>签收</strong><span>实验室确认接收</span><b>1,286</b></div>
+          <div class="flow-step"><strong>上机</strong><span>仪器检测中</span><b>982</b></div>
+          <div class="flow-step"><strong>AI 预审</strong><span>规则与历史比对</span><b>804</b></div>
+          <div class="flow-step"><strong>审核</strong><span>人工确认发布前</span><b>287</b></div>
+          <div class="flow-step"><strong>发布</strong><span>报告已输出</span><b>691</b></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="AI 预审队列" style="margin-top:18px;">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">AI 预审队列</h3>
+            <p class="panel-subtitle">点击样本查看右侧 AI 判定卡片；队列按风险与处理建议分为 A / B / C 类。</p>
+          </div>
+          <span class="badge badge-gray">模拟样本</span>
+        </div>
+        <div class="panel-body queue-layout">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>样本号</th>
+                  <th>项目组</th>
+                  <th>来源</th>
+                  <th>AI 分类</th>
+                  <th>关键提示</th>
+                  <th>等待时间</th>
+                </tr>
+              </thead>
+              <tbody id="sampleTable"></tbody>
+            </table>
+          </div>
+
+          <aside class="ai-card" aria-label="AI 判定卡片">
+            <div class="ai-card-top">
+              <h3 id="cardSample">AI 判定卡片</h3>
+              <p id="cardMeta">请选择左侧样本查看建议</p>
+            </div>
+            <div class="decision-block">
+              <h4>结论</h4>
+              <p id="cardConclusion">--</p>
+            </div>
+            <div class="decision-block">
+              <h4>命中规则</h4>
+              <ul id="cardRules"></ul>
+            </div>
+            <div class="decision-block">
+              <h4>建议动作</h4>
+              <p id="cardAction">--</p>
+            </div>
+            <div class="action-row">
+              <button class="btn" data-action="确认建议">确认建议</button>
+              <button class="btn secondary" data-action="转人工复核">转人工复核</button>
+              <button class="btn danger" data-action="禁止自动放行">禁止自动放行</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section-grid" style="margin-top:18px;">
+        <div class="panel" aria-label="危急值中心">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">危急值中心</h3>
+              <p class="panel-subtitle">将待确认、通知、催办、闭环状态统一追踪。</p>
+            </div>
+            <span class="badge badge-c">闭环优先</span>
+          </div>
+          <div class="panel-body">
+            <div class="critical-grid">
+              <div class="critical-card danger"><strong>3</strong><span>待确认</span></div>
+              <div class="critical-card warning"><strong>4</strong><span>已通知</span></div>
+              <div class="critical-card danger"><strong>2</strong><span>超时催办</span></div>
+              <div class="critical-card success"><strong>16</strong><span>已闭环</span></div>
+            </div>
+            <div class="critical-list">
+              <div class="critical-item"><div><b>模拟样本 S-240608-0931</b><br /><small>血钾 6.3 mmol/L，已通知内科护士站，待医生确认。</small></div><span class="badge badge-b">已通知</span></div>
+              <div class="critical-item"><div><b>模拟样本 S-240608-1044</b><br /><small>血糖 2.1 mmol/L，首次通知未接通，系统已生成二次催办。</small></div><span class="badge badge-c">超时催办</span></div>
+              <div class="critical-item"><div><b>模拟样本 S-240608-1176</b><br /><small>肌钙蛋白显著升高，需审核技师确认危急值规则。</small></div><span class="badge badge-c">待确认</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" aria-label="质控摘要">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">质控与仪器摘要</h3>
+              <p class="panel-subtitle">为 AI 自动放行提供前置安全条件。</p>
+            </div>
+          </div>
+          <div class="panel-body critical-list" style="margin-top:0;">
+            <div class="critical-item"><div><b>生化分析仪 BA-02</b><br /><small>今日质控在控，自动放行规则可用。</small></div><span class="badge badge-a">正常</span></div>
+            <div class="critical-item"><div><b>血常规 HA-01</b><br /><small>白细胞通道重复报警 3 次，相关样本转 B/C 类。</small></div><span class="badge badge-b">关注</span></div>
+            <div class="critical-item"><div><b>免疫 IA-03</b><br /><small>校准即将到期，AI 建议限制自动放行范围。</small></div><span class="badge badge-c">限制</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="内部智能助手">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">内部智能助手</h3>
+            <p class="panel-subtitle">面向实验室内部人员，提供规则解释、闭环追踪和异常定位。</p>
+          </div>
+          <span class="badge badge-info">可点击提问</span>
+        </div>
+        <div class="panel-body assistant">
+          <div class="question-list" id="questionList"></div>
+          <div class="answer-box" id="answerBox">
+            <h4>请选择一个问题</h4>
+            <p>助手会基于模拟规则、模拟样本和模拟仪器状态给出解释，不连接真实医院系统。</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const samples = [
+      {
+        id: "S-240608-0812",
+        group: "生化全套",
+        source: "门诊",
+        category: "A 类：自动放行",
+        categoryClass: "badge-a",
+        tip: "结果稳定、质控在控",
+        wait: "03 分钟",
+        conclusion: "符合自动放行条件，可进入报告发布前的系统放行队列。",
+        rules: ["同项目组质控在控，仪器 BA-02 无报警", "本次结果未触发危急值、复查和 delta check 阈值", "模拟历史结果波动位于实验室允许范围内"],
+        action: "建议确认 AI 自动放行，并保留规则命中日志供追溯。"
+      },
+      {
+        id: "S-240608-0927",
+        group: "血常规",
+        source: "住院",
+        category: "B 类：快速复核",
+        categoryClass: "badge-b",
+        tip: "轻度异常，需人工浏览",
+        wait: "08 分钟",
+        conclusion: "不建议直接自动放行；该样本适合快速人工复核。",
+        rules: ["白细胞结果较模拟历史均值上升，但未达危急值", "HA-01 今日出现重复通道报警，需人工确认散点图", "样本状态、采样时间和签收时间均完整"],
+        action: "建议审核技师查看仪器图谱与备注，确认无干扰后发布。"
+      },
+      {
+        id: "S-240608-1044",
+        group: "急诊生化",
+        source: "急诊",
+        category: "C 类：重点复核",
+        categoryClass: "badge-c",
+        tip: "危急值未闭环",
+        wait: "14 分钟",
+        conclusion: "禁止自动放行；已触发危急值闭环流程并进入重点复核。",
+        rules: ["血糖结果命中危急值阈值", "首次通知未接通，已超过模拟闭环时限", "需要人工确认样本身份、复查状态和通知记录"],
+        action: "建议立即转人工复核，并同步执行二次通知与超时催办。"
+      },
+      {
+        id: "S-240608-1176",
+        group: "心肌标志物",
+        source: "胸痛中心",
+        category: "C 类：重点复核",
+        categoryClass: "badge-c",
+        tip: "肌钙蛋白显著升高",
+        wait: "06 分钟",
+        conclusion: "需要重点复核；该结果可能影响临床快速处置。",
+        rules: ["肌钙蛋白结果超过模拟危急值提醒线", "同批质控在控，但结果具备临床紧急性", "需核对采样时间、复测要求与通知对象"],
+        action: "建议人工确认后触发危急值通知，并跟踪医生接收确认。"
+      },
+      {
+        id: "S-240608-1268",
+        group: "尿液分析",
+        source: "体检",
+        category: "A 类：自动放行",
+        categoryClass: "badge-a",
+        tip: "阴性为主，规则通过",
+        wait: "02 分钟",
+        conclusion: "可自动放行；未发现需人工拦截的异常组合。",
+        rules: ["尿干化学与沉渣规则一致", "无退样、污染或条码冲突提示", "体检来源样本满足低风险放行策略"],
+        action: "建议确认自动放行，系统记录本次规则版本号。"
+      },
+      {
+        id: "S-240608-1320",
+        group: "凝血四项",
+        source: "手术室",
+        category: "B 类：快速复核",
+        categoryClass: "badge-b",
+        tip: "采血到签收时间偏长",
+        wait: "11 分钟",
+        conclusion: "暂不自动放行；存在样本前处理时效疑点。",
+        rules: ["采血至签收间隔超过模拟科室建议值", "凝血项目对样本时效敏感", "结果未达危急值但需要确认是否重采"],
+        action: "建议转人工快速复核，必要时联系科室确认样本状态。"
+      }
+    ];
+
+    const questions = [
+      {
+        question: "这条结果为什么没有自动放行？",
+        answer: "因为样本命中了至少一个拦截条件：例如危急值、delta check 超阈值、仪器报警、质控限制或样本时效异常。系统会把命中规则写入 AI 判定卡片，审核技师可据此快速判断是否转人工复核。"
+      },
+      {
+        question: "今天哪些危急值还没闭环？",
+        answer: "当前模拟数据中共有 7 条未闭环危急值，其中 3 条待确认、4 条已通知未完成医生确认，另有 2 条进入超时催办。建议优先处理 S-240608-1044 和 S-240608-1176。"
+      },
+      {
+        question: "这份样本为什么被退样？",
+        answer: "模拟退样原因通常包括条码不一致、容器类型错误、采血量不足、凝血或溶血、采样到签收超时。原型中可在后续样本签收页面补充退样原因追踪与科室反馈。"
+      },
+      {
+        question: "哪台仪器今天最异常？",
+        answer: "今日模拟异常最集中的是血常规 HA-01：白细胞通道重复报警 3 次，相关样本已被 AI 从自动放行降级到快速复核或重点复核。"
+      }
+    ];
+
+    const sampleTable = document.getElementById("sampleTable");
+    const questionList = document.getElementById("questionList");
+    const toast = document.getElementById("toast");
+    let toastTimer;
+
+    function formatDate(date) {
+      return new Intl.DateTimeFormat("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "long"
+      }).format(date);
+    }
+
+    function renderSamples() {
+      sampleTable.innerHTML = samples.map((sample, index) => `
+        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+          <td><strong>${sample.id}</strong></td>
+          <td>${sample.group}</td>
+          <td>${sample.source}</td>
+          <td><span class="badge ${sample.categoryClass}">${sample.category}</span></td>
+          <td>${sample.tip}</td>
+          <td>${sample.wait}</td>
+        </tr>
+      `).join("");
+
+      sampleTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectSample(Number(row.dataset.index)));
+      });
+    }
+
+    function selectSample(index) {
+      const sample = samples[index];
+      document.querySelectorAll("#sampleTable tr").forEach(row => row.classList.remove("selected"));
+      document.querySelector(`#sampleTable tr[data-index="${index}"]`).classList.add("selected");
+
+      document.getElementById("cardSample").textContent = `${sample.id} · ${sample.group}`;
+      document.getElementById("cardMeta").textContent = `${sample.source} / ${sample.category} / 等待 ${sample.wait}`;
+      document.getElementById("cardConclusion").textContent = sample.conclusion;
+      document.getElementById("cardRules").innerHTML = sample.rules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("cardAction").textContent = sample.action;
+    }
+
+    function renderQuestions() {
+      questionList.innerHTML = questions.map((item, index) => `
+        <button class="question-btn" data-index="${index}" type="button">${item.question}</button>
+      `).join("");
+
+      questionList.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+          const index = Number(button.dataset.index);
+          document.querySelectorAll(".question-btn").forEach(btn => btn.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById("answerBox").innerHTML = `
+            <h4>${questions[index].question}</h4>
+            <p>${questions[index].answer}</p>
+          `;
+        });
+      });
+    }
+
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("show");
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    document.querySelectorAll("[data-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentSample = document.getElementById("cardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.action}，当前样本：${currentSample}`);
+      });
+    });
+
+    document.getElementById("currentDate").textContent = formatDate(new Date());
+    renderSamples();
+    renderQuestions();
+    selectSample(0);
+  </script>
+</body>
+</html>
