@@ -644,9 +644,109 @@
       background: #eef9fd;
     }
 
+
+    .precheck-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .triage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .triage-card {
+      position: relative;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .triage-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 5px;
+      background: var(--primary);
+    }
+
+    .triage-card.a::before { background: var(--success); }
+    .triage-card.b::before { background: var(--warning); }
+    .triage-card.c::before { background: var(--danger); }
+
+    .triage-card h3 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .triage-card p {
+      margin: 8px 0 0;
+      color: #365066;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .triage-card strong {
+      display: block;
+      margin-top: 14px;
+      color: #263f52;
+      font-size: 13px;
+    }
+
+    .precheck-table { min-width: 1160px; }
+    .alert-table { min-width: 980px; }
+    .reagent-table { min-width: 1080px; }
+
+    .risk-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .alert-panel {
+      border-color: #ffd9b0;
+      background: linear-gradient(180deg, #fff, #fffaf0);
+    }
+
+    .alert-panel .panel-header {
+      background: linear-gradient(90deg, #fff8e8, #f7fcfe);
+    }
+
+    .safety-note {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px solid #ffe2a2;
+      border-radius: 12px;
+      color: #6d4a06;
+      background: var(--warning-soft);
+      line-height: 1.6;
+      font-size: 13px;
+    }
+
+    .inline-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .inline-actions .btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
     @media (max-width: 1180px) {
-      .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant, .receiving-layout { grid-template-columns: 1fr; }
+      .metrics, .precheck-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ai-card { position: static; }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -664,12 +764,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .critical-grid, .flow, .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .critical-grid, .flow, .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -697,7 +797,7 @@
       <ul class="nav-list">
         <li class="nav-item active" data-view-target="dashboard"><span class="nav-icon">⌂</span>工作台</li>
         <li class="nav-item" data-view-target="receiving"><span class="nav-icon">▣</span>样本签收</li>
-        <li class="nav-item"><span class="nav-icon">◎</span>AI 预审</li>
+        <li class="nav-item" data-view-target="precheck"><span class="nav-icon">◎</span>AI 预审</li>
         <li class="nav-item"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item"><span class="nav-icon">!</span>危急值中心</li>
         <li class="nav-item"><span class="nav-icon">◈</span>质控看板</li>
@@ -1025,6 +1125,139 @@
           </div>
         </section>
       </div>
+
+      <div class="view" id="precheckView">
+        <section class="hero" aria-label="AI 预审工作台说明">
+          <div class="hero-card">
+            <p class="eyebrow">● AI 预审工作台</p>
+            <h2>把检验结果分流为自动放行、快速复核与重点复核</h2>
+            <p>AI 预审工作台集中展示结果分级、命中规则、风险标签和建议动作，并把传染病阳性预警、试剂近效期预警作为岗位入口前置给审核技师。所有队列均为模拟数据，不包含真实患者信息。</p>
+          </div>
+          <div class="guardrail">
+            <strong>AI 使用边界</strong>
+            <span>AI 仅用于风险提示和流程辅助，不替代检验技师或医生最终判断；自动放行须满足实验室授权规则。</span>
+          </div>
+        </section>
+
+        <section class="metrics precheck-metrics" aria-label="AI 预审总览指标">
+          <article class="metric-card"><div class="metric-label">今日进入预审结果数 <span>总量</span></div><div class="metric-value">804</div><div class="metric-trend">覆盖生化、免疫、血常规等项目</div></article>
+          <article class="metric-card"><div class="metric-label">A 类自动放行数量 <span class="badge badge-a">A 类</span></div><div class="metric-value">512</div><div class="metric-trend">规则、质控、历史波动均通过</div></article>
+          <article class="metric-card"><div class="metric-label">B 类快速复核数量 <span class="badge badge-b">B 类</span></div><div class="metric-value">217</div><div class="metric-trend">轻度异常或需浏览图谱</div></article>
+          <article class="metric-card"><div class="metric-label">C 类重点复核数量 <span class="badge badge-c">C 类</span></div><div class="metric-value">75</div><div class="metric-trend">危急值、冲突或质控拦截</div></article>
+          <article class="metric-card"><div class="metric-label">AI 拦截高风险结果数量 <span class="badge badge-c">拦截</span></div><div class="metric-value">29</div><div class="metric-trend">含危急值、阳性、质控异常</div></article>
+          <article class="metric-card"><div class="metric-label">人工干预次数 <span class="badge badge-info">留痕</span></div><div class="metric-value">46</div><div class="metric-trend">转复核、禁放行、通知记录</div></article>
+        </section>
+
+        <section class="triage-grid" aria-label="A/B/C 三类预审分流区域">
+          <article class="triage-card a">
+            <h3>A 类：自动放行 <span class="badge badge-a">低风险</span></h3>
+            <p>结果在参考范围内，无危急值，与历史波动合理，仪器和质控状态正常。</p>
+            <strong>建议动作</strong>
+            <p>自动进入发布前队列。</p>
+          </article>
+          <article class="triage-card b">
+            <h3>B 类：快速复核 <span class="badge badge-b">需确认</span></h3>
+            <p>轻度异常，历史变化偏大但可解释，项目组合无明显冲突。</p>
+            <strong>建议动作</strong>
+            <p>审核员一键确认或转重点复核。</p>
+          </article>
+          <article class="triage-card c">
+            <h3>C 类：重点复核 <span class="badge badge-c">高风险</span></h3>
+            <p>危急值、结果极端偏差、项目间逻辑冲突、质控或仪器状态异常。</p>
+            <strong>建议动作</strong>
+            <p>必须人工重点审核，不允许自动放行。</p>
+          </article>
+        </section>
+
+        <section class="panel" aria-label="AI 预审结果队列">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">AI 预审结果队列</h3>
+              <p class="panel-subtitle">点击任一模拟结果，右侧 AI 判定详情卡片将按“结论 / 命中规则 / 建议动作”更新。</p>
+            </div>
+            <span class="badge badge-gray">模拟结果</span>
+          </div>
+          <div class="panel-body queue-layout">
+            <div>
+              <div class="inline-actions" aria-label="AI 预审批量操作">
+                <button class="btn" data-precheck-action="批量自动放行">批量自动放行</button>
+                <button class="btn secondary" data-precheck-action="转快速复核">转快速复核</button>
+                <button class="btn danger" data-precheck-action="转重点复核">转重点复核</button>
+              </div>
+              <div class="table-wrap">
+                <table class="precheck-table">
+                  <thead>
+                    <tr><th>样本号</th><th>项目</th><th>来源科室</th><th>当前结果摘要</th><th>AI 分级</th><th>命中规则</th><th>风险标签</th><th>建议动作</th></tr>
+                  </thead>
+                  <tbody id="precheckTable"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <aside class="ai-card" aria-label="AI 判定详情卡片">
+              <div class="ai-card-top">
+                <h3 id="precheckCardSample">AI 判定详情卡片</h3>
+                <p id="precheckCardMeta">请选择左侧结果查看建议</p>
+              </div>
+              <div class="decision-block"><h4>结论</h4><p id="precheckCardConclusion">--</p></div>
+              <div class="decision-block"><h4>命中规则</h4><ul id="precheckCardRules"></ul></div>
+              <div class="decision-block"><h4>建议动作</h4><p id="precheckCardAction">--</p></div>
+              <div class="action-row">
+                <button class="btn" data-precheck-action="确认当前 AI 建议">确认当前 AI 建议</button>
+                <button class="btn secondary" data-precheck-action="追加人工备注">追加人工备注</button>
+                <button class="btn danger" data-precheck-action="禁止自动放行">禁止自动放行</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="risk-layout" aria-label="AI 预审风险预警入口">
+          <div class="panel alert-panel" aria-label="传染病阳性预警">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">传染病阳性预警</h3>
+                <p class="panel-subtitle">仅展示模拟数据；用于复核、通知与留痕流程提醒。</p>
+              </div>
+              <span class="badge badge-c">预警入口</span>
+            </div>
+            <div class="panel-body">
+              <p class="safety-note">AI 仅用于风险提示和流程辅助，不替代检验技师或医生最终判断。</p>
+              <div class="inline-actions">
+                <button class="btn secondary" data-precheck-action="标记阳性预警已复核">标记阳性预警已复核</button>
+                <button class="btn" data-precheck-action="生成阳性结果通知记录">生成阳性结果通知记录</button>
+              </div>
+              <div class="table-wrap">
+                <table class="alert-table">
+                  <thead><tr><th>阳性项目</th><th>来源科室</th><th>复核状态</th><th>通知状态</th><th>处理时限</th><th>建议动作</th></tr></thead>
+                  <tbody id="positiveAlertTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel alert-panel" aria-label="试剂近效期预警">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">试剂近效期预警</h3>
+                <p class="panel-subtitle">按剩余天数和影响项目展示模拟试剂风险。</p>
+              </div>
+              <span class="badge badge-b">库存风险</span>
+            </div>
+            <div class="panel-body">
+              <div class="inline-actions">
+                <button class="btn" data-precheck-action="生成试剂更换提醒">生成试剂更换提醒</button>
+                <button class="btn secondary" data-precheck-action="查看受影响项目">查看受影响项目</button>
+              </div>
+              <div class="table-wrap">
+                <table class="reagent-table">
+                  <thead><tr><th>试剂名称</th><th>批号</th><th>适用项目</th><th>适用仪器</th><th>有效期</th><th>剩余天数</th><th>风险等级</th><th>建议动作</th></tr></thead>
+                  <tbody id="reagentAlertTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   </div>
 
@@ -1227,6 +1460,141 @@
       { title: "09:28 生成退样", badge: "已生成", badgeClass: "badge-c", detail: "模拟样本 R-260609-0004 退样原因为送检时间超限。" }
     ];
 
+
+
+    const precheckResults = [
+      {
+        id: "P-260609-0108",
+        project: "肝功能生化组合",
+        source: "消化内科",
+        summary: "ALT、AST、胆红素均在参考范围内",
+        grade: "A 自动放行",
+        gradeClass: "badge-a",
+        ruleHit: "参考范围 + 质控在控",
+        riskTag: "正常",
+        action: "自动进入发布前队列",
+        conclusion: "结果、历史波动、仪器状态均符合 A 类自动放行策略。",
+        rules: ["结果处于实验室模拟参考范围内", "BA-02 今日质控在控且无仪器报警", "近三次模拟历史结果波动合理"],
+        detailAction: "建议自动进入发布前队列，并记录规则版本与放行批次。"
+      },
+      {
+        id: "P-260609-0136",
+        project: "血常规五分类",
+        source: "呼吸与危重症医学科",
+        summary: "白细胞轻度升高，中性粒比例升高",
+        grade: "B 快速复核",
+        gradeClass: "badge-b",
+        ruleHit: "轻度异常 + Delta Check",
+        riskTag: "轻度异常 / Delta Check",
+        action: "一键确认或转重点复核",
+        conclusion: "存在轻度异常和历史变化偏大，但项目组合暂未见明显冲突，适合快速复核。",
+        rules: ["白细胞较模拟历史均值上升 32%", "未达到危急值阈值", "HA-01 散点图需人工浏览确认"],
+        detailAction: "建议审核员查看仪器图谱和临床来源，一键确认或转重点复核。"
+      },
+      {
+        id: "P-260609-0172",
+        project: "急诊电解质",
+        source: "急诊科",
+        summary: "血钾 6.4 mmol/L，超过模拟危急值线",
+        grade: "C 重点复核",
+        gradeClass: "badge-c",
+        ruleHit: "危急值 + 极端偏差",
+        riskTag: "危急值",
+        action: "人工重点审核并触发闭环",
+        conclusion: "命中危急值和高风险拦截条件，不允许自动放行。",
+        rules: ["血钾结果超过模拟危急值阈值", "需核对溶血、采样时间和复测状态", "急诊来源要求优先处理与通知留痕"],
+        detailAction: "建议立即转重点复核，确认后生成危急值通知并跟踪闭环。"
+      },
+      {
+        id: "P-260609-0211",
+        project: "乙肝两对半",
+        source: "感染性疾病科",
+        summary: "乙肝表面抗原反应性，需复核",
+        grade: "C 重点复核",
+        gradeClass: "badge-c",
+        ruleHit: "阳性结果 + 传染病预警",
+        riskTag: "阳性结果",
+        action: "复核后生成通知记录",
+        conclusion: "传染病相关阳性结果需人工复核与流程留痕，禁止自动放行。",
+        rules: ["HBsAg 初筛阳性命中预警规则", "同批免疫质控在控但需按制度复核", "需形成通知和复核记录"],
+        detailAction: "建议人工复核阳性结果，确认后生成模拟通知记录并留痕。"
+      },
+      {
+        id: "P-260609-0248",
+        project: "肾功能 + 电解质",
+        source: "肾内科",
+        summary: "肌酐升高但与透析病程相符",
+        grade: "B 快速复核",
+        gradeClass: "badge-b",
+        ruleHit: "历史变化偏大但可解释",
+        riskTag: "Delta Check",
+        action: "快速复核后确认发布",
+        conclusion: "结果异常但与模拟历史和科室场景可解释，建议快速复核。",
+        rules: ["肌酐较上次升高但未超过重点复核阈值", "钾钠氯项目间逻辑无明显冲突", "生化质控状态正常"],
+        detailAction: "建议审核员结合模拟历史趋势快速确认，必要时备注临床场景。"
+      },
+      {
+        id: "P-260609-0286",
+        project: "肌钙蛋白 I",
+        source: "胸痛中心",
+        summary: "肌钙蛋白显著升高，质控复查待确认",
+        grade: "C 重点复核",
+        gradeClass: "badge-c",
+        ruleHit: "危急值 + 质控异常",
+        riskTag: "质控异常",
+        action: "暂停自动放行并关联质控复查",
+        conclusion: "关键项目结果显著异常且存在质控复查要求，必须人工重点审核。",
+        rules: ["肌钙蛋白超过模拟重点复核阈值", "IA-03 校准即将到期，自动放行范围受限", "需确认质控复查与复测记录"],
+        detailAction: "建议暂停自动放行，关联质控复查并由资深审核员处理。"
+      },
+      {
+        id: "P-260609-0315",
+        project: "甲状腺功能",
+        source: "内分泌科",
+        summary: "TSH 与 FT4 趋势不一致",
+        grade: "C 重点复核",
+        gradeClass: "badge-c",
+        ruleHit: "项目间逻辑冲突",
+        riskTag: "项目冲突",
+        action: "人工排查项目冲突",
+        conclusion: "项目组合存在逻辑冲突，需要排查干扰、复测或医嘱匹配问题。",
+        rules: ["TSH 与 FT4 模拟趋势不符合常规组合逻辑", "结果未命中危急值但影响解释一致性", "建议排查样本、试剂和仪器状态"],
+        detailAction: "建议转重点复核，必要时复测并联系临床补充信息。"
+      },
+      {
+        id: "P-260609-0362",
+        project: "HIV 初筛",
+        source: "体检中心",
+        summary: "初筛反应性，试剂批号近效期",
+        grade: "C 重点复核",
+        gradeClass: "badge-c",
+        ruleHit: "阳性结果 + 试剂近效期",
+        riskTag: "阳性结果 / 试剂近效期风险",
+        action: "复核并查看受影响项目",
+        conclusion: "阳性结果叠加试剂近效期风险，需要复核、留痕并评估受影响项目。",
+        rules: ["HIV 初筛反应性命中阳性预警", "关联试剂剩余 5 天进入预警", "需按实验室流程复核并记录"],
+        detailAction: "建议人工复核结果，同时生成试剂更换提醒并查看受影响项目。"
+      }
+    ];
+
+    const positiveAlerts = [
+      { project: "乙肝表面抗原阳性", source: "感染性疾病科", review: "待复核", notice: "待通知", limit: "30 分钟内", action: "复核后生成通知记录", badgeClass: "badge-c" },
+      { project: "HIV 初筛阳性", source: "体检中心", review: "待复核", notice: "待留痕", limit: "立即处理", action: "双人复核并留痕", badgeClass: "badge-c" },
+      { project: "梅毒抗体阳性", source: "皮肤科", review: "已复核", notice: "待通知", limit: "60 分钟内", action: "通知临床并记录", badgeClass: "badge-b" },
+      { project: "丙肝抗体阳性", source: "消化内科", review: "已复核", notice: "已通知", limit: "当班完成", action: "归档通知记录", badgeClass: "badge-a" },
+      { project: "新冠核酸阳性", source: "发热门诊", review: "待复核", notice: "待通知", limit: "15 分钟内", action: "优先复核并通知", badgeClass: "badge-c" },
+      { project: "流感抗原阳性", source: "儿科门诊", review: "已复核", notice: "已通知", limit: "当班完成", action: "待留痕", badgeClass: "badge-info" }
+    ];
+
+    const reagentAlerts = [
+      { name: "血常规稀释液", lot: "DIL-2604-18", project: "血常规", instrument: "HA-01", expiry: "2026-07-15", days: 36, risk: "关注", badgeClass: "badge-b", action: "生成采购提醒" },
+      { name: "肝功能生化试剂", lot: "BIO-2605-06", project: "ALT / AST / TBIL", instrument: "BA-02", expiry: "2026-08-30", days: 82, risk: "正常", badgeClass: "badge-a", action: "常规观察" },
+      { name: "肌钙蛋白检测试剂", lot: "TNI-2606-02", project: "肌钙蛋白 I", instrument: "IA-03", expiry: "2026-06-18", days: 9, risk: "高风险", badgeClass: "badge-c", action: "暂停使用并关联质控复查" },
+      { name: "乙肝表面抗原试剂", lot: "HBsAg-2605-11", project: "乙肝表面抗原", instrument: "IA-03", expiry: "2026-06-25", days: 16, risk: "预警", badgeClass: "badge-b", action: "提醒更换" },
+      { name: "HIV 初筛试剂", lot: "HIV-2604-03", project: "HIV 初筛", instrument: "IA-04", expiry: "2026-06-14", days: 5, risk: "高风险", badgeClass: "badge-c", action: "查看受影响项目" },
+      { name: "过期质控校准液", lot: "QC-2601-09", project: "免疫质控", instrument: "IA-03", expiry: "2026-06-01", days: 0, risk: "已过期", badgeClass: "badge-c", action: "暂停使用" }
+    ];
+
     const questions = [
       {
         question: "这条结果为什么没有自动放行？",
@@ -1248,6 +1616,9 @@
 
     const sampleTable = document.getElementById("sampleTable");
     const receivingTable = document.getElementById("receivingTable");
+    const precheckTable = document.getElementById("precheckTable");
+    const positiveAlertTable = document.getElementById("positiveAlertTable");
+    const reagentAlertTable = document.getElementById("reagentAlertTable");
     const questionList = document.getElementById("questionList");
     const toast = document.getElementById("toast");
     let toastTimer;
@@ -1291,6 +1662,67 @@
     }
 
 
+
+
+
+    function renderPrecheckResults() {
+      precheckTable.innerHTML = precheckResults.map((item, index) => `
+        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+          <td><strong>${item.id}</strong></td>
+          <td>${item.project}</td>
+          <td>${item.source}</td>
+          <td>${item.summary}</td>
+          <td><span class="badge ${item.gradeClass}">${item.grade}</span></td>
+          <td>${item.ruleHit}</td>
+          <td>${item.riskTag}</td>
+          <td>${item.action}</td>
+        </tr>
+      `).join("");
+
+      precheckTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectPrecheckResult(Number(row.dataset.index)));
+      });
+    }
+
+    function selectPrecheckResult(index) {
+      const item = precheckResults[index];
+      document.querySelectorAll("#precheckTable tr").forEach(row => row.classList.remove("selected"));
+      document.querySelector(`#precheckTable tr[data-index="${index}"]`).classList.add("selected");
+
+      document.getElementById("precheckCardSample").textContent = `${item.id} · ${item.project}`;
+      document.getElementById("precheckCardMeta").textContent = `${item.source} / ${item.grade} / ${item.riskTag}`;
+      document.getElementById("precheckCardConclusion").textContent = item.conclusion;
+      document.getElementById("precheckCardRules").innerHTML = item.rules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("precheckCardAction").textContent = item.detailAction;
+    }
+
+    function renderPositiveAlerts() {
+      positiveAlertTable.innerHTML = positiveAlerts.map(item => `
+        <tr>
+          <td><strong>${item.project}</strong></td>
+          <td>${item.source}</td>
+          <td><span class="badge ${item.badgeClass}">${item.review}</span></td>
+          <td>${item.notice}</td>
+          <td>${item.limit}</td>
+          <td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderReagentAlerts() {
+      reagentAlertTable.innerHTML = reagentAlerts.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td>
+          <td>${item.lot}</td>
+          <td>${item.project}</td>
+          <td>${item.instrument}</td>
+          <td>${item.expiry}</td>
+          <td>${item.days}</td>
+          <td><span class="badge ${item.badgeClass}">${item.risk}</span></td>
+          <td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
 
     function renderReceivingSamples() {
       receivingTable.innerHTML = receivingSamples.map((sample, index) => `
@@ -1347,6 +1779,7 @@
     function switchView(target) {
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
+      document.getElementById("precheckView").classList.toggle("active", target === "precheck");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
         item.classList.toggle("active", item.dataset.viewTarget === target);
@@ -1354,6 +1787,10 @@
 
       if (target === "receiving") {
         selectReceivingSample(0);
+      }
+
+      if (target === "precheck") {
+        selectPrecheckResult(0);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1398,6 +1835,13 @@
       });
     });
 
+    document.querySelectorAll("[data-precheck-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentResult = document.getElementById("precheckCardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.precheckAction}，当前预审结果：${currentResult}`);
+      });
+    });
+
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
@@ -1405,6 +1849,9 @@
     document.getElementById("currentDate").textContent = formatDate(new Date());
     renderSamples();
     renderReceivingSamples();
+    renderPrecheckResults();
+    renderPositiveAlerts();
+    renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
     renderRejectTemplates();
     renderTaskCards("recollectList", recollectTasks);
@@ -1412,6 +1859,7 @@
     renderQuestions();
     selectSample(0);
     selectReceivingSample(0);
+    selectPrecheckResult(0);
   </script>
 </body>
 </html>
