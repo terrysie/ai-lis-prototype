@@ -848,11 +848,129 @@
       font-size: 14px;
     }
 
+
+    .critical-center-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .critical-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.16fr) minmax(380px, 0.84fr);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .critical-center-table { min-width: 1220px; }
+
+    .critical-detail-card {
+      position: sticky;
+      top: 92px;
+    }
+
+    .critical-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .critical-status-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 12px;
+      padding-left: 4px;
+    }
+
+    .timeline-node {
+      position: relative;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid #e8f0f4;
+      border-radius: 13px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .timeline-node::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: #c7d4dc;
+      box-shadow: 0 0 0 4px #edf2f5;
+    }
+
+    .timeline-node.done::before { background: var(--success); box-shadow: 0 0 0 4px var(--success-soft); }
+    .timeline-node.active::before { background: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+    .timeline-node.overdue::before { background: var(--danger); box-shadow: 0 0 0 4px var(--danger-soft); }
+    .timeline-node.pending::before { background: #a8b5bf; box-shadow: 0 0 0 4px #eef2f5; }
+
+    .timeline-node strong { color: #263f52; }
+    .timeline-node p { margin: 4px 0 0; color: var(--muted); line-height: 1.5; }
+    .timeline-node time { color: var(--muted); white-space: nowrap; }
+
+    .critical-secondary-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .notice-table { min-width: 940px; }
+
+    .critical-actions {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .critical-boundary-note {
+      margin-top: 18px;
+      padding: 15px 16px;
+      border: 1px solid #ffd9b0;
+      border-left: 5px solid var(--warning);
+      border-radius: var(--radius-md);
+      color: #5f4308;
+      background: linear-gradient(90deg, var(--warning-soft), #fffdf6);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .status-dot::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-dot.done { color: var(--success); }
+    .status-dot.active { color: var(--primary-dark); }
+    .status-dot.overdue { color: var(--danger); }
+    .status-dot.pending { color: #7b8892; }
+
     @media (max-width: 1180px) {
-      .metrics, .precheck-metrics, .review-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid { grid-template-columns: 1fr; }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .ai-card { position: static; }
+      .ai-card, .critical-detail-card { position: static; }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .flow-step::after { display: none; }
       .guardrail { width: auto; }
@@ -868,12 +986,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .precheck-metrics, .review-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -903,7 +1021,7 @@
         <li class="nav-item" data-view-target="receiving"><span class="nav-icon">▣</span>样本签收</li>
         <li class="nav-item" data-view-target="precheck"><span class="nav-icon">◎</span>AI 预审</li>
         <li class="nav-item" data-view-target="review"><span class="nav-icon">✓</span>结果审核</li>
-        <li class="nav-item"><span class="nav-icon">!</span>危急值中心</li>
+        <li class="nav-item" data-view-target="critical"><span class="nav-icon">!</span>危急值中心</li>
         <li class="nav-item"><span class="nav-icon">◈</span>质控看板</li>
         <li class="nav-item"><span class="nav-icon">⚙</span>系统设置</li>
       </ul>
@@ -1358,6 +1476,124 @@
                   <tbody id="reagentAlertTable"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+
+      <div class="view" id="criticalView">
+        <section class="hero" aria-label="危急值中心说明">
+          <div class="hero-card">
+            <p class="eyebrow">● 危急值中心</p>
+            <h2>从识别、通知、确认、催办到闭环留痕的一屏任务台</h2>
+            <p>危急值中心集中展示今日危急值总览、待处理队列、详情判断、闭环时间轴、通知催办记录与岗位操作按钮。所有内容均为模拟数据，不包含真实患者信息。</p>
+          </div>
+          <div class="guardrail">
+            <strong>闭环优先</strong>
+            <span>优先处理待确认与超时催办记录；系统仅辅助识别、提醒、解释和留痕。</span>
+          </div>
+        </section>
+
+        <section class="metrics critical-center-metrics" aria-label="危急值总览指标">
+          <article class="metric-card"><div class="metric-label">今日危急值总数 <span>总量</span></div><div class="metric-value">24</div><div class="metric-trend">急诊 9 · 住院 11 · 门诊 4</div></article>
+          <article class="metric-card"><div class="metric-label">待确认 <span class="badge badge-c">优先</span></div><div class="metric-value">3</div><div class="metric-trend">需复核结果并匹配通知对象</div></article>
+          <article class="metric-card"><div class="metric-label">已通知 <span class="badge badge-b">跟踪</span></div><div class="metric-value">6</div><div class="metric-trend">等待临床接收确认</div></article>
+          <article class="metric-card"><div class="metric-label">超时催办 <span class="badge badge-c">超时</span></div><div class="metric-value">2</div><div class="metric-trend">已进入升级提醒队列</div></article>
+          <article class="metric-card"><div class="metric-label">已闭环 <span class="badge badge-a">归档</span></div><div class="metric-value">13</div><div class="metric-trend">通知、确认、处理均留痕</div></article>
+          <article class="metric-card"><div class="metric-label">平均闭环时长 <span>效率</span></div><div class="metric-value">18m</div><div class="metric-trend">较昨日缩短 4 分钟</div></article>
+        </section>
+
+        <section class="critical-workbench" aria-label="危急值处理工作区">
+          <div class="panel" aria-label="危急值处理队列">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">危急值处理队列</h3>
+                <p class="panel-subtitle">点击任一记录，右侧详情卡片、AI 说明、时间轴和通知记录将同步更新。</p>
+              </div>
+              <span class="badge badge-c">模拟队列</span>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table class="critical-center-table">
+                  <thead><tr><th>样本号</th><th>来源科室</th><th>项目名称</th><th>当前结果</th><th>危急值阈值</th><th>触发时间</th><th>通知对象</th><th>当前状态</th><th>剩余处理时间</th><th>建议动作</th></tr></thead>
+                  <tbody id="criticalTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="panel critical-detail-card" aria-label="危急值详情卡片">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title" id="criticalDetailTitle">危急值详情卡片</h3>
+                <p class="panel-subtitle" id="criticalDetailMeta">请选择左侧危急值记录</p>
+              </div>
+              <span class="badge badge-c" id="criticalDetailStatus">--</span>
+            </div>
+            <div class="panel-body">
+              <div class="critical-status-row" id="criticalStatusSummary"></div>
+              <div class="critical-detail-grid" id="criticalDetailGrid"></div>
+              <div class="decision-block" style="margin:16px -20px -20px; border-bottom:0; border-top:1px solid var(--line);">
+                <h4>系统判断说明</h4>
+                <p id="criticalSystemNote">--</p>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="critical-secondary-grid" aria-label="危急值 AI 说明与流程时间轴">
+          <div class="panel" aria-label="AI 辅助说明卡片">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">AI 辅助说明卡片</h3>
+                <p class="panel-subtitle">固定采用“结论 / 命中规则 / 建议动作”三段式说明。</p>
+              </div>
+              <span class="badge badge-info">规则解释</span>
+            </div>
+            <div class="decision-block"><h4>结论</h4><p id="criticalAiConclusion">--</p></div>
+            <div class="decision-block"><h4>命中规则</h4><ul id="criticalAiRules"></ul></div>
+            <div class="decision-block"><h4>建议动作</h4><p id="criticalAiAction">--</p></div>
+            <div class="action-row critical-actions" aria-label="危急值操作区">
+              <button class="btn" data-critical-action="确认已通知">确认已通知</button>
+              <button class="btn secondary" data-critical-action="记录电话通知">记录电话通知</button>
+              <button class="btn secondary" data-critical-action="标记临床已确认">标记临床已确认</button>
+              <button class="btn danger" data-critical-action="发起超时催办">发起超时催办</button>
+              <button class="btn danger" data-critical-action="升级提醒">升级提醒</button>
+              <button class="btn" data-critical-action="完成闭环">完成闭环</button>
+              <button class="btn secondary" data-critical-action="查看完整留痕">查看完整留痕</button>
+            </div>
+          </div>
+
+          <div class="panel" aria-label="闭环流程时间轴">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">闭环流程时间轴</h3>
+                <p class="panel-subtitle">展示触发、标记、通知、确认、催办、完成与归档节点。</p>
+              </div>
+              <span class="badge badge-gray">流程留痕</span>
+            </div>
+            <div class="panel-body timeline" id="criticalTimeline"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="通知与催办记录">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">通知与催办记录</h3>
+              <p class="panel-subtitle">按时间记录通知方式、通知对象、操作人、接收状态和备注。</p>
+            </div>
+            <span class="badge badge-info">模拟留痕</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table class="notice-table">
+                <thead><tr><th>时间</th><th>操作类型</th><th>通知方式</th><th>通知对象</th><th>操作人</th><th>接收状态</th><th>备注</th></tr></thead>
+                <tbody id="criticalNoticeTable"></tbody>
+              </table>
+            </div>
+            <div class="critical-boundary-note">
+              <strong>责任边界提示：</strong>AI 仅用于危急值识别、流程提醒、规则解释和催办辅助，不替代检验技师、医生或医院制度规定的最终处理责任。
             </div>
           </div>
         </section>
@@ -2014,6 +2250,207 @@
       { name: "过期质控校准液", lot: "QC-2601-09", project: "免疫质控", instrument: "IA-03", expiry: "2026-06-01", days: 0, risk: "已过期", badgeClass: "badge-c", action: "暂停使用" }
     ];
 
+
+    const criticalValues = [
+      {
+        id: "CV-260611-001",
+        sample: "S-260611-1176",
+        department: "急诊科",
+        project: "肌钙蛋白 I",
+        result: "3.82",
+        unit: "ng/mL",
+        threshold: "> 0.40 ng/mL",
+        triggerTime: "09:18",
+        notifyTarget: "急诊值班医生 陈医生",
+        status: "待确认",
+        statusClass: "badge-c",
+        remaining: "08 分钟",
+        action: "复核结果并确认通知对象",
+        source: "急诊患者（模拟）",
+        doctor: "陈医生 / 李医生",
+        notifyTime: "--",
+        confirmTime: "--",
+        systemNote: "结果超过急诊肌钙蛋白危急值阈值，来源为急诊，当前尚未完成通知确认，需优先进入闭环流程。",
+        ai: {
+          conclusion: "该结果已触发危急值阈值，必须进入危急值闭环流程。",
+          rules: ["肌钙蛋白 I 结果 3.82 ng/mL 超过急诊危急值阈值 > 0.40 ng/mL。", "患者来源为急诊，通知对象需匹配急诊值班医生。", "当前通知状态未确认，剩余处理时间不足 10 分钟。"],
+          action: "请立即复核结果并确认通知对象；如 15 分钟内未确认，系统应升级催办。"
+        },
+        timeline: [
+          ["结果触发危急值", "09:18", "done", "仪器结果进入 LIS 后命中危急值阈值。"],
+          ["系统自动标记", "09:18", "done", "已标记为危急值待确认。"],
+          ["通知对象匹配", "09:19", "active", "等待审核技师确认急诊值班医生。"],
+          ["已发送通知", "未开始", "pending", "尚未发送。"],
+          ["临床接收确认", "未开始", "pending", "等待临床确认。"],
+          ["超时催办", "未开始", "pending", "未达到催办条件。"],
+          ["处理完成", "未开始", "pending", "待临床处置反馈。"],
+          ["闭环归档", "未开始", "pending", "待全流程完成后归档。"]
+        ],
+        notices: [
+          ["09:18", "系统识别", "系统消息", "危急值中心", "AI-LIS", "已生成", "自动进入待确认队列。"],
+          ["09:19", "对象匹配", "院内消息", "急诊值班医生 陈医生", "系统", "待确认", "等待人工复核通知对象。"]
+        ]
+      },
+      {
+        id: "CV-260611-002",
+        sample: "S-260611-1044",
+        department: "内分泌科",
+        project: "血糖",
+        result: "2.1",
+        unit: "mmol/L",
+        threshold: "< 2.8 mmol/L",
+        triggerTime: "08:46",
+        notifyTarget: "内分泌住院总 王医生",
+        status: "超时催办",
+        statusClass: "badge-c",
+        remaining: "已超时 12 分钟",
+        action: "发起超时催办并升级提醒",
+        source: "住院患者（模拟）",
+        doctor: "王医生 / 周医生",
+        notifyTime: "08:49",
+        confirmTime: "--",
+        systemNote: "血糖结果低于低血糖危急值阈值，已通知但临床未确认，系统判定进入超时催办。",
+        ai: {
+          conclusion: "该记录已超过危急值确认时限，应立即催办并升级提醒。",
+          rules: ["血糖 2.1 mmol/L 低于危急值阈值 < 2.8 mmol/L。", "已发送院内消息和短信，但未获得临床接收确认。", "距首次通知已超过设定处理时限。"],
+          action: "请记录电话通知并发起超时催办；如仍未确认，请升级至科室负责人。"
+        },
+        timeline: [
+          ["结果触发危急值", "08:46", "done", "生化结果命中低血糖危急值规则。"],
+          ["系统自动标记", "08:46", "done", "状态设为危急值。"],
+          ["通知对象匹配", "08:47", "done", "匹配内分泌住院总。"],
+          ["已发送通知", "08:49", "done", "已发送院内消息和短信。"],
+          ["临床接收确认", "超时", "overdue", "尚未收到临床确认。"],
+          ["超时催办", "进行中", "active", "系统建议立即电话催办。"],
+          ["处理完成", "未开始", "pending", "待临床反馈。"],
+          ["闭环归档", "未开始", "pending", "待闭环后归档。"]
+        ],
+        notices: [
+          ["08:49", "首次通知", "院内消息", "内分泌住院总 王医生", "系统", "未读", "自动推送危急值提醒。"],
+          ["08:50", "补充通知", "短信", "内分泌住院总 王医生", "系统", "已送达", "短信网关回执已送达。"],
+          ["09:04", "催办建议", "系统消息", "审核技师", "AI-LIS", "待处理", "超过确认时限，建议电话催办。"]
+        ]
+      },
+      {
+        id: "CV-260611-003",
+        sample: "S-260611-0931",
+        department: "心内科",
+        project: "血钾",
+        result: "6.4",
+        unit: "mmol/L",
+        threshold: "> 6.0 mmol/L",
+        triggerTime: "08:20",
+        notifyTarget: "心内科护士站 / 张医生",
+        status: "已通知",
+        statusClass: "badge-b",
+        remaining: "21 分钟",
+        action: "等待临床确认，必要时电话登记",
+        source: "住院患者（模拟）",
+        doctor: "张医生 / 刘医生",
+        notifyTime: "08:24",
+        confirmTime: "--",
+        systemNote: "血钾高于高钾危急值阈值，通知已发出但尚未完成临床确认。",
+        ai: {
+          conclusion: "该危急值已完成初次通知，当前重点是跟踪临床接收确认。",
+          rules: ["血钾 6.4 mmol/L 超过危急值阈值 > 6.0 mmol/L。", "通知对象已匹配心内科护士站及责任医生。", "当前仍在处理时限内，未触发超时催办。"],
+          action: "请持续关注确认状态；若临近时限仍未确认，登记电话通知并准备催办。"
+        },
+        timeline: [
+          ["结果触发危急值", "08:20", "done", "电解质结果命中高钾危急值。"],
+          ["系统自动标记", "08:20", "done", "自动加入危急值中心。"],
+          ["通知对象匹配", "08:22", "done", "匹配心内科护士站和张医生。"],
+          ["已发送通知", "08:24", "done", "院内消息已发送。"],
+          ["临床接收确认", "进行中", "active", "等待护士站或医生确认。"],
+          ["超时催办", "未开始", "pending", "未达到催办条件。"],
+          ["处理完成", "未开始", "pending", "待临床处置反馈。"],
+          ["闭环归档", "未开始", "pending", "待闭环后归档。"]
+        ],
+        notices: [
+          ["08:24", "首次通知", "院内消息", "心内科护士站", "系统", "已读", "护士站已查看提醒。"],
+          ["08:25", "电话记录", "人工登记", "张医生", "审核技师 A", "待回拨", "电话未接通，已备注。"]
+        ]
+      },
+      {
+        id: "CV-260611-004",
+        sample: "S-260611-0882",
+        department: "ICU",
+        project: "血红蛋白",
+        result: "58",
+        unit: "g/L",
+        threshold: "< 60 g/L",
+        triggerTime: "07:52",
+        notifyTarget: "ICU 值班医生 赵医生",
+        status: "已确认",
+        statusClass: "badge-info",
+        remaining: "已确认",
+        action: "跟踪处理完成并准备归档",
+        source: "住院患者（模拟）",
+        doctor: "赵医生 / ICU 值班医生",
+        notifyTime: "07:55",
+        confirmTime: "08:02",
+        systemNote: "血红蛋白低于危急值阈值，临床已确认接收，待处理完成后闭环归档。",
+        ai: {
+          conclusion: "该危急值已完成通知和临床确认，仍需记录处理结果以完成闭环。",
+          rules: ["血红蛋白 58 g/L 低于危急值阈值 < 60 g/L。", "责任医生已在时限内确认接收。", "闭环归档前仍缺少处理完成节点。"],
+          action: "请跟踪临床处理反馈，补充处置备注后完成闭环。"
+        },
+        timeline: [
+          ["结果触发危急值", "07:52", "done", "血常规结果命中危急值。"],
+          ["系统自动标记", "07:52", "done", "自动标记。"],
+          ["通知对象匹配", "07:54", "done", "匹配 ICU 值班医生。"],
+          ["已发送通知", "07:55", "done", "电话和院内消息已记录。"],
+          ["临床接收确认", "08:02", "done", "赵医生确认接收。"],
+          ["超时催办", "无需", "done", "未超时。"],
+          ["处理完成", "进行中", "active", "等待临床处理结果。"],
+          ["闭环归档", "未开始", "pending", "待处理完成。"]
+        ],
+        notices: [
+          ["07:55", "首次通知", "电话记录", "赵医生", "审核技师 B", "已接通", "医生复述样本号和项目。"],
+          ["08:02", "临床确认", "院内消息", "赵医生", "赵医生", "已确认", "确认接收并安排处置。"]
+        ]
+      },
+      {
+        id: "CV-260611-005",
+        sample: "S-260611-0750",
+        department: "呼吸科",
+        project: "血氧分压",
+        result: "42",
+        unit: "mmHg",
+        threshold: "< 45 mmHg",
+        triggerTime: "07:18",
+        notifyTarget: "呼吸科值班医生 孙医生",
+        status: "已闭环",
+        statusClass: "badge-a",
+        remaining: "已闭环",
+        action: "查看完整留痕",
+        source: "住院患者（模拟）",
+        doctor: "孙医生 / 呼吸科值班医生",
+        notifyTime: "07:21",
+        confirmTime: "07:27",
+        systemNote: "危急值通知、临床确认、处理完成和归档均已留痕。",
+        ai: {
+          conclusion: "该危急值已完成闭环，可用于事后追溯和质控统计。",
+          rules: ["血氧分压 42 mmHg 低于危急值阈值 < 45 mmHg。", "临床已在时限内确认。", "处理完成节点和闭环归档节点均已记录。"],
+          action: "如需质控复盘，可查看完整留痕；无需继续催办。"
+        },
+        timeline: [
+          ["结果触发危急值", "07:18", "done", "动脉血气命中危急值。"],
+          ["系统自动标记", "07:18", "done", "自动标记。"],
+          ["通知对象匹配", "07:20", "done", "匹配呼吸科值班医生。"],
+          ["已发送通知", "07:21", "done", "电话通知成功。"],
+          ["临床接收确认", "07:27", "done", "医生确认接收。"],
+          ["超时催办", "无需", "done", "未超时。"],
+          ["处理完成", "07:39", "done", "临床完成处置反馈。"],
+          ["闭环归档", "07:44", "done", "系统归档留痕。"]
+        ],
+        notices: [
+          ["07:21", "首次通知", "电话记录", "孙医生", "审核技师 C", "已接通", "已口头复述危急值。"],
+          ["07:27", "临床确认", "院内消息", "孙医生", "孙医生", "已确认", "确认接收。"],
+          ["07:44", "闭环归档", "系统消息", "危急值中心", "系统", "已归档", "闭环留痕完成。"]
+        ]
+      }
+    ];
+
     const questions = [
       {
         question: "这条结果为什么没有自动放行？",
@@ -2037,6 +2474,7 @@
     const receivingTable = document.getElementById("receivingTable");
     const precheckTable = document.getElementById("precheckTable");
     const reviewTable = document.getElementById("reviewTable");
+    const criticalTable = document.getElementById("criticalTable");
     const positiveAlertTable = document.getElementById("positiveAlertTable");
     const reagentAlertTable = document.getElementById("reagentAlertTable");
     const questionList = document.getElementById("questionList");
@@ -2262,11 +2700,84 @@
       });
     }
 
+
+    function renderCriticalValues() {
+      criticalTable.innerHTML = criticalValues.map((item, index) => `
+        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+          <td><strong>${item.sample}</strong></td>
+          <td>${item.department}</td>
+          <td>${item.project}</td>
+          <td>${item.result} ${item.unit}</td>
+          <td>${item.threshold}</td>
+          <td>${item.triggerTime}</td>
+          <td>${item.notifyTarget}</td>
+          <td><span class="badge ${item.statusClass}">${item.status}</span></td>
+          <td>${item.remaining}</td>
+          <td>${item.action}</td>
+        </tr>
+      `).join("");
+
+      criticalTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectCriticalValue(Number(row.dataset.index)));
+      });
+    }
+
+    function selectCriticalValue(index) {
+      const item = criticalValues[index];
+      document.querySelectorAll("#criticalTable tr").forEach(row => row.classList.remove("selected"));
+      document.querySelector(`#criticalTable tr[data-index="${index}"]`).classList.add("selected");
+
+      document.getElementById("criticalDetailTitle").textContent = `${item.sample} · ${item.project}`;
+      document.getElementById("criticalDetailMeta").textContent = `${item.department} / ${item.source} / ${item.id}`;
+      document.getElementById("criticalDetailStatus").textContent = item.status;
+      document.getElementById("criticalDetailStatus").className = `badge ${item.statusClass}`;
+      document.getElementById("criticalStatusSummary").innerHTML = `
+        <span class="badge ${item.statusClass}">${item.status}</span>
+        <span class="badge badge-gray">剩余处理时间：${item.remaining}</span>
+        <span class="badge badge-info">建议：${item.action}</span>
+      `;
+
+      const detailFields = [
+        ["样本号", item.sample],
+        ["项目名称", item.project],
+        ["当前结果", `${item.result} ${item.unit}`],
+        ["单位", item.unit],
+        ["危急值阈值", item.threshold],
+        ["患者来源", item.source],
+        ["来源科室", item.department],
+        ["责任医生 / 值班医生", item.doctor],
+        ["触发时间", item.triggerTime],
+        ["通知时间", item.notifyTime],
+        ["确认时间", item.confirmTime],
+        ["当前状态", item.status]
+      ];
+      document.getElementById("criticalDetailGrid").innerHTML = detailFields.map(([label, value]) => `
+        <div class="detail-field"><span>${label}</span><strong>${value}</strong></div>
+      `).join("");
+      document.getElementById("criticalSystemNote").textContent = item.systemNote;
+
+      document.getElementById("criticalAiConclusion").textContent = item.ai.conclusion;
+      document.getElementById("criticalAiRules").innerHTML = item.ai.rules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("criticalAiAction").textContent = item.ai.action;
+
+      document.getElementById("criticalTimeline").innerHTML = item.timeline.map(([name, time, state, note]) => `
+        <div class="timeline-node ${state}">
+          <div><strong>${name}</strong><p>${note}</p></div>
+          <time>${time}</time>
+        </div>
+      `).join("");
+
+      document.getElementById("criticalNoticeTable").innerHTML = item.notices.map(record => `
+        <tr><td>${record[0]}</td><td>${record[1]}</td><td>${record[2]}</td><td>${record[3]}</td><td>${record[4]}</td><td>${record[5]}</td><td>${record[6]}</td></tr>
+      `).join("");
+    }
+
     function switchView(target) {
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
       document.getElementById("precheckView").classList.toggle("active", target === "precheck");
       document.getElementById("reviewView").classList.toggle("active", target === "review");
+      document.getElementById("criticalView").classList.toggle("active", target === "critical");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
         item.classList.toggle("active", item.dataset.viewTarget === target);
@@ -2282,6 +2793,10 @@
 
       if (target === "review") {
         selectReviewResult(0);
+      }
+
+      if (target === "critical") {
+        selectCriticalValue(0);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2340,6 +2855,14 @@
       });
     });
 
+
+    document.querySelectorAll("[data-critical-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentCritical = document.getElementById("criticalDetailTitle").textContent;
+        showToast(`模拟操作成功：${button.dataset.criticalAction}，当前危急值：${currentCritical}`);
+      });
+    });
+
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
@@ -2349,6 +2872,7 @@
     renderReceivingSamples();
     renderPrecheckResults();
     renderReviewResults();
+    renderCriticalValues();
     renderPositiveAlerts();
     renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
@@ -2360,6 +2884,7 @@
     selectReceivingSample(0);
     selectPrecheckResult(0);
     selectReviewResult(0);
+    selectCriticalValue(0);
   </script>
 </body>
 </html>
