@@ -744,9 +744,113 @@
       font-size: 13px;
     }
 
+
+    .review-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .review-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .review-table { min-width: 1180px; }
+
+    .review-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .detail-field {
+      padding: 11px 12px;
+      border: 1px solid #e8f0f4;
+      border-radius: 12px;
+      background: #fff;
+      min-width: 0;
+    }
+
+    .detail-field span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .detail-field strong {
+      display: block;
+      margin-top: 5px;
+      color: #263f52;
+      font-size: 14px;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .review-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .trend-list, .delta-list, .conflict-list, .audit-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .trend-item, .delta-item, .conflict-item, .audit-item {
+      padding: 12px;
+      border: 1px solid #edf2f5;
+      border-radius: 12px;
+      background: #fff;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .trend-item strong, .delta-item strong, .conflict-item strong, .audit-item strong {
+      color: #263f52;
+    }
+
+    .trend-bar {
+      height: 8px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: #e8f0f4;
+      overflow: hidden;
+    }
+
+    .trend-bar span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #79c7df, var(--primary));
+    }
+
+    .review-actions {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .review-actions .btn:last-child {
+      grid-column: 1 / -1;
+    }
+
+    .responsibility-note {
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid #cfe7f2;
+      border-left: 5px solid var(--primary);
+      border-radius: var(--radius-md);
+      color: #294f63;
+      background: #f4fbfe;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
     @media (max-width: 1180px) {
-      .metrics, .precheck-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid { grid-template-columns: 1fr; }
+      .metrics, .precheck-metrics, .review-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ai-card { position: static; }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -764,12 +868,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .precheck-metrics, .critical-grid, .flow, .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .precheck-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -798,7 +902,7 @@
         <li class="nav-item active" data-view-target="dashboard"><span class="nav-icon">⌂</span>工作台</li>
         <li class="nav-item" data-view-target="receiving"><span class="nav-icon">▣</span>样本签收</li>
         <li class="nav-item" data-view-target="precheck"><span class="nav-icon">◎</span>AI 预审</li>
-        <li class="nav-item"><span class="nav-icon">✓</span>结果审核</li>
+        <li class="nav-item" data-view-target="review"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item"><span class="nav-icon">!</span>危急值中心</li>
         <li class="nav-item"><span class="nav-icon">◈</span>质控看板</li>
         <li class="nav-item"><span class="nav-icon">⚙</span>系统设置</li>
@@ -1258,6 +1362,102 @@
           </div>
         </section>
       </div>
+
+      <div class="view" id="reviewView">
+        <section class="hero" aria-label="结果审核工作台说明">
+          <div class="hero-card">
+            <p class="eyebrow">● 结果审核工作台</p>
+            <h2>面向审核技师的人工确认、AI 辅助判断与发布留痕</h2>
+            <p>集中展示待审核结果队列、AI 三段式建议、历史结果趋势、Delta Check、项目间逻辑冲突和人工审核操作。所有内容均为模拟数据，不包含真实患者信息。</p>
+          </div>
+          <div class="guardrail">
+            <strong>结果审核边界</strong>
+            <span>AI 仅用于辅助审核、风险提示和规则解释，不替代检验技师或医生的最终判断。</span>
+          </div>
+        </section>
+
+        <section class="metrics review-metrics" aria-label="审核总览指标">
+          <article class="metric-card"><div class="metric-label">今日待审核结果 <span>总量</span></div><div class="metric-value">286</div><div class="metric-trend">急诊 64 · 门诊 112 · 住院 110</div></article>
+          <article class="metric-card"><div class="metric-label">AI 建议自动放行 <span class="badge badge-a">A 类</span></div><div class="metric-value">168</div><div class="metric-trend">满足质控、历史和参考范围规则</div></article>
+          <article class="metric-card"><div class="metric-label">快速复核结果 <span class="badge badge-b">B 类</span></div><div class="metric-value">82</div><div class="metric-trend">轻度异常或需浏览趋势</div></article>
+          <article class="metric-card"><div class="metric-label">重点复核结果 <span class="badge badge-c">C 类</span></div><div class="metric-value">36</div><div class="metric-trend">含冲突、质控、样本和阳性风险</div></article>
+          <article class="metric-card"><div class="metric-label">危急值待确认 <span class="badge badge-c">优先</span></div><div class="metric-value">7</div><div class="metric-trend">需复核后进入闭环通知</div></article>
+          <article class="metric-card"><div class="metric-label">已发布报告 <span class="badge badge-a">完成</span></div><div class="metric-value">519</div><div class="metric-trend">今日累计模拟发布</div></article>
+        </section>
+
+        <p class="responsibility-note"><strong>责任边界提示：</strong>AI 仅用于辅助审核、风险提示和规则解释，不替代检验技师或医生的最终判断。</p>
+
+        <section class="review-workbench" aria-label="结果审核核心任务区">
+          <div class="panel" aria-label="待审核结果队列">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">待审核结果队列</h3>
+                <p class="panel-subtitle">点击任一模拟结果，右侧详情、AI 建议、历史趋势与审核留痕将同步更新。</p>
+              </div>
+              <span class="badge badge-gray">模拟队列</span>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table class="review-table">
+                  <thead>
+                    <tr><th>样本号</th><th>来源科室</th><th>检验项目</th><th>当前结果摘要</th><th>AI 分级</th><th>风险标签</th><th>当前状态</th><th>建议动作</th></tr>
+                  </thead>
+                  <tbody id="reviewTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="ai-card" aria-label="结果详情与 AI 审核建议">
+            <div class="ai-card-top">
+              <h3 id="reviewCardSample">结果详情卡片</h3>
+              <p id="reviewCardMeta">请选择左侧结果查看审核详情</p>
+            </div>
+            <div class="decision-block">
+              <h4>结果详情</h4>
+              <div class="review-detail-grid" id="reviewDetailGrid"></div>
+            </div>
+            <div class="decision-block"><h4>结论</h4><p id="reviewAiConclusion">--</p></div>
+            <div class="decision-block"><h4>命中规则</h4><ul id="reviewAiRules"></ul></div>
+            <div class="decision-block"><h4>建议动作</h4><p id="reviewAiAction">--</p></div>
+            <div class="action-row review-actions">
+              <button class="btn" data-review-action="确认发布">确认发布</button>
+              <button class="btn secondary" data-review-action="转重点复核">转重点复核</button>
+              <button class="btn secondary" data-review-action="建议复检">建议复检</button>
+              <button class="btn secondary" data-review-action="暂缓发布">暂缓发布</button>
+              <button class="btn danger" data-review-action="标记危急值">标记危急值</button>
+              <button class="btn secondary" data-review-action="查看完整留痕">查看完整留痕</button>
+            </div>
+          </aside>
+        </section>
+
+        <section class="review-cards-grid" aria-label="结果审核辅助判断区">
+          <div class="panel" aria-label="历史结果趋势">
+            <div class="panel-header"><div><h3 class="panel-title">历史结果趋势</h3><p class="panel-subtitle">最近 3 次模拟结果、趋势条和变化幅度。</p></div></div>
+            <div class="panel-body trend-list" id="reviewHistoryList"></div>
+          </div>
+          <div class="panel" aria-label="Delta Check 提醒">
+            <div class="panel-header"><div><h3 class="panel-title">Delta Check 提醒</h3><p class="panel-subtitle">本次与上次结果对比及系统判断。</p></div></div>
+            <div class="panel-body delta-list" id="reviewDeltaList"></div>
+          </div>
+          <div class="panel" aria-label="项目间逻辑冲突提示">
+            <div class="panel-header"><div><h3 class="panel-title">项目间逻辑冲突提示</h3><p class="panel-subtitle">按关联项目展示模拟冲突和系统建议。</p></div></div>
+            <div class="panel-body conflict-list" id="reviewConflictList"></div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="审核留痕记录">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">审核留痕记录</h3>
+              <p class="panel-subtitle">记录模拟操作时间、操作人、AI 命中规则、人工处理意见和状态。</p>
+            </div>
+            <span class="badge badge-info">可追溯</span>
+          </div>
+          <div class="panel-body audit-list" id="reviewAuditList"></div>
+        </section>
+      </div>
+
     </main>
   </div>
 
@@ -1577,6 +1777,225 @@
       }
     ];
 
+
+    const reviewResults = [
+      {
+        id: "A-260611-1008",
+        source: "消化内科",
+        project: "ALT",
+        summary: "ALT 126 U/L，较上次明显升高",
+        grade: "C 类：重点复核",
+        gradeClass: "badge-c",
+        riskTag: "Delta Check",
+        riskClass: "badge-c",
+        status: "待人工审核",
+        action: "结合历史结果重点复核",
+        details: {
+          sample: "A-260611-1008", projectName: "丙氨酸氨基转移酶 ALT", current: "126", unit: "U/L", reference: "7–40", critical: "> 500 U/L", sampleStatus: "血清外观正常", instrumentStatus: "BA-02 运行正常", qcStatus: "同批质控在控", source: "消化内科", collectedAt: "2026-06-11 08:16", reviewStatus: "C 类待复核"
+        },
+        ai: {
+          conclusion: "该结果触发 Delta Check，建议人工重点复核。",
+          rules: ["本次 ALT 较上次升高 180%，超过规则阈值", "样本状态正常，质控状态正常", "未达到危急值阈值但历史变化幅度较大"],
+          action: "请审核技师结合历史结果和临床信息判断，必要时建议复检或暂缓发布。"
+        },
+        history: [
+          { date: "2026-06-11", item: "ALT", result: "126", unit: "U/L", change: "+180%", width: 92 },
+          { date: "2026-05-29", item: "ALT", result: "45", unit: "U/L", change: "+12%", width: 38 },
+          { date: "2026-05-10", item: "ALT", result: "40", unit: "U/L", change: "基线", width: 32 }
+        ],
+        delta: { current: "126 U/L", previous: "45 U/L", change: "+180%", threshold: "±50%", judgement: "超过阈值，触发 Delta Check", action: "建议重点复核，必要时复检或联系临床确认病程变化。" },
+        conflicts: [
+          { items: "ALT / AST", note: "ALT 明显升高但 AST 正常，建议结合历史结果复核。", suggestion: "核对样本、复查肝功能组合并关注用药或病程信息。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:24", user: "AI 规则引擎", content: "自动分级为 C 类重点复核", rules: "Delta Check 超阈值", opinion: "待人工确认", status: "已留痕" },
+          { time: "2026-06-11 10:27", user: "审核技师-模拟", content: "查看历史趋势", rules: "ALT 变化 +180%", opinion: "建议复核后发布", status: "处理中" }
+        ]
+      },
+      {
+        id: "A-260611-1042",
+        source: "急诊科",
+        project: "电解质 K+",
+        summary: "K+ 6.5 mmol/L，危急值待确认",
+        grade: "C 类：重点复核",
+        gradeClass: "badge-c",
+        riskTag: "危急值 / 样本异常",
+        riskClass: "badge-c",
+        status: "危急值待确认",
+        action: "复核并标记危急值",
+        details: { sample: "A-260611-1042", projectName: "血钾 K+", current: "6.5", unit: "mmol/L", reference: "3.5–5.3", critical: "> 6.2 mmol/L", sampleStatus: "轻度溶血疑似", instrumentStatus: "BA-02 无报警", qcStatus: "电解质质控在控", source: "急诊科", collectedAt: "2026-06-11 09:02", reviewStatus: "危急值复核中" },
+        ai: { conclusion: "该结果达到模拟危急值阈值，且存在溶血排除需求，不允许自动发布。", rules: ["K+ 6.5 mmol/L 高于危急值阈值 6.2 mmol/L", "样本外观提示轻度溶血疑似", "急诊来源需优先复核并形成通知留痕"], action: "建议立即复测或核对溶血指数，确认后标记危急值并进入闭环通知。" },
+        history: [
+          { date: "2026-06-11", item: "K+", result: "6.5", unit: "mmol/L", change: "+44%", width: 95 },
+          { date: "2026-06-08", item: "K+", result: "4.5", unit: "mmol/L", change: "+2%", width: 52 },
+          { date: "2026-05-18", item: "K+", result: "4.4", unit: "mmol/L", change: "基线", width: 50 }
+        ],
+        delta: { current: "6.5 mmol/L", previous: "4.5 mmol/L", change: "+44%", threshold: "±25% 或危急值线", judgement: "达到危急值并接近 Delta 阈值", action: "优先排除溶血，必要时复检；确认后执行危急值闭环。" },
+        conflicts: [
+          { items: "K+ / 溶血指数", note: "K+ 极端异常，需排除溶血。", suggestion: "核对样本外观、溶血指数和采血过程，必要时重新采样。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:31", user: "AI 规则引擎", content: "拦截自动发布", rules: "危急值 + 样本异常", opinion: "建议复检并通知", status: "已拦截" }
+        ]
+      },
+      {
+        id: "A-260611-1086",
+        source: "呼吸与危重症医学科",
+        project: "血常规 + CRP",
+        summary: "WBC 18.2×10^9/L，CRP 正常",
+        grade: "B 类：快速复核",
+        gradeClass: "badge-b",
+        riskTag: "项目冲突",
+        riskClass: "badge-b",
+        status: "快速复核",
+        action: "核对项目相关性后发布",
+        details: { sample: "A-260611-1086", projectName: "血常规五分类 + CRP", current: "WBC 18.2 / CRP 4.2", unit: "10^9/L / mg/L", reference: "WBC 3.5–9.5；CRP < 10", critical: "WBC > 30×10^9/L", sampleStatus: "全血样本正常", instrumentStatus: "HA-01 散点图需浏览", qcStatus: "血常规质控在控", source: "呼吸与危重症医学科", collectedAt: "2026-06-11 08:48", reviewStatus: "B 类快速复核" },
+        ai: { conclusion: "白细胞明显升高但 CRP 正常，存在项目间解释不一致，建议快速复核。", rules: ["WBC 高于参考区间但未达到危急值", "CRP 未同步升高", "HA-01 要求人工浏览散点图"], action: "建议审核技师核对散点图和临床相关性，可确认发布或转重点复核。" },
+        history: [
+          { date: "2026-06-11", item: "WBC", result: "18.2", unit: "10^9/L", change: "+76%", width: 82 },
+          { date: "2026-06-02", item: "WBC", result: "10.3", unit: "10^9/L", change: "+18%", width: 49 },
+          { date: "2026-05-20", item: "WBC", result: "8.7", unit: "10^9/L", change: "基线", width: 41 }
+        ],
+        delta: { current: "18.2×10^9/L", previous: "10.3×10^9/L", change: "+76%", threshold: "±80%", judgement: "接近阈值，未单独触发 C 类", action: "结合 CRP、散点图和临床诊断快速复核。" },
+        conflicts: [
+          { items: "WBC / CRP", note: "白细胞明显升高但 CRP 正常，建议关注临床相关性。", suggestion: "浏览血常规散点图，必要时复片或联系临床补充信息。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:18", user: "AI 规则引擎", content: "提示项目间逻辑冲突", rules: "WBC 升高 + CRP 正常", opinion: "建议快速复核", status: "待确认" }
+        ]
+      },
+      {
+        id: "A-260611-1120",
+        source: "胸痛中心",
+        project: "肌钙蛋白 I + CK-MB",
+        summary: "肌钙蛋白 I 异常，CK-MB 正常",
+        grade: "C 类：重点复核",
+        gradeClass: "badge-c",
+        riskTag: "项目冲突 / 阳性结果",
+        riskClass: "badge-c",
+        status: "待重点复核",
+        action: "结合时间窗复查",
+        details: { sample: "A-260611-1120", projectName: "肌钙蛋白 I + CK-MB", current: "cTnI 0.86 / CK-MB 3.1", unit: "ng/mL / ng/mL", reference: "cTnI < 0.04；CK-MB < 5.0", critical: "cTnI > 0.5 ng/mL", sampleStatus: "血清样本正常", instrumentStatus: "IA-03 校准有效", qcStatus: "免疫质控在控", source: "胸痛中心", collectedAt: "2026-06-11 09:20", reviewStatus: "C 类待复核" },
+        ai: { conclusion: "肌钙蛋白异常但 CK-MB 正常，且肌钙蛋白达到重点复核阈值，建议人工重点复核。", rules: ["cTnI 高于模拟危急/重点复核阈值", "CK-MB 未同步异常，存在时间窗差异可能", "胸痛中心来源要求优先审核留痕"], action: "建议结合发病时间窗和复查计划，必要时暂缓发布并联系临床。" },
+        history: [
+          { date: "2026-06-11", item: "cTnI", result: "0.86", unit: "ng/mL", change: "+760%", width: 96 },
+          { date: "2026-06-10", item: "cTnI", result: "0.10", unit: "ng/mL", change: "+150%", width: 36 },
+          { date: "2026-05-30", item: "cTnI", result: "0.04", unit: "ng/mL", change: "基线", width: 18 }
+        ],
+        delta: { current: "0.86 ng/mL", previous: "0.10 ng/mL", change: "+760%", threshold: "±100% 或重点复核阈值", judgement: "显著超阈值，触发重点复核", action: "建议复查或结合胸痛时间窗，确认后再发布并留痕。" },
+        conflicts: [
+          { items: "cTnI / CK-MB", note: "肌钙蛋白异常但 CK-MB 正常，建议结合时间窗复查。", suggestion: "查看采样时间、发病时间和连续检测计划，必要时建议复检。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:36", user: "AI 规则引擎", content: "生成重点复核任务", rules: "肌钙蛋白异常 + 项目冲突", opinion: "暂缓自动发布", status: "已拦截" }
+        ]
+      },
+      {
+        id: "A-260611-1164",
+        source: "感染性疾病科",
+        project: "乙肝表面抗原",
+        summary: "HBsAg 反应性，需复核留痕",
+        grade: "C 类：重点复核",
+        gradeClass: "badge-c",
+        riskTag: "阳性结果",
+        riskClass: "badge-c",
+        status: "阳性复核中",
+        action: "复核后生成通知记录",
+        details: { sample: "A-260611-1164", projectName: "乙肝表面抗原 HBsAg", current: "反应性 S/CO 12.6", unit: "S/CO", reference: "< 1.0 阴性", critical: "不适用；阳性需复核", sampleStatus: "血清样本正常", instrumentStatus: "IA-04 运行正常", qcStatus: "同批免疫质控在控", source: "感染性疾病科", collectedAt: "2026-06-11 09:44", reviewStatus: "阳性结果待复核" },
+        ai: { conclusion: "传染病相关阳性结果需人工复核和留痕，禁止自动放行。", rules: ["HBsAg 反应性命中阳性结果预警", "免疫质控在控但制度要求人工复核", "需要形成复核和通知记录"], action: "建议双人复核阳性结果，确认后生成模拟通知记录并归档留痕。" },
+        history: [
+          { date: "2026-06-11", item: "HBsAg", result: "12.6", unit: "S/CO", change: "新阳性", width: 90 },
+          { date: "2026-03-18", item: "HBsAg", result: "0.4", unit: "S/CO", change: "阴性", width: 18 },
+          { date: "2025-12-02", item: "HBsAg", result: "0.3", unit: "S/CO", change: "阴性", width: 16 }
+        ],
+        delta: { current: "12.6 S/CO", previous: "0.4 S/CO", change: "由阴性转反应性", threshold: "阴阳性转换", judgement: "触发阳性复核规则", action: "按感染性项目流程复核并留痕，必要时建议补充确认试验。" },
+        conflicts: [
+          { items: "HBsAg / 同批质控", note: "阳性结果与质控状态无冲突，但需按制度复核。", suggestion: "核对试剂批号、质控和复核记录后再发布。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:40", user: "AI 规则引擎", content: "触发阳性结果预警", rules: "HBsAg 反应性", opinion: "待双人复核", status: "待处理" }
+        ]
+      },
+      {
+        id: "A-260611-1205",
+        source: "体检中心",
+        project: "肾功能组合",
+        summary: "肌酐、尿素氮均在参考范围内",
+        grade: "A 类：自动放行",
+        gradeClass: "badge-a",
+        riskTag: "正常",
+        riskClass: "badge-a",
+        status: "待确认发布",
+        action: "确认发布",
+        details: { sample: "A-260611-1205", projectName: "肾功能组合", current: "Cr 68 / BUN 4.8", unit: "μmol/L / mmol/L", reference: "Cr 41–81；BUN 2.9–7.1", critical: "Cr > 700 μmol/L", sampleStatus: "血清样本正常", instrumentStatus: "BA-02 运行正常", qcStatus: "同批质控在控", source: "体检中心", collectedAt: "2026-06-11 07:55", reviewStatus: "A 类待发布" },
+        ai: { conclusion: "结果处于参考范围内，历史变化平稳，满足模拟自动放行条件。", rules: ["所有项目处于模拟参考区间", "近三次历史结果波动小于 15%", "样本、仪器和质控状态均正常"], action: "建议确认发布，并自动记录规则版本、审核人和发布时间。" },
+        history: [
+          { date: "2026-06-11", item: "Cr", result: "68", unit: "μmol/L", change: "+3%", width: 42 },
+          { date: "2026-03-12", item: "Cr", result: "66", unit: "μmol/L", change: "-1%", width: 40 },
+          { date: "2025-11-08", item: "Cr", result: "67", unit: "μmol/L", change: "基线", width: 41 }
+        ],
+        delta: { current: "68 μmol/L", previous: "66 μmol/L", change: "+3%", threshold: "±30%", judgement: "未触发 Delta Check", action: "可按 A 类规则确认发布。" },
+        conflicts: [
+          { items: "Cr / BUN / eGFR", note: "项目间逻辑一致，未识别明显冲突。", suggestion: "按常规审核流程发布。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:12", user: "AI 规则引擎", content: "建议自动放行", rules: "参考范围 + 质控在控 + 历史平稳", opinion: "待确认发布", status: "可发布" }
+        ]
+      },
+      {
+        id: "A-260611-1237",
+        source: "内分泌科",
+        project: "空腹血糖",
+        summary: "GLU 6.8 mmol/L，轻度异常",
+        grade: "B 类：快速复核",
+        gradeClass: "badge-b",
+        riskTag: "轻度异常",
+        riskClass: "badge-b",
+        status: "快速复核",
+        action: "确认参考区间后发布",
+        details: { sample: "A-260611-1237", projectName: "空腹血糖 GLU", current: "6.8", unit: "mmol/L", reference: "3.9–6.1", critical: "< 2.2 或 > 22.2 mmol/L", sampleStatus: "血清样本正常", instrumentStatus: "BA-02 运行正常", qcStatus: "同批质控在控", source: "内分泌科", collectedAt: "2026-06-11 08:05", reviewStatus: "B 类快速复核" },
+        ai: { conclusion: "该结果为轻度异常，未触发危急值或项目冲突，适合快速复核。", rules: ["GLU 略高于模拟参考区间", "未达到危急值阈值", "历史结果波动在可解释范围内"], action: "建议审核技师确认采样状态和历史趋势后发布，必要时备注空腹状态。" },
+        history: [
+          { date: "2026-06-11", item: "GLU", result: "6.8", unit: "mmol/L", change: "+13%", width: 54 },
+          { date: "2026-05-14", item: "GLU", result: "6.0", unit: "mmol/L", change: "+5%", width: 48 },
+          { date: "2026-04-10", item: "GLU", result: "5.7", unit: "mmol/L", change: "基线", width: 45 }
+        ],
+        delta: { current: "6.8 mmol/L", previous: "6.0 mmol/L", change: "+13%", threshold: "±30%", judgement: "未触发 Delta Check", action: "快速复核后可确认发布。" },
+        conflicts: [
+          { items: "GLU / HbA1c", note: "当前模拟队列未发现明显项目冲突。", suggestion: "结合医嘱项目和采样状态进行常规审核。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:46", user: "AI 规则引擎", content: "分级为 B 类快速复核", rules: "轻度异常", opinion: "待人工快速确认", status: "待确认" }
+        ]
+      },
+      {
+        id: "A-260611-1279",
+        source: "肿瘤科",
+        project: "肿瘤标志物 CA125",
+        summary: "CA125 升高，同批质控复查待确认",
+        grade: "C 类：重点复核",
+        gradeClass: "badge-c",
+        riskTag: "质控异常",
+        riskClass: "badge-c",
+        status: "暂停发布",
+        action: "关联质控复查",
+        details: { sample: "A-260611-1279", projectName: "CA125", current: "96", unit: "U/mL", reference: "< 35", critical: "不适用；异常需结合临床", sampleStatus: "血清样本正常", instrumentStatus: "IA-03 校准即将到期", qcStatus: "同批质控复查待确认", source: "肿瘤科", collectedAt: "2026-06-11 09:36", reviewStatus: "C 类质控拦截" },
+        ai: { conclusion: "结果异常且存在质控复查要求，建议暂缓发布并由人工重点复核。", rules: ["CA125 高于模拟参考区间", "同批质控复查待确认", "IA-03 校准即将到期，自动放行范围受限"], action: "建议先完成质控复查，再决定是否复测或发布报告。" },
+        history: [
+          { date: "2026-06-11", item: "CA125", result: "96", unit: "U/mL", change: "+60%", width: 78 },
+          { date: "2026-05-06", item: "CA125", result: "60", unit: "U/mL", change: "+20%", width: 54 },
+          { date: "2026-04-01", item: "CA125", result: "50", unit: "U/mL", change: "基线", width: 48 }
+        ],
+        delta: { current: "96 U/mL", previous: "60 U/mL", change: "+60%", threshold: "±50%", judgement: "超过阈值且质控状态受限", action: "暂缓发布，等待质控复查结果。" },
+        conflicts: [
+          { items: "CA125 / 质控记录", note: "结果升高叠加质控异常，需先确认分析系统可靠性。", suggestion: "关联质控复查记录，必要时复测。" }
+        ],
+        audit: [
+          { time: "2026-06-11 10:49", user: "AI 规则引擎", content: "质控异常拦截", rules: "质控复查待确认 + Delta Check", opinion: "建议暂缓发布", status: "已拦截" }
+        ]
+      }
+    ];
+
     const positiveAlerts = [
       { project: "乙肝表面抗原阳性", source: "感染性疾病科", review: "待复核", notice: "待通知", limit: "30 分钟内", action: "复核后生成通知记录", badgeClass: "badge-c" },
       { project: "HIV 初筛阳性", source: "体检中心", review: "待复核", notice: "待留痕", limit: "立即处理", action: "双人复核并留痕", badgeClass: "badge-c" },
@@ -1617,6 +2036,7 @@
     const sampleTable = document.getElementById("sampleTable");
     const receivingTable = document.getElementById("receivingTable");
     const precheckTable = document.getElementById("precheckTable");
+    const reviewTable = document.getElementById("reviewTable");
     const positiveAlertTable = document.getElementById("positiveAlertTable");
     const reagentAlertTable = document.getElementById("reagentAlertTable");
     const questionList = document.getElementById("questionList");
@@ -1694,6 +2114,72 @@
       document.getElementById("precheckCardConclusion").textContent = item.conclusion;
       document.getElementById("precheckCardRules").innerHTML = item.rules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("precheckCardAction").textContent = item.detailAction;
+    }
+
+
+    function renderReviewResults() {
+      reviewTable.innerHTML = reviewResults.map((item, index) => `
+        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+          <td><strong>${item.id}</strong></td>
+          <td>${item.source}</td>
+          <td>${item.project}</td>
+          <td>${item.summary}</td>
+          <td><span class="badge ${item.gradeClass}">${item.grade}</span></td>
+          <td><span class="badge ${item.riskClass}">${item.riskTag}</span></td>
+          <td>${item.status}</td>
+          <td>${item.action}</td>
+        </tr>
+      `).join("");
+
+      reviewTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectReviewResult(Number(row.dataset.index)));
+      });
+    }
+
+    function selectReviewResult(index) {
+      const item = reviewResults[index];
+      document.querySelectorAll("#reviewTable tr").forEach(row => row.classList.remove("selected"));
+      document.querySelector(`#reviewTable tr[data-index="${index}"]`).classList.add("selected");
+
+      document.getElementById("reviewCardSample").textContent = `${item.id} · ${item.project}`;
+      document.getElementById("reviewCardMeta").textContent = `${item.source} / ${item.grade} / ${item.status}`;
+      const fields = [
+        ["样本号", item.details.sample],
+        ["项目名称", item.details.projectName],
+        ["当前结果", item.details.current],
+        ["单位", item.details.unit],
+        ["参考区间", item.details.reference],
+        ["危急值阈值", item.details.critical],
+        ["样本状态", item.details.sampleStatus],
+        ["仪器状态", item.details.instrumentStatus],
+        ["质控状态", item.details.qcStatus],
+        ["来源科室", item.details.source],
+        ["采样时间", item.details.collectedAt],
+        ["审核状态", item.details.reviewStatus]
+      ];
+      document.getElementById("reviewDetailGrid").innerHTML = fields.map(([label, value]) => `
+        <div class="detail-field"><span>${label}</span><strong>${value}</strong></div>
+      `).join("");
+      document.getElementById("reviewAiConclusion").textContent = item.ai.conclusion;
+      document.getElementById("reviewAiRules").innerHTML = item.ai.rules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("reviewAiAction").textContent = item.ai.action;
+      document.getElementById("reviewHistoryList").innerHTML = item.history.map(record => `
+        <div class="trend-item"><strong>${record.date} · ${record.item}</strong><br />结果：${record.result} ${record.unit} · 与上次变化：${record.change}<div class="trend-bar" aria-hidden="true"><span style="width:${record.width}%"></span></div></div>
+      `).join("");
+      document.getElementById("reviewDeltaList").innerHTML = `
+        <div class="delta-item"><strong>本次结果</strong><br />${item.delta.current}</div>
+        <div class="delta-item"><strong>上次结果</strong><br />${item.delta.previous}</div>
+        <div class="delta-item"><strong>变化幅度</strong><br />${item.delta.change}</div>
+        <div class="delta-item"><strong>规则阈值</strong><br />${item.delta.threshold}</div>
+        <div class="delta-item"><strong>系统判断</strong><br />${item.delta.judgement}</div>
+        <div class="delta-item"><strong>建议动作</strong><br />${item.delta.action}</div>
+      `;
+      document.getElementById("reviewConflictList").innerHTML = item.conflicts.map(conflict => `
+        <div class="conflict-item"><strong>关联项目：${conflict.items}</strong><br />冲突说明：${conflict.note}<br />系统建议：${conflict.suggestion}</div>
+      `).join("");
+      document.getElementById("reviewAuditList").innerHTML = item.audit.map(record => `
+        <div class="audit-item"><strong>${record.time} · ${record.user}</strong><br />操作内容：${record.content}<br />AI 命中规则：${record.rules}<br />人工处理意见：${record.opinion}<br />状态：${record.status}</div>
+      `).join("");
     }
 
     function renderPositiveAlerts() {
@@ -1780,6 +2266,7 @@
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
       document.getElementById("precheckView").classList.toggle("active", target === "precheck");
+      document.getElementById("reviewView").classList.toggle("active", target === "review");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
         item.classList.toggle("active", item.dataset.viewTarget === target);
@@ -1791,6 +2278,10 @@
 
       if (target === "precheck") {
         selectPrecheckResult(0);
+      }
+
+      if (target === "review") {
+        selectReviewResult(0);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1842,6 +2333,13 @@
       });
     });
 
+    document.querySelectorAll("[data-review-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentResult = document.getElementById("reviewCardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.reviewAction}，当前审核结果：${currentResult}`);
+      });
+    });
+
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
@@ -1850,6 +2348,7 @@
     renderSamples();
     renderReceivingSamples();
     renderPrecheckResults();
+    renderReviewResults();
     renderPositiveAlerts();
     renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
@@ -1860,6 +2359,7 @@
     selectSample(0);
     selectReceivingSample(0);
     selectPrecheckResult(0);
+    selectReviewResult(0);
   </script>
 </body>
 </html>
