@@ -1043,12 +1043,71 @@
     .status-cell.danger { color: var(--danger); }
     .status-cell.gray { color: #667580; }
 
+
+    .settings-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .settings-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .settings-actions .btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .settings-section-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .settings-panel { margin-bottom: 18px; }
+    .role-table { min-width: 1180px; }
+    .auto-release-table { min-width: 1320px; }
+    .ai-rule-table { min-width: 980px; }
+    .critical-rule-table { min-width: 1220px; }
+    .positive-rule-table { min-width: 1280px; }
+    .reagent-rule-table { min-width: 1220px; }
+    .interface-table { min-width: 980px; }
+    .settings-audit-table { min-width: 1220px; }
+
+
+    .rule-note {
+      margin: 0 0 14px;
+      padding: 12px 14px;
+      border: 1px solid #cfe7f2;
+      border-left: 5px solid var(--primary);
+      border-radius: 12px;
+      color: #294f63;
+      background: #f4fbfe;
+      line-height: 1.65;
+      font-size: 13px;
+    }
+
+    .settings-boundary-note {
+      margin: 0 0 18px;
+      padding: 15px 16px;
+      border: 1px solid #ffd9b0;
+      border-left: 5px solid var(--warning);
+      border-radius: var(--radius-md);
+      color: #5f4308;
+      background: linear-gradient(90deg, var(--warning-soft), #fffdf6);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
     @media (max-width: 1180px) {
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid, .quality-workbench, .quality-secondary-grid { grid-template-columns: 1fr; }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid, .quality-workbench, .quality-secondary-grid, .settings-section-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ai-card, .critical-detail-card, .quality-ai-card { position: static; }
-      .quality-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .quality-actions, .settings-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .flow-step::after { display: none; }
       .guardrail { width: auto; }
@@ -1064,12 +1123,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions, .quality-actions { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -1101,7 +1160,7 @@
         <li class="nav-item" data-view-target="review"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item" data-view-target="critical"><span class="nav-icon">!</span>危急值中心</li>
         <li class="nav-item" data-view-target="quality"><span class="nav-icon">◈</span>质控看板</li>
-        <li class="nav-item"><span class="nav-icon">⚙</span>系统设置</li>
+        <li class="nav-item" data-view-target="settings"><span class="nav-icon">⚙</span>系统设置</li>
       </ul>
       <div class="sidebar-note">
         <strong>原型说明</strong><br />本页面仅使用模拟数据，不包含真实患者信息；AI 仅做筛选、解释、催办与排序辅助。
@@ -1931,6 +1990,101 @@
           </div>
         </section>
       </div>
+
+      <div class="view" id="settingsView">
+        <section class="hero" aria-label="系统设置说明">
+          <div class="hero-card">
+            <p class="eyebrow">● 系统设置 / 规则配置中心</p>
+            <h2>面向系统管理员与科室负责人的规则、权限和接口治理台</h2>
+            <p>集中展示角色权限、自动放行、AI 预审、危急值、传染病阳性预警、试剂近效期预警、仪器接口配置和审计日志。所有配置与记录均为静态原型模拟数据。</p>
+          </div>
+          <div class="guardrail">
+            <strong>规则治理边界</strong>
+            <span>AI 仅辅助解释、提醒和流程排序，不替代医院制度、检验科负责人和信息科确认。</span>
+          </div>
+        </section>
+
+        <section class="metrics settings-metrics" aria-label="系统设置总览">
+          <article class="metric-card"><div class="metric-label">当前启用规则数 <span class="badge badge-a">启用</span></div><div class="metric-value">42</div><div class="metric-trend">覆盖预审、危急值、阳性与试剂预警</div></article>
+          <article class="metric-card"><div class="metric-label">当前用户角色数 <span>角色</span></div><div class="metric-value">6</div><div class="metric-trend">管理员至只读观察员</div></article>
+          <article class="metric-card"><div class="metric-label">自动放行规则数 <span class="badge badge-info">放行</span></div><div class="metric-value">12</div><div class="metric-trend">3 条待审核，1 条暂停</div></article>
+          <article class="metric-card"><div class="metric-label">危急值规则数 <span class="badge badge-c">高风险</span></div><div class="metric-value">9</div><div class="metric-trend">急诊与住院阈值分组</div></article>
+          <article class="metric-card"><div class="metric-label">阳性预警规则数 <span class="badge badge-b">预警</span></div><div class="metric-value">6</div><div class="metric-trend">院感提醒与上报提示留痕</div></article>
+          <article class="metric-card"><div class="metric-label">试剂预警规则数 <span class="badge badge-b">库存</span></div><div class="metric-value">5</div><div class="metric-trend">30 / 14 / 7 / 0 天分层</div></article>
+          <article class="metric-card"><div class="metric-label">今日配置变更数 <span>变更</span></div><div class="metric-value">8</div><div class="metric-trend">含接口测试与规则编辑</div></article>
+          <article class="metric-card"><div class="metric-label">待审核配置变更数 <span class="badge badge-b">待审</span></div><div class="metric-value">3</div><div class="metric-trend">需科主任或信息科复核</div></article>
+        </section>
+
+        <p class="settings-boundary-note"><strong>责任边界提示：</strong>系统设置中的规则仅为原型模拟。真实医疗系统中的自动放行、危急值、阳性预警、试剂预警和接口配置必须由医院制度、检验科负责人和信息科共同确认，并保留完整审计记录。AI 仅用于辅助解释、提醒和流程排序，不替代最终责任人。</p>
+
+        <section class="panel settings-panel" aria-label="系统设置模拟操作按钮">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">高频配置操作</h3>
+              <p class="panel-subtitle">按钮仅触发模拟提示，不连接后端、不写入数据库。</p>
+            </div>
+            <span class="badge badge-gray">模拟交互</span>
+          </div>
+          <div class="panel-body">
+            <div class="settings-actions">
+              <button class="btn" data-settings-action="新建规则">新建规则</button>
+              <button class="btn secondary" data-settings-action="编辑规则">编辑规则</button>
+              <button class="btn secondary" data-settings-action="启用规则">启用规则</button>
+              <button class="btn secondary" data-settings-action="暂停规则">暂停规则</button>
+              <button class="btn" data-settings-action="提交审核">提交审核</button>
+              <button class="btn secondary" data-settings-action="查看变更记录">查看变更记录</button>
+              <button class="btn secondary" data-settings-action="导出审计日志">导出审计日志</button>
+              <button class="btn secondary" data-settings-action="测试接口连接">测试接口连接</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel settings-panel" aria-label="角色与权限配置">
+          <div class="panel-header"><div><h3 class="panel-title">角色与权限配置</h3><p class="panel-subtitle">按角色、岗位、可访问模块和关键操作展示模拟权限矩阵。</p></div><span class="badge badge-info">权限治理</span></div>
+          <div class="panel-body table-wrap"><table class="role-table"><thead><tr><th>角色名称</th><th>适用岗位</th><th>可访问模块</th><th>可执行操作</th><th>是否需要二次确认</th><th>状态</th></tr></thead><tbody id="roleConfigTable"></tbody></table></div>
+        </section>
+
+        <section class="panel settings-panel" aria-label="自动放行规则配置">
+          <div class="panel-header"><div><h3 class="panel-title">自动放行规则配置</h3><p class="panel-subtitle">高频自动放行条件按项目、科室、参考范围、Delta Check、样本与质控状态分组。</p></div><span class="badge badge-a">自动放行</span></div>
+          <div class="panel-body table-wrap"><table class="auto-release-table"><thead><tr><th>规则名称</th><th>适用项目</th><th>适用科室</th><th>参考范围条件</th><th>Delta Check 条件</th><th>样本状态条件</th><th>质控状态条件</th><th>当前状态</th><th>建议动作</th></tr></thead><tbody id="autoReleaseRuleTable"></tbody></table></div>
+        </section>
+
+        <section class="panel settings-panel" aria-label="AI 预审规则配置">
+          <div class="panel-header"><div><h3 class="panel-title">AI 预审规则配置</h3><p class="panel-subtitle">展示 A / B / C 类预审分级规则、命中场景、推荐动作和留痕要求。</p></div><span class="badge badge-info">三类分级</span></div>
+          <div class="panel-body table-wrap"><table class="ai-rule-table"><thead><tr><th>预审类别</th><th>分级条件</th><th>命中场景</th><th>推荐动作</th><th>是否允许人工覆盖</th><th>是否需要留痕</th></tr></thead><tbody id="aiPrecheckRuleTable"></tbody></table></div>
+        </section>
+
+        <section class="settings-section-grid" aria-label="风险规则配置">
+          <div class="panel" aria-label="危急值规则配置">
+            <div class="panel-header"><div><h3 class="panel-title">危急值规则配置</h3><p class="panel-subtitle">按项目、人群、科室、通知对象和处理时限配置闭环规则。</p></div><span class="badge badge-c">高风险规则</span></div>
+            <div class="panel-body table-wrap"><table class="critical-rule-table"><thead><tr><th>项目名称</th><th>危急值上限</th><th>危急值下限</th><th>适用人群</th><th>适用科室</th><th>通知对象</th><th>处理时限</th><th>超时催办规则</th><th>当前状态</th></tr></thead><tbody id="criticalRuleTable"></tbody></table></div>
+          </div>
+          <div class="panel" aria-label="传染病阳性预警规则配置">
+            <div class="panel-header"><div><h3 class="panel-title">传染病阳性预警规则配置</h3><p class="panel-subtitle">仅用于阳性风险提示、复核提醒、告知与上报流程辅助。</p></div><span class="badge badge-b">阳性预警</span></div>
+            <div class="panel-body">
+              <p class="rule-note"><strong>明确提示：</strong>AI 仅用于阳性风险提示和流程辅助，不替代制度规定的复核、告知或上报责任。</p>
+              <div class="table-wrap"><table class="positive-rule-table"><thead><tr><th>项目名称</th><th>阳性判断条件</th><th>复核要求</th><th>通知对象</th><th>是否需要院感提醒</th><th>是否需要上报提示</th><th>处理时限</th><th>留痕要求</th><th>当前状态</th></tr></thead><tbody id="positiveRuleTable"></tbody></table></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section-grid" aria-label="试剂与接口配置">
+          <div class="panel" aria-label="试剂近效期预警规则配置">
+            <div class="panel-header"><div><h3 class="panel-title">试剂近效期预警规则配置</h3><p class="panel-subtitle">按关注、预警、高风险和已过期阈值展示试剂风险策略。</p></div><span class="badge badge-b">试剂风险</span></div>
+            <div class="panel-body table-wrap"><table class="reagent-rule-table"><thead><tr><th>规则名称</th><th>适用试剂类型</th><th>关注阈值</th><th>预警阈值</th><th>高风险阈值</th><th>是否关联质控复查</th><th>是否暂停相关项目</th><th>是否生成采购提醒</th><th>当前状态</th></tr></thead><tbody id="reagentRuleTable"></tbody></table></div>
+          </div>
+          <div class="panel" aria-label="仪器与接口配置">
+            <div class="panel-header"><div><h3 class="panel-title">仪器与接口配置</h3><p class="panel-subtitle">覆盖 HIS、EMR、检验仪器、条码、试剂库存和院内消息系统连接状态。</p></div><span class="badge badge-info">接口治理</span></div>
+            <div class="panel-body table-wrap"><table class="interface-table"><thead><tr><th>接口名称</th><th>连接对象</th><th>接口类型</th><th>当前状态</th><th>最近同步时间</th><th>异常次数</th><th>建议动作</th></tr></thead><tbody id="interfaceConfigTable"></tbody></table></div>
+          </div>
+        </section>
+
+        <section class="panel settings-panel" aria-label="审计日志">
+          <div class="panel-header"><div><h3 class="panel-title">审计日志</h3><p class="panel-subtitle">记录规则配置、权限调整、接口测试和审核流转的模拟审计记录。</p></div><span class="badge badge-info">完整留痕</span></div>
+          <div class="panel-body table-wrap"><table class="settings-audit-table"><thead><tr><th>时间</th><th>操作人</th><th>操作模块</th><th>操作内容</th><th>修改前</th><th>修改后</th><th>审核状态</th><th>备注</th></tr></thead><tbody id="settingsAuditTable"></tbody></table></div>
+        </section>
+      </div>
+
 
     </main>
   </div>
@@ -2764,6 +2918,70 @@
       { time: "2026-06-11 08:55", user: "审核技师 陈某", action: "查看受影响样本", instrument: "HA-01", project: "WBC", result: "已转人工快速浏览", note: "未发现真实患者信息" }
     ];
 
+    const roleConfigs = [
+      { role: "管理员", post: "信息科 / LIS 管理员", modules: "全部模块、系统设置、审计日志", actions: "查看结果、修改规则、查看审计日志、测试接口连接", confirm: "关键规则和接口变更需要", status: "启用" },
+      { role: "审核技师", post: "检验审核岗位", modules: "工作台、AI 预审、结果审核、危急值中心", actions: "查看结果、审核发布、自动放行确认、危急值闭环", confirm: "自动放行批量确认需要", status: "启用" },
+      { role: "签收人员", post: "前处理 / 标本接收", modules: "样本签收、工作台", actions: "样本签收、退样登记、补采提醒", confirm: "退样登记需要", status: "启用" },
+      { role: "质控负责人", post: "质控管理岗位", modules: "质控看板、结果审核、系统设置", actions: "质控事件处理、暂停相关项目、查看审计日志", confirm: "暂停项目需要", status: "启用" },
+      { role: "科主任", post: "科室负责人", modules: "全部业务看板、系统设置、审计日志", actions: "审核发布、修改规则审批、查看审计日志", confirm: "规则审批需要", status: "启用" },
+      { role: "只读观察员", post: "教学 / 运营观察", modules: "工作台、质控看板、危急值中心", actions: "查看结果、查看统计、查看审计日志", confirm: "不允许执行变更", status: "暂停" }
+    ];
+
+    const autoReleaseRules = [
+      { name: "门诊生化常规自动放行", project: "ALT / AST / GLU / CREA", dept: "门诊全科", range: "全部结果位于参考范围内", delta: "7 日内变化 < 20%", sample: "已签收、无溶血脂血黄疸标记", qc: "同批次质控在控", status: "启用", action: "允许自动进入发布前队列" },
+      { name: "血常规稳定结果放行", project: "WBC / RBC / PLT / HGB", dept: "体检中心", range: "参考范围内且无形态学提示", delta: "30 日内变化 < 15%", sample: "条码一致、采血量合格", qc: "血液分析仪质控在控", status: "启用", action: "自动放行并留痕" },
+      { name: "电解质轻微波动拦截", project: "K / Na / Cl", dept: "住院科室", range: "接近上下限 5% 内需拦截", delta: "较上次变化 > 10% 转复核", sample: "无凝血、无稀释提示", qc: "电解质质控在控", status: "待审核", action: "提交质控负责人审核" },
+      { name: "免疫阴性批量放行", project: "HBsAg / HCV-Ab / TP-Ab", dept: "体检中心", range: "阴性且 S/CO 远低于阈值", delta: "不适用", sample: "复核样本状态合格", qc: "免疫质控在控", status: "暂停", action: "待阳性复核流程确认后启用" },
+      { name: "已废弃旧版肝功规则", project: "肝功组合", dept: "全院", range: "旧参考范围", delta: "旧阈值", sample: "旧样本条件", qc: "旧质控条件", status: "已废弃", action: "保留审计，不可启用" }
+    ];
+
+    const aiPrecheckRules = [
+      { grade: "A 类：自动放行", condition: "结果在参考范围内、质控在控、无危急值、无阳性预警、Delta Check 合理", scene: "体检阴性、门诊常规生化稳定结果", action: "进入自动放行确认队列", override: "允许人工拦截", trace: "需要留痕" },
+      { grade: "B 类：快速复核", condition: "轻度异常、历史波动可解释、样本和仪器状态正常", scene: "慢病随访轻度异常、接近参考范围边界", action: "人工快速浏览后一键确认或转重点复核", override: "允许人工覆盖", trace: "需要留痕" },
+      { grade: "C 类：重点复核", condition: "危急值、阳性预警、结果极端偏差、项目冲突、质控或仪器异常", scene: "急诊危急值、传染病阳性初筛、质控失控影响项目", action: "禁止自动放行，必须人工重点审核", override: "不允许降级自动放行", trace: "必须完整留痕" }
+    ];
+
+    const criticalRules = [
+      { project: "肌钙蛋白 I", high: "> 0.50 ng/mL", low: "--", people: "成人", dept: "急诊 / 心内科", target: "急诊医生、心内科值班", limit: "15 分钟内确认", remind: "10 分钟未读院内消息 + 短信；15 分钟电话催办", status: "启用" },
+      { project: "血钾", high: "> 6.0 mmol/L", low: "< 2.8 mmol/L", people: "成人 / 儿童分阈值", dept: "全院", target: "申请医生、护士站", limit: "30 分钟闭环", remind: "20 分钟未确认自动升级科室值班", status: "启用" },
+      { project: "血糖", high: "> 25.0 mmol/L", low: "< 2.8 mmol/L", people: "成人", dept: "急诊 / ICU / 内分泌", target: "责任医生", limit: "20 分钟确认", remind: "超时后每 10 分钟催办一次", status: "启用" },
+      { project: "血红蛋白", high: "--", low: "< 60 g/L", people: "成人", dept: "住院 / ICU", target: "病区医生、护士站", limit: "30 分钟闭环", remind: "未确认转人工电话登记", status: "待审核" }
+    ];
+
+    const positiveRules = [
+      { project: "乙肝表面抗原", condition: "S/CO ≥ 1.0 或仪器判定 Reactive", review: "按实验室流程复核原管或重测", target: "审核技师、申请医生", infection: "是", report: "按院内制度提示", limit: "2 小时内复核", trace: "记录复核、通知和处理人", status: "启用" },
+      { project: "HIV 初筛", condition: "初筛反应性", review: "必须复核并按制度转确认流程", target: "指定审核人员、科主任", infection: "是", report: "需要上报提示", limit: "立即处理", trace: "全流程强制留痕", status: "启用" },
+      { project: "梅毒抗体", condition: "TP-Ab 阳性或灰区复测阳性", review: "建议原管复测并结合补充项目", target: "审核技师、临床医生", infection: "是", report: "按制度提示", limit: "4 小时内处理", trace: "记录复核结论", status: "启用" },
+      { project: "丙肝抗体", condition: "HCV-Ab 阳性", review: "复测或补充确认建议", target: "审核技师、申请医生", infection: "是", report: "按院内制度提示", limit: "4 小时内处理", trace: "记录通知状态", status: "启用" },
+      { project: "新冠核酸", condition: "目标基因 Ct 值满足阳性判定", review: "复核扩增曲线和质控", target: "院感、发热门诊、检验负责人", infection: "是", report: "需要上报提示", limit: "立即处理", trace: "记录曲线复核和通知", status: "暂停" },
+      { project: "流感抗原", condition: "抗原检测阳性", review: "必要时建议核酸确认", target: "发热门诊、申请医生", infection: "按季节策略", report: "按制度提示", limit: "2 小时内处理", trace: "记录提醒和确认", status: "待审核" }
+    ];
+
+    const reagentRules = [
+      { name: "通用试剂近效期分层", type: "生化 / 免疫 / 凝血通用", watch: "剩余 30 天", warn: "剩余 14 天", high: "剩余 7 天；已过期：剩余 0 天或小于 0 天", qc: "是", pause: "高风险或过期时建议暂停", purchase: "是", status: "启用" },
+      { name: "免疫发光高敏项目", type: "肌钙蛋白、肿瘤标志物", watch: "剩余 30 天", warn: "剩余 14 天", high: "剩余 7 天", qc: "是，需双水平复查", pause: "高风险时暂停自动放行", purchase: "是", status: "启用" },
+      { name: "传染病筛查试剂", type: "HBsAg / HIV / TP / HCV", watch: "剩余 30 天", warn: "剩余 14 天", high: "剩余 7 天或批号异常", qc: "是", pause: "过期必须暂停", purchase: "是", status: "启用" },
+      { name: "凝血项目试剂", type: "PT / APTT / FIB", watch: "剩余 30 天", warn: "剩余 14 天", high: "剩余 7 天", qc: "是", pause: "质控异常时暂停", purchase: "是", status: "待审核" }
+    ];
+
+    const interfaceConfigs = [
+      { name: "HIS 医嘱同步", object: "HIS", type: "HL7 / REST", status: "正常", sync: "2026-06-11 10:58", errors: "0", action: "保持监测" },
+      { name: "EMR 报告回写", object: "EMR", type: "REST API", status: "延迟", sync: "2026-06-11 10:41", errors: "2", action: "建议检查回写队列" },
+      { name: "生化仪 BA-02", object: "检验仪器", type: "ASTM / TCP", status: "正常", sync: "2026-06-11 10:59", errors: "0", action: "无需处理" },
+      { name: "条码扫描服务", object: "条码系统", type: "WebSocket", status: "异常", sync: "2026-06-11 09:36", errors: "5", action: "建议测试接口连接并通知信息科" },
+      { name: "试剂库存联动", object: "试剂库存系统", type: "REST API", status: "暂停", sync: "2026-06-10 18:20", errors: "1", action: "待库存系统维护完成后启用" },
+      { name: "危急值消息推送", object: "院内消息系统", type: "消息队列", status: "待配置", sync: "--", errors: "--", action: "补充消息模板和接收人规则" }
+    ];
+
+    const settingsAudits = [
+      { time: "2026-06-11 10:52", user: "管理员 周某", module: "自动放行规则", content: "编辑门诊生化常规自动放行阈值", before: "Delta < 15%", after: "Delta < 20%", review: "待审核", note: "模拟记录，需科主任确认" },
+      { time: "2026-06-11 10:31", user: "质控负责人 王某", module: "试剂预警规则", content: "启用免疫发光高敏项目近效期规则", before: "暂停", after: "启用", review: "已通过", note: "关联质控复查" },
+      { time: "2026-06-11 09:48", user: "信息科 李某", module: "仪器与接口配置", content: "测试条码扫描服务连接", before: "异常 6 次", after: "异常 5 次", review: "无需审核", note: "仍需排查网络" },
+      { time: "2026-06-11 09:12", user: "科主任 赵某", module: "危急值规则", content: "审核血红蛋白危急值规则", before: "待审核", after: "退回修改", review: "未通过", note: "需补充儿童阈值" },
+      { time: "2026-06-11 08:44", user: "管理员 周某", module: "角色与权限", content: "新增只读观察员角色", before: "无", after: "只读观察员", review: "已通过", note: "仅允许查看模拟看板" }
+    ];
+
+
     function formatDate(date) {
       return new Intl.DateTimeFormat("zh-CN", {
         year: "numeric",
@@ -3123,6 +3341,87 @@
       `).join("");
     }
 
+
+    function getRuleStatusClass(status) {
+      if (["启用", "正常", "已通过", "无需审核"].includes(status)) return "normal";
+      if (["待审核", "延迟", "待配置"].includes(status)) return "warning";
+      if (["暂停", "异常", "未通过"].includes(status)) return "danger";
+      if (["已废弃"].includes(status)) return "gray";
+      return "watch";
+    }
+
+    function renderRoleConfigs() {
+      document.getElementById("roleConfigTable").innerHTML = roleConfigs.map(item => `
+        <tr>
+          <td><strong>${item.role}</strong></td><td>${item.post}</td><td>${item.modules}</td><td>${item.actions}</td>
+          <td>${item.confirm}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAutoReleaseRules() {
+      document.getElementById("autoReleaseRuleTable").innerHTML = autoReleaseRules.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td><td>${item.project}</td><td>${item.dept}</td><td>${item.range}</td><td>${item.delta}</td>
+          <td>${item.sample}</td><td>${item.qc}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td><td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderAiPrecheckRules() {
+      document.getElementById("aiPrecheckRuleTable").innerHTML = aiPrecheckRules.map((item, index) => `
+        <tr>
+          <td><span class="badge ${index === 0 ? "badge-a" : index === 1 ? "badge-b" : "badge-c"}">${item.grade}</span></td>
+          <td>${item.condition}</td><td>${item.scene}</td><td>${item.action}</td><td>${item.override}</td><td>${item.trace}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderCriticalRules() {
+      document.getElementById("criticalRuleTable").innerHTML = criticalRules.map(item => `
+        <tr>
+          <td><strong>${item.project}</strong></td><td>${item.high}</td><td>${item.low}</td><td>${item.people}</td><td>${item.dept}</td>
+          <td>${item.target}</td><td>${item.limit}</td><td>${item.remind}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderPositiveRules() {
+      document.getElementById("positiveRuleTable").innerHTML = positiveRules.map(item => `
+        <tr>
+          <td><strong>${item.project}</strong></td><td>${item.condition}</td><td>${item.review}</td><td>${item.target}</td><td>${item.infection}</td>
+          <td>${item.report}</td><td>${item.limit}</td><td>${item.trace}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderReagentRules() {
+      document.getElementById("reagentRuleTable").innerHTML = reagentRules.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td><td>${item.type}</td><td>${item.watch}</td><td>${item.warn}</td><td>${item.high}</td>
+          <td>${item.qc}</td><td>${item.pause}</td><td>${item.purchase}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderInterfaceConfigs() {
+      document.getElementById("interfaceConfigTable").innerHTML = interfaceConfigs.map(item => `
+        <tr>
+          <td><strong>${item.name}</strong></td><td>${item.object}</td><td>${item.type}</td><td><span class="status-cell ${getRuleStatusClass(item.status)}">${item.status}</span></td>
+          <td>${item.sync}</td><td>${item.errors}</td><td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderSettingsAudits() {
+      document.getElementById("settingsAuditTable").innerHTML = settingsAudits.map(item => `
+        <tr>
+          <td>${item.time}</td><td>${item.user}</td><td>${item.module}</td><td>${item.content}</td><td>${item.before}</td><td>${item.after}</td>
+          <td><span class="status-cell ${getRuleStatusClass(item.review)}">${item.review}</span></td><td>${item.note}</td>
+        </tr>
+      `).join("");
+    }
+
     function switchView(target) {
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
@@ -3130,6 +3429,7 @@
       document.getElementById("reviewView").classList.toggle("active", target === "review");
       document.getElementById("criticalView").classList.toggle("active", target === "critical");
       document.getElementById("qualityView").classList.toggle("active", target === "quality");
+      document.getElementById("settingsView").classList.toggle("active", target === "settings");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
         item.classList.toggle("active", item.dataset.viewTarget === target);
@@ -3226,6 +3526,12 @@
       });
     });
 
+    document.querySelectorAll("[data-settings-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        showToast(`模拟操作成功：${button.dataset.settingsAction}。该操作仅用于静态原型展示，未连接后端或数据库。`);
+      });
+    });
+
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
@@ -3241,6 +3547,14 @@
     renderQualityReagents();
     renderQualityBatchRisks();
     renderQualityRecords();
+    renderRoleConfigs();
+    renderAutoReleaseRules();
+    renderAiPrecheckRules();
+    renderCriticalRules();
+    renderPositiveRules();
+    renderReagentRules();
+    renderInterfaceConfigs();
+    renderSettingsAudits();
     renderPositiveAlerts();
     renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
