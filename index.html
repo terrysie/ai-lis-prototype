@@ -966,11 +966,89 @@
     .status-dot.overdue { color: var(--danger); }
     .status-dot.pending { color: #7b8892; }
 
+
+
+    .quality-metrics {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .quality-workbench {
+      display: grid;
+      grid-template-columns: minmax(0, 1.28fr) minmax(360px, 0.72fr);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .quality-table { min-width: 1180px; }
+    .qc-event-table { min-width: 1120px; }
+    .qc-reagent-table { min-width: 1240px; }
+    .qc-batch-table { min-width: 980px; }
+    .qc-record-table { min-width: 1080px; }
+
+    .quality-secondary-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .quality-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .quality-actions .btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .quality-ai-card {
+      position: sticky;
+      top: 92px;
+    }
+
+    .quality-risk-note {
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      border: 1px solid #ffd9b0;
+      border-left: 5px solid var(--warning);
+      border-radius: var(--radius-md);
+      color: #5f4308;
+      background: linear-gradient(90deg, var(--warning-soft), #fffdf6);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .status-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 760;
+    }
+
+    .status-cell::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-cell.normal { color: var(--success); }
+    .status-cell.watch { color: var(--primary-dark); }
+    .status-cell.warning { color: var(--warning); }
+    .status-cell.danger { color: var(--danger); }
+    .status-cell.gray { color: #667580; }
+
     @media (max-width: 1180px) {
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid { grid-template-columns: 1fr; }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid, .quality-workbench, .quality-secondary-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .ai-card, .critical-detail-card { position: static; }
+      .ai-card, .critical-detail-card, .quality-ai-card { position: static; }
+      .quality-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .flow-step::after { display: none; }
       .guardrail { width: auto; }
@@ -986,12 +1064,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions, .quality-actions { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -1022,7 +1100,7 @@
         <li class="nav-item" data-view-target="precheck"><span class="nav-icon">◎</span>AI 预审</li>
         <li class="nav-item" data-view-target="review"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item" data-view-target="critical"><span class="nav-icon">!</span>危急值中心</li>
-        <li class="nav-item"><span class="nav-icon">◈</span>质控看板</li>
+        <li class="nav-item" data-view-target="quality"><span class="nav-icon">◈</span>质控看板</li>
         <li class="nav-item"><span class="nav-icon">⚙</span>系统设置</li>
       </ul>
       <div class="sidebar-note">
@@ -1691,6 +1769,166 @@
             <span class="badge badge-info">可追溯</span>
           </div>
           <div class="panel-body audit-list" id="reviewAuditList"></div>
+        </section>
+      </div>
+
+
+      <div class="view" id="qualityView">
+        <section class="hero" aria-label="质控看板说明">
+          <div class="hero-card">
+            <p class="eyebrow">● 质控看板</p>
+            <h2>面向质控岗位的一屏式仪器、试剂、规则和处理任务台</h2>
+            <p>集中展示今日质控状态、仪器运行风险、试剂批次与近效期风险、Westgard 规则命中、失控处理记录和 AI 质控建议。所有数据均为模拟数据，不包含真实患者信息。</p>
+          </div>
+          <div class="guardrail">
+            <strong>质控责任边界</strong>
+            <span>AI 仅用于质控风险提示、规则解释和流程辅助，不替代最终判断。</span>
+          </div>
+        </section>
+
+        <section class="metrics quality-metrics" aria-label="质控总览指标">
+          <article class="metric-card"><div class="metric-label">今日质控项目数 <span>总量</span></div><div class="metric-value">186</div><div class="metric-trend">生化 72 · 免疫 44 · 血液 38 · 凝血 32</div></article>
+          <article class="metric-card"><div class="metric-label">质控通过数 <span class="badge badge-a">在控</span></div><div class="metric-value">168</div><div class="metric-trend">符合模拟室内质控规则</div></article>
+          <article class="metric-card"><div class="metric-label">质控预警数 <span class="badge badge-b">关注</span></div><div class="metric-value">12</div><div class="metric-trend">主要为 1-2s 与趋势异常</div></article>
+          <article class="metric-card"><div class="metric-label">质控失控数 <span class="badge badge-c">失控</span></div><div class="metric-value">6</div><div class="metric-trend">已限制相关项目自动放行</div></article>
+          <article class="metric-card"><div class="metric-label">受影响检验项目数 <span class="badge badge-b">影响</span></div><div class="metric-value">14</div><div class="metric-trend">含 GLU、CA125、cTnI 等模拟项目</div></article>
+          <article class="metric-card"><div class="metric-label">待处理质控事件数 <span class="badge badge-c">待办</span></div><div class="metric-value">8</div><div class="metric-trend">3 条建议优先处理</div></article>
+        </section>
+
+        <p class="quality-risk-note"><strong>责任边界提示：</strong>AI 仅用于质控风险提示、规则解释和流程辅助，不替代检验科质控负责人、审核技师或医院制度规定的最终判断。</p>
+
+        <section class="quality-workbench" aria-label="质控事件工作台">
+          <div class="panel" aria-label="质控事件队列">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">质控事件队列</h3>
+                <p class="panel-subtitle">点击任一事件，右侧 AI 质控建议卡片将按结论、命中规则、建议动作三段式更新。</p>
+              </div>
+              <span class="badge badge-gray">模拟事件</span>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table class="qc-event-table">
+                  <thead><tr><th>事件编号</th><th>仪器名称</th><th>检验项目</th><th>质控水平</th><th>触发规则</th><th>当前状态</th><th>影响范围</th><th>建议动作</th></tr></thead>
+                  <tbody id="qualityEventTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <aside class="ai-card quality-ai-card" aria-label="AI 质控建议卡片">
+            <div class="ai-card-top">
+              <h3 id="qualityAiTitle">AI 质控建议卡片</h3>
+              <p id="qualityAiMeta">请选择左侧质控事件查看建议</p>
+            </div>
+            <div class="decision-block"><h4>结论</h4><p id="qualityAiConclusion">--</p></div>
+            <div class="decision-block"><h4>命中规则</h4><ul id="qualityAiRules"></ul></div>
+            <div class="decision-block"><h4>建议动作</h4><p id="qualityAiAction">--</p></div>
+            <div class="action-row">
+              <button class="btn" data-quality-action="确认质控事件">确认质控事件</button>
+              <button class="btn secondary" data-quality-action="暂停相关项目">暂停相关项目</button>
+              <button class="btn secondary" data-quality-action="生成复查任务">生成复查任务</button>
+              <button class="btn secondary" data-quality-action="标记已校准">标记已校准</button>
+              <button class="btn secondary" data-quality-action="生成试剂更换提醒">生成试剂更换提醒</button>
+              <button class="btn secondary" data-quality-action="查看受影响样本">查看受影响样本</button>
+              <button class="btn danger" data-quality-action="关闭质控事件">关闭质控事件</button>
+            </div>
+          </aside>
+        </section>
+
+        <section class="panel" aria-label="仪器状态看板" style="margin-bottom:18px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">仪器状态看板</h3>
+              <p class="panel-subtitle">按专业组查看仪器状态、今日质控状态、关联项目、最近校准时间和建议动作。</p>
+            </div>
+            <span class="badge badge-info">实时模拟</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table class="quality-table">
+                <thead><tr><th>仪器名称</th><th>仪器编号</th><th>所属专业组</th><th>当前状态</th><th>今日质控状态</th><th>关联项目</th><th>最近一次校准时间</th><th>建议动作</th></tr></thead>
+                <tbody id="qualityInstrumentTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="试剂近效期预警" style="margin-bottom:18px;">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">试剂近效期预警</h3>
+              <p class="panel-subtitle">按剩余天数、风险等级和关联质控风险提示更换、复查、暂停或采购提醒。</p>
+            </div>
+            <span class="badge badge-b">近效期优先</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table class="qc-reagent-table">
+                <thead><tr><th>试剂名称</th><th>批号</th><th>适用项目</th><th>适用仪器</th><th>启用日期</th><th>有效期</th><th>剩余天数</th><th>风险等级</th><th>建议动作</th></tr></thead>
+                <tbody id="qualityReagentTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="quality-secondary-grid" aria-label="批次风险与处理记录">
+          <div class="panel" aria-label="批次风险与受影响项目">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">批次风险与受影响项目</h3>
+                <p class="panel-subtitle">展示试剂批次与检验结果风险之间的模拟关联。</p>
+              </div>
+              <span class="badge badge-c">风险关联</span>
+            </div>
+            <div class="panel-body">
+              <div class="table-wrap">
+                <table class="qc-batch-table">
+                  <thead><tr><th>批号</th><th>关联项目</th><th>受影响样本数</th><th>最近异常次数</th><th>是否需要复查</th><th>系统建议</th></tr></thead>
+                  <tbody id="qualityBatchRiskTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" aria-label="快捷操作区">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">质控快捷操作</h3>
+                <p class="panel-subtitle">按钮仅触发模拟提示，不连接后端、不写入数据库。</p>
+              </div>
+            </div>
+            <div class="panel-body">
+              <div class="quality-actions">
+                <button class="btn" data-quality-action="确认质控事件">确认质控事件</button>
+                <button class="btn secondary" data-quality-action="暂停相关项目">暂停相关项目</button>
+                <button class="btn secondary" data-quality-action="生成复查任务">生成复查任务</button>
+                <button class="btn secondary" data-quality-action="标记已校准">标记已校准</button>
+                <button class="btn secondary" data-quality-action="生成试剂更换提醒">生成试剂更换提醒</button>
+                <button class="btn secondary" data-quality-action="查看受影响样本">查看受影响样本</button>
+                <button class="btn danger" data-quality-action="关闭质控事件">关闭质控事件</button>
+              </div>
+              <p class="safety-note" style="margin-bottom:0;">所有操作均为静态原型模拟交互，用于展示岗位流程，不代表真实 LIS、仪器中间件或库存系统操作。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-label="质控处理记录">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">质控处理记录</h3>
+              <p class="panel-subtitle">记录模拟处理时间、操作人、处理动作、关联仪器、关联项目、处理结果和备注。</p>
+            </div>
+            <span class="badge badge-info">模拟留痕</span>
+          </div>
+          <div class="panel-body">
+            <div class="table-wrap">
+              <table class="qc-record-table">
+                <thead><tr><th>时间</th><th>操作人</th><th>处理动作</th><th>关联仪器</th><th>关联项目</th><th>处理结果</th><th>备注</th></tr></thead>
+                <tbody id="qualityRecordTable"></tbody>
+              </table>
+            </div>
+          </div>
         </section>
       </div>
 
@@ -2481,6 +2719,51 @@
     const toast = document.getElementById("toast");
     let toastTimer;
 
+
+    const qualityInstruments = [
+      { name: "全自动生化分析仪 BA-02", code: "BA-02", group: "生化组", status: "正常", statusTone: "normal", qc: "今日质控通过", qcClass: "badge-a", projects: "GLU、ALT、Cr、电解质", calibratedAt: "2026-06-11 07:20", action: "继续观察，保持自动放行前置条件" },
+      { name: "全自动免疫分析仪 IA-03", code: "IA-03", group: "免疫组", status: "质控失控", statusTone: "danger", qc: "1-3s 失控", qcClass: "badge-c", projects: "CA125、cTnI、TSH", calibratedAt: "2026-06-10 16:40", action: "暂停相关项目，复查质控品并评估校准" },
+      { name: "血液分析仪 HA-01", code: "HA-01", group: "血液组", status: "质控预警", statusTone: "warning", qc: "1-2s 预警", qcClass: "badge-b", projects: "WBC、HGB、PLT", calibratedAt: "2026-06-09 08:15", action: "复查质控趋势，重点关注白细胞通道" },
+      { name: "凝血分析仪 CO-01", code: "CO-01", group: "凝血组", status: "待校准", statusTone: "warning", qc: "校准临期", qcClass: "badge-b", projects: "PT、APTT、FIB", calibratedAt: "2026-06-04 17:10", action: "安排校准，校准前限制自动放行范围" },
+      { name: "尿液分析流水线 UA-01", code: "UA-01", group: "尿液组", status: "维护中", statusTone: "gray", qc: "维护暂停", qcClass: "badge-gray", projects: "尿干化学、尿沉渣", calibratedAt: "2026-06-08 09:05", action: "等待维护完成后执行质控验证" },
+      { name: "电解质分析仪 EL-02", code: "EL-02", group: "急诊组", status: "暂停使用", statusTone: "danger", qc: "R-4s 失控", qcClass: "badge-c", projects: "K、Na、Cl", calibratedAt: "2026-06-10 22:30", action: "暂停使用并切换备用仪器" }
+    ];
+
+    const qualityEvents = [
+      { id: "QC-260611-001", instrument: "全自动免疫分析仪 IA-03", project: "CA125", level: "水平 2", rule: "1-3s 失控", ruleClass: "badge-c", status: "待确认", statusClass: "badge-c", impact: "肿瘤标志物自动放行暂停，影响 18 份模拟样本", action: "暂停自动放行并复查质控品", ai: { conclusion: "该项目触发 1-3s 失控规则，建议暂停自动放行并复查质控品。", rules: ["同一质控水平结果超过均值 ±3SD", "关联仪器今日已有 2 次预警", "同批试剂 CA-2605-18 距有效期不足 10 天"], action: "暂停相关项目自动放行，复查质控品，必要时进行仪器校准并记录处理过程。" } },
+      { id: "QC-260611-002", instrument: "电解质分析仪 EL-02", project: "K / Na / Cl", level: "水平 1 + 水平 2", rule: "R-4s 失控", ruleClass: "badge-c", status: "处理中", statusClass: "badge-b", impact: "急诊电解质 11 份模拟样本需复核", action: "暂停使用并切换备用仪器", ai: { conclusion: "电解质项目命中 R-4s 失控，提示随机误差风险较高。", rules: ["同批检测中两个质控水平差值超过 4SD", "当前仪器已被标记为暂停使用", "急诊来源结果对时效和准确性敏感"], action: "建议立即暂停 EL-02，启用备用仪器，复查质控品并核对近期已发布结果。" } },
+      { id: "QC-260611-003", instrument: "血液分析仪 HA-01", project: "WBC", level: "水平 1", rule: "1-2s 预警", ruleClass: "badge-b", status: "已复查", statusClass: "badge-info", impact: "血常规自动放行降级为人工快速浏览", action: "查看趋势并复查散点图", ai: { conclusion: "白细胞通道触发 1-2s 预警，暂未达到失控，但需连续观察。", rules: ["单次质控结果超过均值 ±2SD", "仪器今日出现 3 次模拟通道报警", "复查结果回落但趋势仍偏高"], action: "建议保留人工浏览，关注下一批质控趋势；如再次预警，升级为质控事件处理。" } },
+      { id: "QC-260611-004", instrument: "凝血分析仪 CO-01", project: "APTT", level: "水平 2", rule: "2-2s 失控", ruleClass: "badge-c", status: "已校准", statusClass: "badge-a", impact: "凝血四项 6 份模拟样本需复查", action: "校准后重新质控", ai: { conclusion: "APTT 曾命中 2-2s 失控，校准后需要重新确认在控状态。", rules: ["连续两个质控结果位于均值同侧并超过 ±2SD", "校准临期叠加同批质控偏移", "已完成一次模拟校准记录"], action: "建议校准后重新检测双水平质控，并对校准前结果执行抽样复查。" } },
+      { id: "QC-260611-005", instrument: "全自动生化分析仪 BA-02", project: "GLU", level: "水平 1", rule: "10x 系统漂移", ruleClass: "badge-b", status: "待确认", statusClass: "badge-b", impact: "空腹血糖趋势偏移，影响 24 份模拟样本", action: "关联质控复查并核对试剂批号", ai: { conclusion: "GLU 出现连续同侧偏移，提示可能存在系统性漂移。", rules: ["连续 10 次质控结果位于均值同侧", "同批葡萄糖试剂 GLU-2604-08 剩余 4 天", "患者结果中位数较前日轻度上移"], action: "建议关联质控复查，核对试剂批号和校准曲线，必要时生成试剂更换提醒。" } },
+      { id: "QC-260611-006", instrument: "全自动免疫分析仪 IA-03", project: "cTnI", level: "水平 3", rule: "4-1s 趋势异常", ruleClass: "badge-b", status: "已关闭", statusClass: "badge-gray", impact: "胸痛中心 cTnI 结果已完成复核", action: "归档处理记录", ai: { conclusion: "cTnI 趋势异常已完成复核和记录，可关闭事件。", rules: ["连续 4 个质控点超过均值同侧 ±1SD", "复查质控品后回归可接受范围", "无新增仪器报警"], action: "建议保留事件归档，用于月度质控复盘；无需继续限制自动放行。" } }
+    ];
+
+    const qualityReagents = [
+      { name: "CA125 化学发光试剂", lot: "CA-2605-18", project: "CA125", instrument: "IA-03", start: "2026-05-28", expiry: "2026-06-19", days: 8, risk: "高风险", riskClass: "badge-c", action: "关联质控复查" },
+      { name: "肌钙蛋白 I 试剂", lot: "TNI-2606-02", project: "cTnI", instrument: "IA-03", start: "2026-06-02", expiry: "2026-06-18", days: 7, risk: "预警", riskClass: "badge-b", action: "提醒更换" },
+      { name: "葡萄糖测定试剂", lot: "GLU-2604-08", project: "GLU", instrument: "BA-02", start: "2026-05-30", expiry: "2026-06-15", days: 4, risk: "高风险", riskClass: "badge-c", action: "生成采购提醒" },
+      { name: "凝血 APTT 试剂", lot: "APTT-2605-11", project: "APTT", instrument: "CO-01", start: "2026-05-24", expiry: "2026-06-24", days: 13, risk: "关注", riskClass: "badge-info", action: "继续观察" },
+      { name: "电解质校准液", lot: "ELC-2603-03", project: "K、Na、Cl", instrument: "EL-02", start: "2026-04-20", expiry: "2026-06-10", days: 0, risk: "已过期", riskClass: "badge-c", action: "暂停使用" },
+      { name: "尿液质控液", lot: "UAQC-2606-01", project: "尿干化学", instrument: "UA-01", start: "2026-06-05", expiry: "2026-07-15", days: 34, risk: "正常", riskClass: "badge-a", action: "继续观察" },
+      { name: "肌酐酶法试剂", lot: "CREA-2605-21", project: "Cr", instrument: "BA-02", start: "2026-06-01", expiry: "2026-06-28", days: 17, risk: "关注", riskClass: "badge-info", action: "查看受影响项目" }
+    ];
+
+    const qualityBatchRisks = [
+      { lot: "CA-2605-18", project: "CA125", samples: 18, abnormal: 3, recheck: "是", recheckClass: "badge-c", suggestion: "暂停自动放行，复查质控品并核对近效期" },
+      { lot: "GLU-2604-08", project: "GLU", samples: 24, abnormal: 5, recheck: "是", recheckClass: "badge-c", suggestion: "生成试剂更换提醒，抽查近两小时结果" },
+      { lot: "APTT-2605-11", project: "APTT", samples: 6, abnormal: 2, recheck: "是", recheckClass: "badge-b", suggestion: "校准后重做双水平质控，必要时复测样本" },
+      { lot: "TNI-2606-02", project: "cTnI", samples: 9, abnormal: 1, recheck: "否", recheckClass: "badge-info", suggestion: "保留趋势观察，近效期前完成更换计划" },
+      { lot: "UAQC-2606-01", project: "尿干化学", samples: 0, abnormal: 0, recheck: "否", recheckClass: "badge-a", suggestion: "当前无批次风险，继续常规监测" }
+    ];
+
+    const qualityRecords = [
+      { time: "2026-06-11 10:42", user: "质控技师 王某", action: "确认质控事件", instrument: "IA-03", project: "CA125", result: "事件已确认，暂停自动放行", note: "模拟记录：等待复查质控品" },
+      { time: "2026-06-11 10:26", user: "AI 质控助手", action: "生成复查任务", instrument: "EL-02", project: "K / Na / Cl", result: "已生成双水平复查任务", note: "模拟任务，不连接仪器" },
+      { time: "2026-06-11 09:58", user: "组长 李某", action: "标记已校准", instrument: "CO-01", project: "APTT", result: "校准完成，待重新质控", note: "需人工确认质控曲线" },
+      { time: "2026-06-11 09:31", user: "库存管理员 赵某", action: "生成试剂更换提醒", instrument: "BA-02", project: "GLU", result: "已加入模拟采购提醒", note: "GLU-2604-08 剩余 4 天" },
+      { time: "2026-06-11 08:55", user: "审核技师 陈某", action: "查看受影响样本", instrument: "HA-01", project: "WBC", result: "已转人工快速浏览", note: "未发现真实患者信息" }
+    ];
+
     function formatDate(date) {
       return new Intl.DateTimeFormat("zh-CN", {
         year: "numeric",
@@ -2772,12 +3055,81 @@
       `).join("");
     }
 
+
+    function renderQualityInstruments() {
+      document.getElementById("qualityInstrumentTable").innerHTML = qualityInstruments.map(item => `
+        <tr>
+          <td>${item.name}</td><td>${item.code}</td><td>${item.group}</td>
+          <td><span class="status-cell ${item.statusTone}">${item.status}</span></td>
+          <td><span class="badge ${item.qcClass}">${item.qc}</span></td>
+          <td>${item.projects}</td><td>${item.calibratedAt}</td><td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderQualityEvents() {
+      document.getElementById("qualityEventTable").innerHTML = qualityEvents.map((item, index) => `
+        <tr data-index="${index}">
+          <td>${item.id}</td><td>${item.instrument}</td><td>${item.project}</td><td>${item.level}</td>
+          <td><span class="badge ${item.ruleClass}">${item.rule}</span></td>
+          <td><span class="badge ${item.statusClass}">${item.status}</span></td>
+          <td>${item.impact}</td><td>${item.action}</td>
+        </tr>
+      `).join("");
+
+      document.querySelectorAll("#qualityEventTable tr").forEach(row => {
+        row.addEventListener("click", () => selectQualityEvent(Number(row.dataset.index)));
+      });
+    }
+
+    function selectQualityEvent(index) {
+      const item = qualityEvents[index];
+      document.querySelectorAll("#qualityEventTable tr").forEach(row => row.classList.remove("selected"));
+      const selectedRow = document.querySelector(`#qualityEventTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
+
+      document.getElementById("qualityAiTitle").textContent = `${item.id} · ${item.project}`;
+      document.getElementById("qualityAiMeta").textContent = `${item.instrument}｜${item.level}｜${item.status}`;
+      document.getElementById("qualityAiConclusion").textContent = item.ai.conclusion;
+      document.getElementById("qualityAiRules").innerHTML = item.ai.rules.map(rule => `<li>${rule}</li>`).join("");
+      document.getElementById("qualityAiAction").textContent = item.ai.action;
+    }
+
+    function renderQualityReagents() {
+      document.getElementById("qualityReagentTable").innerHTML = qualityReagents.map(item => `
+        <tr>
+          <td>${item.name}</td><td>${item.lot}</td><td>${item.project}</td><td>${item.instrument}</td>
+          <td>${item.start}</td><td>${item.expiry}</td><td>${item.days} 天</td>
+          <td><span class="badge ${item.riskClass}">${item.risk}</span></td><td>${item.action}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderQualityBatchRisks() {
+      document.getElementById("qualityBatchRiskTable").innerHTML = qualityBatchRisks.map(item => `
+        <tr>
+          <td>${item.lot}</td><td>${item.project}</td><td>${item.samples}</td><td>${item.abnormal}</td>
+          <td><span class="badge ${item.recheckClass}">${item.recheck}</span></td><td>${item.suggestion}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderQualityRecords() {
+      document.getElementById("qualityRecordTable").innerHTML = qualityRecords.map(item => `
+        <tr>
+          <td>${item.time}</td><td>${item.user}</td><td>${item.action}</td><td>${item.instrument}</td>
+          <td>${item.project}</td><td>${item.result}</td><td>${item.note}</td>
+        </tr>
+      `).join("");
+    }
+
     function switchView(target) {
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
       document.getElementById("precheckView").classList.toggle("active", target === "precheck");
       document.getElementById("reviewView").classList.toggle("active", target === "review");
       document.getElementById("criticalView").classList.toggle("active", target === "critical");
+      document.getElementById("qualityView").classList.toggle("active", target === "quality");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
         item.classList.toggle("active", item.dataset.viewTarget === target);
@@ -2797,6 +3149,10 @@
 
       if (target === "critical") {
         selectCriticalValue(0);
+      }
+
+      if (target === "quality") {
+        selectQualityEvent(0);
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2863,6 +3219,13 @@
       });
     });
 
+    document.querySelectorAll("[data-quality-action]").forEach(button => {
+      button.addEventListener("click", () => {
+        const currentQualityEvent = document.getElementById("qualityAiTitle").textContent;
+        showToast(`模拟操作成功：${button.dataset.qualityAction}，当前质控事件：${currentQualityEvent}`);
+      });
+    });
+
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
@@ -2873,6 +3236,11 @@
     renderPrecheckResults();
     renderReviewResults();
     renderCriticalValues();
+    renderQualityInstruments();
+    renderQualityEvents();
+    renderQualityReagents();
+    renderQualityBatchRisks();
+    renderQualityRecords();
     renderPositiveAlerts();
     renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
@@ -2885,6 +3253,7 @@
     selectPrecheckResult(0);
     selectReviewResult(0);
     selectCriticalValue(0);
+    selectQualityEvent(0);
   </script>
 </body>
 </html>
