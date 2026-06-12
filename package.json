@@ -6,7 +6,10 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win"
+    "build": "electron-builder --win",
+    "db:init": "node scripts/db-init.js",
+    "db:reset": "node scripts/db-reset.js",
+    "db:check": "node scripts/db-check.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
@@ -17,7 +20,11 @@
     "files": [
       "index.html",
       "main.js",
-      "package.json"
+      "package.json",
+      "src/**/*",
+      "database/schema.sql",
+      "database/seed.sql",
+      "node_modules/sql.js/**/*"
     ],
     "win": {
       "target": "nsis",
@@ -34,5 +41,8 @@
   "devDependencies": {
     "electron": "^37.2.6",
     "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "sql.js": "^1.13.0"
   }
 }

@@ -1,5 +1,6 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
+const { initializeDatabase } = require('./src/database/initDatabase');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -20,7 +21,17 @@ const createMainWindow = () => {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 };
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  try {
+    const { databasePath, created } = await initializeDatabase({
+      userDataPath: app.getPath('userData')
+    });
+    console.log(`[TERRY-LIS] Local SQLite database ${created ? 'initialized' : 'ready'}: ${databasePath}`);
+  } catch (error) {
+    console.error('[TERRY-LIS] Failed to initialize local SQLite database.');
+    console.error(error);
+  }
+
   createMainWindow();
 
   app.on('activate', () => {
