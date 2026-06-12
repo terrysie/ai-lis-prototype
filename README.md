@@ -36,7 +36,7 @@ AI 判定卡片必须采用：
 
 ## Windows 桌面端运行与打包说明
 
-本项目在保留现有 GitHub Pages 静态网页版本的基础上，新增 Electron Windows 桌面端演示版能力。桌面版与网页版共用 `index.html` 作为入口，不接入后端服务，不接入数据库，当前仍然使用模拟数据，请勿录入或使用真实患者信息。
+本项目在保留现有 GitHub Pages 静态网页版本的基础上，新增 Electron Windows 桌面端演示版能力。桌面版与网页版共用 `index.html` 作为入口，不接入后端服务；当前页面仍然使用模拟数据，暂不从本地数据库读取，请勿录入或使用真实患者信息。
 
 ### 安装依赖
 
@@ -69,5 +69,53 @@ dist/
 ### 数据与部署说明
 
 - 当前桌面版仍然是静态演示原型，所有数据均为模拟数据。
-- 桌面版不接入后端服务，不接入数据库。
+- 桌面版不接入后端服务；当前页面暂不从本地数据库读取。
 - 现有 GitHub Pages 网页版本继续使用同一个 `index.html`，无需通过 Electron 即可作为静态页面部署。
+
+## 本地 SQLite 数据库初始化
+
+TERRY-LIS 已新增本地 SQLite 数据库初始化能力，用于根据 `database/schema.sql` 和 `database/seed.sql` 生成桌面端可验证的本地数据库文件。当前页面数据仍然使用模拟数据，暂时不会从数据库读取。
+
+### 初始化数据库
+
+```bash
+npm run db:init
+```
+
+该命令会检查本地数据库文件是否存在：
+
+- 如果数据库文件不存在，会创建数据库，并依次执行 `database/schema.sql` 与 `database/seed.sql`。
+- 如果数据库文件已存在，会跳过初始化，不会重复导入 `seed.sql`。
+
+### 重置数据库
+
+```bash
+npm run db:reset
+```
+
+该命令会删除旧的本地数据库文件，然后重新执行初始化流程。适合在调整演示数据或需要恢复初始状态时使用。
+
+### 检查数据库
+
+```bash
+npm run db:check
+```
+
+该命令会检查数据库文件是否存在，并输出 `users`、`roles`、`samples`、`test_items`、`test_results`、`ai_pre_reviews`、`result_reviews`、`critical_values`、`critical_notifications`、`instruments`、`qc_events`、`reagent_batches`、`reagent_expiry_alerts`、`infectious_alerts`、`system_rules`、`audit_logs` 等核心表的数据数量。
+
+### 数据库文件位置
+
+通过命令行脚本初始化时，数据库默认生成在：
+
+```text
+data/terry-lis.sqlite
+```
+
+Electron 桌面端启动时也会自动初始化本地数据库。桌面端会优先使用 Electron 的用户数据目录保存数据库，以避免写入安装目录；如需指定数据库路径，可以设置环境变量 `TERRY_LIS_DB_PATH`。
+
+### 数据声明
+
+- 当前数据库仍然只使用原型模拟数据，不包含真实患者信息。
+- 请勿在本地数据库中录入或保存真实患者姓名、身份证号、电话、住址等敏感信息。
+- 下一步会逐步把页面中的模拟数据替换为数据库读取，但本次只新增数据库初始化能力。
+- GitHub Pages 网页版本继续使用静态 `index.html`，不依赖本地 SQLite 数据库。

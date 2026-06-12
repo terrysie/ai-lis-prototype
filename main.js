@@ -1,5 +1,6 @@
 const path = require('path');
 const { app, BrowserWindow } = require('electron');
+const { initializeDatabase } = require('./src/database/initDatabase');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -20,7 +21,14 @@ const createMainWindow = () => {
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 };
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  try {
+    const { databasePath } = await initializeDatabase({ electronApp: app });
+    console.log(`TERRY-LIS 本地数据库路径：${databasePath}`);
+  } catch (error) {
+    console.error('TERRY-LIS 本地数据库初始化失败：', error);
+  }
+
   createMainWindow();
 
   app.on('activate', () => {
