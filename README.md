@@ -33,3 +33,41 @@ AI 判定卡片必须采用：
 - 代码先写在 index.html
 - 所有数据使用模拟数据
 - 保持 GitHub Pages 可部署
+
+## Windows 桌面端运行与打包说明
+
+本项目在保留现有 GitHub Pages 静态网页版本的基础上，新增 Electron Windows 桌面端演示版能力。桌面版与网页版共用 `index.html` 作为入口，不接入后端服务，不接入数据库，当前仍然使用模拟数据，请勿录入或使用真实患者信息。
+
+### 安装依赖
+
+```bash
+npm install
+```
+
+### 本地运行桌面版
+
+```bash
+npm start
+```
+
+Electron 将加载本地 `index.html`，以桌面窗口形式运行 TERRY-LIS 实验室信息管理系统原型。
+
+### 打包 Windows 版本
+
+```bash
+npm run build
+```
+
+打包工具使用 `electron-builder`，应用名称为 `TERRY-LIS`，Windows 安装包文件名中会包含 `TERRY-LIS`。
+
+### 打包产物位置
+
+```text
+dist/
+```
+
+### 数据与部署说明
+
+- 当前桌面版仍然是静态演示原型，所有数据均为模拟数据。
+- 桌面版不接入后端服务，不接入数据库。
+- 现有 GitHub Pages 网页版本继续使用同一个 `index.html`，无需通过 Electron 即可作为静态页面部署。

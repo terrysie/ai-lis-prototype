@@ -1,0 +1,38 @@
+{
+  "name": "terry-lis-desktop-demo",
+  "version": "1.0.0",
+  "description": "TERRY-LIS 实验室信息管理系统 Windows 桌面端静态演示原型",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.terrylis.desktop.demo",
+    "productName": "TERRY-LIS",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "main.js",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "TERRY-LIS-${version}-Windows-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TERRY-LIS"
+    }
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  }
+}
