@@ -1499,11 +1499,11 @@
         </section>
 
         <section class="metrics precheck-metrics" aria-label="AI 预审总览指标">
-          <article class="metric-card"><div class="metric-label">今日进入预审结果数 <span>总量</span></div><div class="metric-value">804</div><div class="metric-trend">覆盖生化、免疫、血常规等项目</div></article>
-          <article class="metric-card"><div class="metric-label">A 类自动放行数量 <span class="badge badge-a">A 类</span></div><div class="metric-value">512</div><div class="metric-trend">规则、质控、历史波动均通过</div></article>
-          <article class="metric-card"><div class="metric-label">B 类快速复核数量 <span class="badge badge-b">B 类</span></div><div class="metric-value">217</div><div class="metric-trend">轻度异常或需浏览图谱</div></article>
-          <article class="metric-card"><div class="metric-label">C 类重点复核数量 <span class="badge badge-c">C 类</span></div><div class="metric-value">75</div><div class="metric-trend">危急值、冲突或质控拦截</div></article>
-          <article class="metric-card"><div class="metric-label">AI 拦截高风险结果数量 <span class="badge badge-c">拦截</span></div><div class="metric-value">29</div><div class="metric-trend">含危急值、阳性、质控异常</div></article>
+          <article class="metric-card"><div class="metric-label">今日进入预审结果数 <span>总量</span></div><div class="metric-value" data-precheck-stat="total">804</div><div class="metric-trend">覆盖生化、免疫、血常规等项目</div></article>
+          <article class="metric-card"><div class="metric-label">A 类自动放行数量 <span class="badge badge-a">A 类</span></div><div class="metric-value" data-precheck-stat="autoRelease">512</div><div class="metric-trend">规则、质控、历史波动均通过</div></article>
+          <article class="metric-card"><div class="metric-label">B 类快速复核数量 <span class="badge badge-b">B 类</span></div><div class="metric-value" data-precheck-stat="quickReview">217</div><div class="metric-trend">轻度异常或需浏览图谱</div></article>
+          <article class="metric-card"><div class="metric-label">C 类重点复核数量 <span class="badge badge-c">C 类</span></div><div class="metric-value" data-precheck-stat="focusReview">75</div><div class="metric-trend">危急值、冲突或质控拦截</div></article>
+          <article class="metric-card"><div class="metric-label">AI 拦截高风险结果数量 <span class="badge badge-c">拦截</span></div><div class="metric-value" data-precheck-stat="riskAlerts">29</div><div class="metric-trend">含危急值、阳性、质控异常</div></article>
           <article class="metric-card"><div class="metric-label">人工干预次数 <span class="badge badge-info">留痕</span></div><div class="metric-value">46</div><div class="metric-trend">转复核、禁放行、通知记录</div></article>
         </section>
 
@@ -1546,7 +1546,7 @@
               <div class="table-wrap">
                 <table class="precheck-table">
                   <thead>
-                    <tr><th>样本号</th><th>项目</th><th>来源科室</th><th>当前结果摘要</th><th>AI 分级</th><th>命中规则</th><th>风险标签</th><th>建议动作</th></tr>
+                    <tr><th>样本号 / 患者编号</th><th>项目</th><th>来源科室</th><th>当前结果摘要</th><th>AI 分级</th><th>命中规则</th><th>风险标签</th><th>建议动作</th></tr>
                   </thead>
                   <tbody id="precheckTable"></tbody>
                 </table>
@@ -2290,7 +2290,7 @@
 
 
 
-    const precheckResults = [
+    let precheckResults = [
       {
         id: "P-260609-0108",
         project: "肝功能生化组合",
@@ -2404,6 +2404,80 @@
         detailAction: "建议人工复核结果，同时生成试剂更换提醒并查看受影响项目。"
       }
     ];
+
+
+    const getPrecheckGradeView = (aiLevel) => {
+      const normalizedLevel = String(aiLevel || "").trim().toLowerCase();
+      if (["a", "a_class", "auto_release", "low_risk", "低风险", "a 类", "a类", "自动放行"].includes(normalizedLevel)) {
+        return { text: "A 自动放行", badgeClass: "badge-a" };
+      }
+      if (["b", "b_class", "quick_review", "medium_risk", "中风险", "b 类", "b类", "快速复核"].includes(normalizedLevel)) {
+        return { text: "B 快速复核", badgeClass: "badge-b" };
+      }
+      return { text: "C 重点复核", badgeClass: "badge-c" };
+    };
+
+    const joinPrecheckList = (items, fallback = "--") => {
+      if (!Array.isArray(items) || items.length === 0) {
+        return fallback;
+      }
+
+      return items.join(" / ");
+    };
+
+    const toPrecheckResultView = (review) => {
+      const gradeView = getPrecheckGradeView(review.aiLevel);
+      const resultSummary = [review.itemName, review.resultValue, review.unit].filter(Boolean).join(" ") || "--";
+      const riskTag = joinPrecheckList(review.riskTags, "无风险标签");
+      const ruleHit = joinPrecheckList(review.hitRules, "未命中规则");
+
+      return {
+        id: review.sampleNo,
+        project: review.itemName || review.testGroup || "--",
+        source: review.department || "--",
+        summary: resultSummary,
+        grade: gradeView.text,
+        gradeClass: gradeView.badgeClass,
+        ruleHit,
+        riskTag,
+        action: review.suggestedAction || "--",
+        conclusion: review.conclusion || "--",
+        rules: Array.isArray(review.hitRules) && review.hitRules.length ? review.hitRules : ["未命中规则"],
+        detailAction: review.suggestedAction || "--",
+        patientCode: review.patientCode,
+        testGroup: review.testGroup,
+        resultId: review.resultId,
+        createdAt: review.createdAt
+      };
+    };
+
+    async function hydrateAiPreReviewData() {
+      if (!window.terryLisApi?.getAiPreReviewData) {
+        return;
+      }
+
+      try {
+        const data = await window.terryLisApi.getAiPreReviewData();
+        if (!data?.stats || !Array.isArray(data.reviews)) {
+          return;
+        }
+
+        ["total", "autoRelease", "quickReview", "focusReview", "riskAlerts"].forEach(key => {
+          const node = document.querySelector(`[data-precheck-stat="${key}"]`);
+          if (node) {
+            node.textContent = data.stats[key] ?? 0;
+          }
+        });
+
+        precheckResults = data.reviews.map(toPrecheckResultView);
+        renderPrecheckResults();
+        if (precheckResults.length > 0) {
+          selectPrecheckResult(0);
+        }
+      } catch (error) {
+        console.warn("TERRY-LIS AI 预审数据读取失败，继续使用静态模拟数据。", error);
+      }
+    }
 
 
     const reviewResults = [
@@ -3144,7 +3218,7 @@
     function renderPrecheckResults() {
       precheckTable.innerHTML = precheckResults.map((item, index) => `
         <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
-          <td><strong>${item.id}</strong></td>
+          <td><strong>${item.id}</strong><br /><small>${item.patientCode || "--"}</small></td>
           <td>${item.project}</td>
           <td>${item.source}</td>
           <td>${item.summary}</td>
@@ -3162,11 +3236,14 @@
 
     function selectPrecheckResult(index) {
       const item = precheckResults[index];
+      if (!item) {
+        return;
+      }
       document.querySelectorAll("#precheckTable tr").forEach(row => row.classList.remove("selected"));
-      document.querySelector(`#precheckTable tr[data-index="${index}"]`).classList.add("selected");
+      document.querySelector(`#precheckTable tr[data-index="${index}"]`)?.classList.add("selected");
 
       document.getElementById("precheckCardSample").textContent = `${item.id} · ${item.project}`;
-      document.getElementById("precheckCardMeta").textContent = `${item.source} / ${item.grade} / ${item.riskTag}`;
+      document.getElementById("precheckCardMeta").textContent = `${item.source} / ${item.testGroup || "--"} / ${item.grade} / ${item.riskTag}`;
       document.getElementById("precheckCardConclusion").textContent = item.conclusion;
       document.getElementById("precheckCardRules").innerHTML = item.rules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("precheckCardAction").textContent = item.detailAction;
@@ -3176,7 +3253,7 @@
     function renderReviewResults() {
       reviewTable.innerHTML = reviewResults.map((item, index) => `
         <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
-          <td><strong>${item.id}</strong></td>
+          <td><strong>${item.id}</strong><br /><small>${item.patientCode || "--"}</small></td>
           <td>${item.source}</td>
           <td>${item.project}</td>
           <td>${item.summary}</td>
@@ -3560,6 +3637,7 @@
       }
 
       if (target === "precheck") {
+        hydrateAiPreReviewData();
         selectPrecheckResult(0);
       }
 
