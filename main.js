@@ -1,6 +1,7 @@
 const path = require('path');
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const { initializeDatabase } = require('./src/database/initDatabase');
+const { getDashboardStats } = require('./src/database/dashboardStats');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -13,13 +14,16 @@ const createMainWindow = () => {
     resizable: true,
     maximizable: true,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
     }
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
 };
+
+ipcMain.handle('dashboard:getStats', async () => getDashboardStats({ electronApp: app }));
 
 app.whenReady().then(async () => {
   try {

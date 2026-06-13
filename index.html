@@ -1184,27 +1184,27 @@
       <section class="metrics" aria-label="首页核心指标">
         <article class="metric-card">
           <div class="metric-label">今日接收样本 <span>总量</span></div>
-          <div class="metric-value">1,286</div>
+          <div class="metric-value" data-dashboard-stat="todaySamples">1,286</div>
           <div class="metric-trend">较昨日 +8.4%</div>
         </article>
         <article class="metric-card">
           <div class="metric-label">AI 可自动放行 <span class="badge badge-a">A 类</span></div>
-          <div class="metric-value">742</div>
+          <div class="metric-value" data-dashboard-stat="aiAutoRelease">742</div>
           <div class="metric-trend">预计节省审核 4.1 小时</div>
         </article>
         <article class="metric-card">
           <div class="metric-label">快速复核 <span class="badge badge-b">B 类</span></div>
-          <div class="metric-value">318</div>
+          <div class="metric-value" data-dashboard-stat="quickReview">318</div>
           <div class="metric-trend">轻微异常或规则需确认</div>
         </article>
         <article class="metric-card">
           <div class="metric-label">重点复核 <span class="badge badge-c">C 类</span></div>
-          <div class="metric-value">61</div>
+          <div class="metric-value" data-dashboard-stat="focusReview">61</div>
           <div class="metric-trend">优先进入人工审核队列</div>
         </article>
         <article class="metric-card">
           <div class="metric-label">未闭环危急值 <span class="badge badge-c">待处理</span></div>
-          <div class="metric-value">7</div>
+          <div class="metric-value" data-dashboard-stat="openCriticalValues">7</div>
           <div class="metric-trend">2 条即将超时</div>
         </article>
       </section>
@@ -3022,6 +3022,28 @@
 
 
 
+    function formatDashboardStat(value) {
+      return new Intl.NumberFormat("zh-CN").format(Number(value) || 0);
+    }
+
+    async function hydrateDashboardStats() {
+      if (!window.terryLisApi?.getDashboardStats) {
+        return;
+      }
+
+      try {
+        const stats = await window.terryLisApi.getDashboardStats();
+        ["todaySamples", "aiAutoRelease", "quickReview", "focusReview", "openCriticalValues"].forEach(key => {
+          const element = document.querySelector(`[data-dashboard-stat="${key}"]`);
+          if (element && Number.isFinite(Number(stats?.[key]))) {
+            element.textContent = formatDashboardStat(stats[key]);
+          }
+        });
+      } catch (error) {
+        console.warn("TERRY-LIS 首页统计数据读取失败，继续使用静态模拟数据。", error);
+      }
+    }
+
 
 
     function renderPrecheckResults() {
@@ -3538,6 +3560,7 @@
 
     document.getElementById("currentDate").textContent = formatDate(new Date());
     renderSamples();
+    hydrateDashboardStats();
     renderReceivingSamples();
     renderPrecheckResults();
     renderReviewResults();
