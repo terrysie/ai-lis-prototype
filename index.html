@@ -1750,11 +1750,11 @@
         </section>
 
         <section class="metrics review-metrics" aria-label="审核总览指标">
-          <article class="metric-card"><div class="metric-label">今日待审核结果 <span>总量</span></div><div class="metric-value">286</div><div class="metric-trend">急诊 64 · 门诊 112 · 住院 110</div></article>
-          <article class="metric-card"><div class="metric-label">AI 建议自动放行 <span class="badge badge-a">A 类</span></div><div class="metric-value">168</div><div class="metric-trend">满足质控、历史和参考范围规则</div></article>
-          <article class="metric-card"><div class="metric-label">快速复核结果 <span class="badge badge-b">B 类</span></div><div class="metric-value">82</div><div class="metric-trend">轻度异常或需浏览趋势</div></article>
-          <article class="metric-card"><div class="metric-label">重点复核结果 <span class="badge badge-c">C 类</span></div><div class="metric-value">36</div><div class="metric-trend">含冲突、质控、样本和阳性风险</div></article>
-          <article class="metric-card"><div class="metric-label">危急值待确认 <span class="badge badge-c">优先</span></div><div class="metric-value">7</div><div class="metric-trend">需复核后进入闭环通知</div></article>
+          <article class="metric-card"><div class="metric-label">今日待审核结果 <span>总量</span></div><div class="metric-value" data-review-stat="pendingReview">286</div><div class="metric-trend">Electron 优先读取 SQLite</div></article>
+          <article class="metric-card"><div class="metric-label">全部结果 <span class="badge badge-info">总数</span></div><div class="metric-value" data-review-stat="totalResults">168</div><div class="metric-trend">test_results 当前记录数</div></article>
+          <article class="metric-card"><div class="metric-label">异常结果 <span class="badge badge-b">异常</span></div><div class="metric-value" data-review-stat="abnormalResults">82</div><div class="metric-trend">abnormal_flag 非正常</div></article>
+          <article class="metric-card"><div class="metric-label">危急值结果 <span class="badge badge-c">优先</span></div><div class="metric-value" data-review-stat="criticalResults">36</div><div class="metric-trend">critical_flag 命中危急值</div></article>
+          <article class="metric-card"><div class="metric-label">已审核结果 <span class="badge badge-a">完成</span></div><div class="metric-value" data-review-stat="reviewed">7</div><div class="metric-trend">review_status 已审核 / 已发布</div></article>
           <article class="metric-card"><div class="metric-label">已发布报告 <span class="badge badge-a">完成</span></div><div class="metric-value">519</div><div class="metric-trend">今日累计模拟发布</div></article>
         </section>
 
@@ -2480,7 +2480,7 @@
     }
 
 
-    const reviewResults = [
+    let reviewResults = [
       {
         id: "A-260611-1008",
         source: "消化内科",
@@ -3250,6 +3250,133 @@
     }
 
 
+    function getReviewGradeView(review) {
+      const normalizedLevel = String(review.aiLevel || "").trim().toLowerCase();
+      const critical = String(review.criticalFlag || "").trim().toLowerCase();
+      const abnormal = String(review.abnormalFlag || "").trim().toLowerCase();
+      if (["critical", "critical_high", "critical_low", "true", "危急值"].includes(critical) || ["high_risk", "c", "c_class", "重点复核"].includes(normalizedLevel)) {
+        return { text: "C 类：重点复核", badgeClass: "badge-c" };
+      }
+      if (!["normal", "none", "正常", ""].includes(abnormal) || ["medium_risk", "b", "b_class", "快速复核"].includes(normalizedLevel)) {
+        return { text: "B 类：快速复核", badgeClass: "badge-b" };
+      }
+      return { text: "A 类：自动放行", badgeClass: "badge-a" };
+    }
+
+    function getReviewStatusText(review) {
+      const status = review.reviewStatus || review.resultStatus || "pending_review";
+      const normalized = String(status).toLowerCase();
+      if (["approved", "reviewed", "released", "release"].includes(normalized)) return "已审核 / 已发布";
+      if (["pending", "pending_review", "reviewing", "auto_release_candidate"].includes(normalized)) return "待人工审核";
+      return status;
+    }
+
+    function getReviewRiskView(review) {
+      const critical = String(review.criticalFlag || "").toLowerCase();
+      const abnormal = String(review.abnormalFlag || "").toLowerCase();
+      if (["critical", "critical_high", "critical_low", "true"].includes(critical)) {
+        return { text: "危急值", badgeClass: "badge-c" };
+      }
+      if (!["normal", "none", "正常", ""].includes(abnormal)) {
+        return { text: review.abnormalFlag || "异常", badgeClass: "badge-b" };
+      }
+      return { text: "正常", badgeClass: "badge-a" };
+    }
+
+    function toResultReviewView(review) {
+      const grade = getReviewGradeView(review);
+      const risk = getReviewRiskView(review);
+      const resultValue = review.resultText || review.resultValue || "--";
+      const summary = [review.itemName, resultValue, review.unit].filter(Boolean).join(" ");
+      return {
+        id: review.sampleNo,
+        patientCode: review.patientCode,
+        source: review.department || "--",
+        project: review.itemName || review.testGroup || "--",
+        summary,
+        grade: grade.text,
+        gradeClass: grade.badgeClass,
+        riskTag: risk.text,
+        riskClass: risk.badgeClass,
+        status: getReviewStatusText(review),
+        action: review.aiSuggestedAction || review.reviewAction || "当前版本仅展示读取结果",
+        details: {
+          sample: review.sampleNo,
+          projectName: review.itemName || "--",
+          current: resultValue,
+          unit: review.unit || "--",
+          reference: review.referenceRange || "--",
+          critical: review.criticalFlag || "--",
+          sampleStatus: review.resultStatus || "--",
+          instrumentStatus: "--",
+          qcStatus: review.qcStatus || "--",
+          source: review.department || "--",
+          collectedAt: review.reportedAt || review.createdAt || "--",
+          reviewStatus: review.reviewStatus || review.resultStatus || "--"
+        },
+        ai: {
+          conclusion: review.aiConclusion || "暂无 AI 预审结论。",
+          rules: [
+            `异常标记：${review.abnormalFlag || "--"}`,
+            `危急值标记：${review.criticalFlag || "--"}`,
+            `质控状态：${review.qcStatus || "--"}`,
+            `审核人：${review.reviewerName || "未指定"}`,
+            `审核意见：${review.reviewOpinion || "暂无"}`
+          ],
+          action: review.aiSuggestedAction || review.reviewAction || "当前仅实现 SQLite 读取，不执行审核写入。"
+        },
+        history: [
+          { date: (review.createdAt || "--").slice(0, 10), item: review.itemName || "--", result: resultValue, unit: review.unit || "", change: "当前记录", width: 64 }
+        ],
+        delta: {
+          current: `${resultValue} ${review.unit || ""}`.trim(),
+          previous: "--",
+          change: "--",
+          threshold: review.referenceRange || "--",
+          judgement: risk.text,
+          action: review.aiSuggestedAction || "请结合数据库结果进行人工审核。"
+        },
+        conflicts: [
+          { items: review.testGroup || review.itemName || "--", note: `结果状态：${review.resultStatus || "--"}`, suggestion: review.reviewOpinion || review.aiSuggestedAction || "暂无额外提示。" }
+        ],
+        audit: [
+          { time: review.reviewedAt || review.createdAt || "--", user: review.reviewerName || "SQLite 记录", content: `审核状态：${review.reviewStatus || "--"}`, rules: review.aiLevel || "--", opinion: review.reviewOpinion || "暂无", status: review.reviewAction || review.resultStatus || "--" }
+        ]
+      };
+    }
+
+    function hydrateResultReviewStats(stats) {
+      ["totalResults", "pendingReview", "reviewed", "abnormalResults", "criticalResults"].forEach(key => {
+        const element = document.querySelector(`[data-review-stat="${key}"]`);
+        if (element && Number.isFinite(Number(stats?.[key]))) {
+          element.textContent = formatDashboardStat(stats[key]);
+        }
+      });
+    }
+
+    async function hydrateResultReviewData() {
+      if (!window.terryLisApi?.getResultReviewData) {
+        return;
+      }
+
+      try {
+        const data = await window.terryLisApi.getResultReviewData();
+        if (!Array.isArray(data?.reviews)) {
+          return;
+        }
+
+        hydrateResultReviewStats(data.stats || {});
+        reviewResults = data.reviews.map(toResultReviewView);
+        renderReviewResults();
+        if (reviewResults.length > 0) {
+          selectReviewResult(0);
+        }
+      } catch (error) {
+        console.warn("TERRY-LIS 结果审核数据读取失败，继续使用静态模拟数据。", error);
+      }
+    }
+
+
     function renderReviewResults() {
       reviewTable.innerHTML = reviewResults.map((item, index) => `
         <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
@@ -3642,6 +3769,7 @@
       }
 
       if (target === "review") {
+        hydrateResultReviewData();
         selectReviewResult(0);
       }
 

@@ -4,6 +4,7 @@ const { initializeDatabase } = require('./src/database/initDatabase');
 const { getDashboardStats } = require('./src/database/dashboardStats');
 const { getSampleReceptionData } = require('./src/database/sampleReception');
 const { getAiPreReviewData } = require('./src/database/aiPreReview');
+const { getResultReviewData } = require('./src/database/resultReview');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -28,6 +29,7 @@ const createMainWindow = () => {
 ipcMain.handle('dashboard:getStats', async () => getDashboardStats({ electronApp: app }));
 ipcMain.handle('sampleReception:getData', async () => getSampleReceptionData({ electronApp: app }));
 ipcMain.handle('aiPreReview:getData', async () => getAiPreReviewData({ electronApp: app }));
+ipcMain.handle('resultReview:getData', async () => getResultReviewData({ electronApp: app }));
 
 app.whenReady().then(async () => {
   try {
