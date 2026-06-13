@@ -160,6 +160,16 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 后续会逐步加入危急值通知确认、超时催办、闭环处理和审计日志，让危急值识别、通知、确认、处置和归档形成完整可追溯流程。
 
+## 质控看板数据库驱动
+
+Electron 桌面版质控看板现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `instruments`、`qc_events`、`reagent_batches`、`reagent_expiry_alerts`、`test_items` 表读取质控数据，并用读取结果更新现有质控看板页面的统计卡片、质控事件队列、仪器状态看板、试剂近效期预警和批次风险列表。
+
+本次修复补齐了 `qcDashboard:getData` IPC、`window.terryLisApi.getQcDashboardData()` preload API、`src/database/qcDashboard.js` 读取聚合逻辑，以及进入“质控看板”页面时的数据 hydration。质控看板不再在 Electron 桌面版中保留 `186`、`168`、`12`、`6` 等静态大数，而是映射为 SQLite seed 小数据：仪器数量来自 `instruments`，质控事件数量来自 `qc_events`，试剂批次数量来自 `reagent_batches`，试剂近效期预警与高风险试剂来自 `reagent_expiry_alerts`。
+
+GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本地 SQLite 能力，因此质控看板会继续使用 `index.html` 中已有的静态 fallback 模拟数据；如果 Electron IPC 调用失败，页面同样会保留静态模拟数据并输出 `console.warn`，避免影响静态网页部署。
+
+当前版本仅实现质控看板数据读取，不实现确认质控事件、暂停相关项目、生成复查任务、标记已校准、生成试剂更换提醒等写入操作。页面中的相关按钮仍为原型演示交互，不会修改数据库。
+
 ## 结果审核页面数据库驱动
 
 Electron 桌面版结果审核页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `samples`、`test_results`、`test_items`、`ai_pre_reviews`、`result_reviews`、`users` 表读取结果审核数据，并用读取结果更新结果审核总览统计、结果审核队列和右侧结果详情 / AI 建议 / 审核留痕卡片。
