@@ -1633,11 +1633,11 @@
         </section>
 
         <section class="metrics critical-center-metrics" aria-label="危急值总览指标">
-          <article class="metric-card"><div class="metric-label">今日危急值总数 <span>总量</span></div><div class="metric-value">24</div><div class="metric-trend">急诊 9 · 住院 11 · 门诊 4</div></article>
-          <article class="metric-card"><div class="metric-label">待确认 <span class="badge badge-c">优先</span></div><div class="metric-value">3</div><div class="metric-trend">需复核结果并匹配通知对象</div></article>
-          <article class="metric-card"><div class="metric-label">已通知 <span class="badge badge-b">跟踪</span></div><div class="metric-value">6</div><div class="metric-trend">等待临床接收确认</div></article>
-          <article class="metric-card"><div class="metric-label">超时催办 <span class="badge badge-c">超时</span></div><div class="metric-value">2</div><div class="metric-trend">已进入升级提醒队列</div></article>
-          <article class="metric-card"><div class="metric-label">已闭环 <span class="badge badge-a">归档</span></div><div class="metric-value">13</div><div class="metric-trend">通知、确认、处理均留痕</div></article>
+          <article class="metric-card"><div class="metric-label">今日危急值总数 <span>总量</span></div><div class="metric-value" data-critical-stat="totalCriticalValues">24</div><div class="metric-trend">Electron 桌面版优先读取 SQLite</div></article>
+          <article class="metric-card"><div class="metric-label">待确认 <span class="badge badge-c">优先</span></div><div class="metric-value" data-critical-stat="pendingConfirm">3</div><div class="metric-trend">需复核结果并匹配通知对象</div></article>
+          <article class="metric-card"><div class="metric-label">已通知 <span class="badge badge-b">跟踪</span></div><div class="metric-value" data-critical-stat="notified">6</div><div class="metric-trend">等待临床接收确认</div></article>
+          <article class="metric-card"><div class="metric-label">超时催办 <span class="badge badge-c">超时</span></div><div class="metric-value" data-critical-stat="overdue">2</div><div class="metric-trend">已进入升级提醒队列</div></article>
+          <article class="metric-card"><div class="metric-label">已闭环 <span class="badge badge-a">归档</span></div><div class="metric-value" data-critical-stat="closed">13</div><div class="metric-trend">通知、确认、处理均留痕</div></article>
           <article class="metric-card"><div class="metric-label">平均闭环时长 <span>效率</span></div><div class="metric-value">18m</div><div class="metric-trend">较昨日缩短 4 分钟</div></article>
         </section>
 
@@ -2717,7 +2717,7 @@
     ];
 
 
-    const criticalValues = [
+    let criticalValues = [
       {
         id: "CV-260611-001",
         sample: "S-260611-1176",
@@ -3525,6 +3525,123 @@
     }
 
 
+    function formatCriticalDateTime(value) {
+      if (!value) return "--";
+      return String(value).replace("T", " ").slice(0, 16);
+    }
+
+    function normalizeCriticalStatus(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+      if (["pending", "pending_confirm", "待确认", "待处理"].includes(normalized)) return { text: "待确认", badgeClass: "badge-c" };
+      if (["notified", "已通知"].includes(normalized)) return { text: "已通知", badgeClass: "badge-b" };
+      if (["overdue", "超时", "催办", "超时催办"].includes(normalized)) return { text: "超时催办", badgeClass: "badge-c" };
+      if (["closed", "completed", "已闭环"].includes(normalized)) return { text: "已闭环", badgeClass: "badge-a" };
+      if (["confirmed", "已确认"].includes(normalized)) return { text: "已确认", badgeClass: "badge-info" };
+      return { text: status || "待处理", badgeClass: "badge-info" };
+    }
+
+    function criticalActionByStatus(statusText) {
+      if (statusText === "待确认") return "复核结果并确认通知对象";
+      if (statusText === "已通知") return "等待临床确认，必要时电话登记";
+      if (statusText === "超时催办") return "发起超时催办并升级提醒";
+      if (statusText === "已闭环") return "查看完整留痕";
+      return "跟踪危急值处理状态";
+    }
+
+    function criticalRemainingByStatus(statusText) {
+      if (statusText === "超时催办") return "已超时";
+      if (statusText === "已闭环") return "已闭环";
+      if (statusText === "已通知") return "跟踪中";
+      return "待处理";
+    }
+
+    function toCriticalValueView(item, notifications) {
+      const status = normalizeCriticalStatus(item.status);
+      const resultText = `${item.resultValue || "--"}${item.unit ? ` ${item.unit}` : ""}`;
+      const itemNotifications = notifications.filter(record => Number(record.criticalValueId) === Number(item.id));
+      const notifyTime = formatCriticalDateTime(item.latestNotifiedAt);
+      const confirmTime = formatCriticalDateTime(item.latestConfirmedAt);
+      const notifyTarget = item.latestNotifyTarget || item.responsibleDoctor || "待匹配通知对象";
+      return {
+        id: `CV-${item.id}`,
+        sample: item.sampleNo || `样本 ${item.sampleId}`,
+        patientCode: item.patientCode || "--",
+        department: item.department || "--",
+        project: item.itemName || "--",
+        result: item.resultValue || "--",
+        unit: item.unit || "",
+        threshold: item.thresholdText || "--",
+        triggerTime: formatCriticalDateTime(item.triggeredAt),
+        notifyTarget,
+        status: status.text,
+        statusClass: status.badgeClass,
+        remaining: criticalRemainingByStatus(status.text),
+        action: criticalActionByStatus(status.text),
+        source: `${item.testGroup || "--"} / 患者编号 ${item.patientCode || "--"}`,
+        doctor: item.responsibleDoctor || notifyTarget,
+        notifyTime,
+        confirmTime,
+        confirmStatus: item.latestConfirmStatus || "--",
+        notifyMethod: item.latestNotifyMethod || "--",
+        systemNote: `${item.itemName || "项目"}结果 ${resultText} 命中危急值阈值（${item.thresholdText || "未记录阈值"}），当前状态为${status.text}。`,
+        ai: {
+          conclusion: `该记录来自 SQLite critical_values 表，当前危急值状态为${status.text}。`,
+          rules: [
+            `${item.itemName || "项目"}结果：${resultText}`,
+            `危急值阈值：${item.thresholdText || "--"}`,
+            `最近通知：${item.latestNotifyMethod || "--"} / ${notifyTarget} / 确认状态 ${item.latestConfirmStatus || "--"}`
+          ],
+          action: criticalActionByStatus(status.text)
+        },
+        timeline: [
+          ["结果触发危急值", formatCriticalDateTime(item.triggeredAt), "done", "SQLite critical_values 记录已生成。"],
+          ["已发送通知", notifyTime, item.latestNotifiedAt ? "done" : "pending", item.latestNotifiedAt ? `最近通知方式：${item.latestNotifyMethod || "--"}` : "暂无通知记录。"],
+          ["临床接收确认", confirmTime, item.latestConfirmedAt ? "done" : (status.text === "超时催办" ? "overdue" : "pending"), `确认状态：${item.latestConfirmStatus || "--"}`],
+          ["闭环归档", formatCriticalDateTime(item.closedAt), item.closedAt ? "done" : "pending", item.closedAt ? "危急值已闭环。" : "尚未闭环。"]
+        ],
+        notices: itemNotifications.length ? itemNotifications.map(record => [
+          formatCriticalDateTime(record.notifiedAt || record.createdAt),
+          record.confirmedAt ? "临床确认" : "通知记录",
+          record.notifyMethod || "--",
+          record.notifyTarget || "--",
+          record.notifiedBy || "--",
+          record.confirmStatus || "--",
+          record.remark || "--"
+        ]) : [[formatCriticalDateTime(item.triggeredAt), "系统识别", "系统消息", "危急值中心", "SQLite", "已生成", "暂无通知记录。"]]
+      };
+    }
+
+    function hydrateCriticalValuesStats(stats) {
+      ["totalCriticalValues", "pendingConfirm", "notified", "overdue", "closed"].forEach(key => {
+        const element = document.querySelector(`[data-critical-stat="${key}"]`);
+        if (element && stats[key] !== undefined) {
+          element.textContent = formatDashboardStat(stats[key]);
+        }
+      });
+    }
+
+    async function hydrateCriticalValuesData() {
+      if (!window.terryLisApi?.getCriticalValuesData) {
+        return;
+      }
+
+      try {
+        const data = await window.terryLisApi.getCriticalValuesData();
+        if (!Array.isArray(data?.criticalValues)) {
+          return;
+        }
+
+        hydrateCriticalValuesStats(data.stats || {});
+        criticalValues = data.criticalValues.map(item => toCriticalValueView(item, data.notifications || []));
+        renderCriticalValues();
+        if (criticalValues.length > 0) {
+          selectCriticalValue(0);
+        }
+      } catch (error) {
+        console.warn("TERRY-LIS 危急值中心数据读取失败，继续使用静态模拟数据。", error);
+      }
+    }
+
     function renderCriticalValues() {
       criticalTable.innerHTML = criticalValues.map((item, index) => `
         <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
@@ -3548,8 +3665,10 @@
 
     function selectCriticalValue(index) {
       const item = criticalValues[index];
+      if (!item) return;
       document.querySelectorAll("#criticalTable tr").forEach(row => row.classList.remove("selected"));
-      document.querySelector(`#criticalTable tr[data-index="${index}"]`).classList.add("selected");
+      const selectedRow = document.querySelector(`#criticalTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
 
       document.getElementById("criticalDetailTitle").textContent = `${item.sample} · ${item.project}`;
       document.getElementById("criticalDetailMeta").textContent = `${item.department} / ${item.source} / ${item.id}`;
@@ -3563,6 +3682,7 @@
 
       const detailFields = [
         ["样本号", item.sample],
+        ["患者编号", item.patientCode || "--"],
         ["项目名称", item.project],
         ["当前结果", `${item.result} ${item.unit}`],
         ["单位", item.unit],
@@ -3571,7 +3691,10 @@
         ["来源科室", item.department],
         ["责任医生 / 值班医生", item.doctor],
         ["触发时间", item.triggerTime],
+        ["通知方式", item.notifyMethod || "--"],
+        ["通知对象", item.notifyTarget || "--"],
         ["通知时间", item.notifyTime],
+        ["确认状态", item.confirmStatus || "--"],
         ["确认时间", item.confirmTime],
         ["当前状态", item.status]
       ];
@@ -3774,6 +3897,7 @@
       }
 
       if (target === "critical") {
+        hydrateCriticalValuesData();
         selectCriticalValue(0);
       }
 
