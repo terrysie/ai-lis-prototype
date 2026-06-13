@@ -1352,27 +1352,27 @@
         <section class="metrics receiving-metrics" aria-label="今日待签收样本统计">
           <article class="metric-card">
             <div class="metric-label">今日待签收 <span>总量</span></div>
-            <div class="metric-value">48</div>
+            <div class="metric-value" data-receiving-stat="totalSamples">48</div>
             <div class="metric-trend">普通样本 31 · 急诊样本 17</div>
           </article>
           <article class="metric-card">
             <div class="metric-label">可直接签收 <span class="badge badge-a">正常</span></div>
-            <div class="metric-value">29</div>
+            <div class="metric-value" data-receiving-stat="received">29</div>
             <div class="metric-trend">条码、容器、时效均通过</div>
           </article>
           <article class="metric-card">
             <div class="metric-label">异常待确认 <span class="badge badge-b">待判定</span></div>
-            <div class="metric-value">13</div>
+            <div class="metric-value" data-receiving-stat="abnormal">13</div>
             <div class="metric-trend">建议优先核对容器与样本量</div>
           </article>
           <article class="metric-card">
             <div class="metric-label">建议退样 <span class="badge badge-c">高风险</span></div>
-            <div class="metric-value">4</div>
+            <div class="metric-value" data-receiving-stat="rejected">4</div>
             <div class="metric-trend">已匹配退样原因模板</div>
           </article>
           <article class="metric-card">
             <div class="metric-label">补采任务 <span class="badge badge-info">待生成</span></div>
-            <div class="metric-value">6</div>
+            <div class="metric-value" data-receiving-stat="pendingReceive">6</div>
             <div class="metric-trend">儿科、急诊优先提醒</div>
           </article>
         </section>
@@ -2169,7 +2169,7 @@
 
 
 
-    const receivingSamples = [
+    let receivingSamples = [
       {
         id: "R-260609-0018",
         source: "门诊",
@@ -3045,6 +3045,101 @@
     }
 
 
+    function formatReceptionTime(value) {
+      if (!value) return "--";
+      const parts = String(value).split(" ");
+      return parts[1] ? parts[1].slice(0, 5) : String(value);
+    }
+
+    function getReceptionStatusView(status) {
+      const normalized = String(status || "").toLowerCase();
+      if (["pending_receive", "pending", "待签收"].includes(normalized)) {
+        return { label: "待签收", badgeClass: "badge-info", action: "确认签收" };
+      }
+      if (["received", "reviewing", "released", "critical_pending", "已签收"].includes(normalized)) {
+        return { label: "已签收", badgeClass: "badge-a", action: "查看流转记录" };
+      }
+      if (["abnormal", "异常"].includes(normalized)) {
+        return { label: "异常", badgeClass: "badge-b", action: "人工复核" };
+      }
+      if (["rejected", "退样"].includes(normalized)) {
+        return { label: "退样", badgeClass: "badge-c", action: "查看退样原因" };
+      }
+      return { label: status || "未知", badgeClass: "badge-gray", action: "查看详情" };
+    }
+
+    function mapDatabaseSampleToReceivingSample(sample) {
+      const statusView = getReceptionStatusView(sample.status);
+      const collectedAt = formatReceptionTime(sample.collectedAt);
+      const arrivedAt = formatReceptionTime(sample.receivedAt);
+      const sampleTypeText = [sample.sampleType, sample.containerType].filter(Boolean).join(" / ") || "--";
+      const projectText = sample.testGroup || "未分组项目";
+      const sourceText = [sample.sourceType, sample.department].filter(Boolean).join(" · ") || "--";
+      const basic = `${sample.patientCode || "--"}，${sourceText}，${sampleTypeText}，采样时间 ${collectedAt}，签收时间 ${arrivedAt}。`;
+      const ruleCheck = [
+        sample.sampleNo ? "样本条码已登记" : "样本条码缺失",
+        sampleTypeText !== "--" ? `样本类型 / 容器：${sampleTypeText}` : "样本类型或容器未登记",
+        sample.receivedAt ? "已有签收时间记录" : "尚未记录签收时间"
+      ];
+      const conclusion = sample.rejectReason
+        ? `当前样本存在退样原因：${sample.rejectReason}`
+        : `当前样本状态为 ${statusView.label}，数据来自本地 SQLite samples 表。`;
+
+      return {
+        id: sample.sampleNo,
+        source: sourceText,
+        project: projectText,
+        type: sampleTypeText,
+        collectedAt,
+        arrivedAt,
+        status: statusView.label,
+        statusClass: statusView.badgeClass,
+        action: statusView.action,
+        basic,
+        ruleCheck,
+        conclusion,
+        aiRules: [
+          `数据库状态：${sample.status}`,
+          `优先级：${sample.priority || "routine"}`,
+          sample.rejectReason ? `退样原因：${sample.rejectReason}` : "未记录退样原因"
+        ],
+        aiAction: sample.rejectReason || statusView.label === "退样"
+          ? "建议查看退样原因并联系来源科室。"
+          : "当前版本仅展示数据库读取结果，不执行真实签收、退样或补采写入。"
+      };
+    }
+
+    function hydrateReceivingStats(stats) {
+      ["totalSamples", "pendingReceive", "received", "abnormal", "rejected"].forEach(key => {
+        const element = document.querySelector(`[data-receiving-stat="${key}"]`);
+        if (element && Number.isFinite(Number(stats?.[key]))) {
+          element.textContent = formatDashboardStat(stats[key]);
+        }
+      });
+    }
+
+    async function hydrateSampleReceptionData() {
+      if (!window.terryLisApi?.getSampleReceptionData) {
+        return;
+      }
+
+      try {
+        const data = await window.terryLisApi.getSampleReceptionData();
+        if (!Array.isArray(data?.samples)) {
+          return;
+        }
+
+        hydrateReceivingStats(data.stats || {});
+        receivingSamples = data.samples.map(mapDatabaseSampleToReceivingSample);
+        renderReceivingSamples();
+        if (receivingSamples.length > 0) {
+          selectReceivingSample(0);
+        }
+      } catch (error) {
+        console.warn("TERRY-LIS 样本签收数据读取失败，继续使用静态模拟数据。", error);
+      }
+    }
+
 
     function renderPrecheckResults() {
       precheckTable.innerHTML = precheckResults.map((item, index) => `
@@ -3192,8 +3287,10 @@
 
     function selectReceivingSample(index) {
       const sample = receivingSamples[index];
+      if (!sample) return;
       document.querySelectorAll("#receivingTable tr").forEach(row => row.classList.remove("selected"));
-      document.querySelector(`#receivingTable tr[data-index="${index}"]`).classList.add("selected");
+      const selectedRow = document.querySelector(`#receivingTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
 
       document.getElementById("receivingCardSample").textContent = `${sample.id} · ${sample.project}`;
       document.getElementById("receivingCardMeta").textContent = `${sample.source} / ${sample.type} / ${sample.status}`;
@@ -3458,6 +3555,7 @@
       });
 
       if (target === "receiving") {
+        hydrateSampleReceptionData();
         selectReceivingSample(0);
       }
 
@@ -3562,6 +3660,7 @@
     renderSamples();
     hydrateDashboardStats();
     renderReceivingSamples();
+    hydrateSampleReceptionData();
     renderPrecheckResults();
     renderReviewResults();
     renderCriticalValues();
