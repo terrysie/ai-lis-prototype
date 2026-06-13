@@ -2005,11 +2005,11 @@
         </section>
 
         <section class="metrics settings-metrics" aria-label="系统设置总览">
-          <article class="metric-card"><div class="metric-label">当前启用规则数 <span class="badge badge-a">启用</span></div><div class="metric-value">42</div><div class="metric-trend">覆盖预审、危急值、阳性与试剂预警</div></article>
-          <article class="metric-card"><div class="metric-label">当前用户角色数 <span>角色</span></div><div class="metric-value">6</div><div class="metric-trend">管理员至只读观察员</div></article>
-          <article class="metric-card"><div class="metric-label">自动放行规则数 <span class="badge badge-info">放行</span></div><div class="metric-value">12</div><div class="metric-trend">3 条待审核，1 条暂停</div></article>
-          <article class="metric-card"><div class="metric-label">危急值规则数 <span class="badge badge-c">高风险</span></div><div class="metric-value">9</div><div class="metric-trend">急诊与住院阈值分组</div></article>
-          <article class="metric-card"><div class="metric-label">阳性预警规则数 <span class="badge badge-b">预警</span></div><div class="metric-value">6</div><div class="metric-trend">院感提醒与上报提示留痕</div></article>
+          <article class="metric-card"><div class="metric-label">用户总数 <span class="badge badge-info">用户</span></div><div class="metric-value" id="settingsUsersTotal">4</div><div class="metric-trend">Electron 优先读取 SQLite users 表</div></article>
+          <article class="metric-card"><div class="metric-label">启用用户数量 <span class="badge badge-a">启用</span></div><div class="metric-value" id="settingsActiveUsers">4</div><div class="metric-trend">按 active / enabled / 正常 / 启用统计</div></article>
+          <article class="metric-card"><div class="metric-label">角色数量 <span>角色</span></div><div class="metric-value" id="settingsRolesTotal">6</div><div class="metric-trend">管理员至只读观察员</div></article>
+          <article class="metric-card"><div class="metric-label">生效规则数量 <span class="badge badge-a">规则</span></div><div class="metric-value" id="settingsActiveRules">42</div><div class="metric-trend">来自 SQLite system_rules 表</div></article>
+          <article class="metric-card"><div class="metric-label">审计日志数量 <span class="badge badge-info">审计</span></div><div class="metric-value" id="settingsAuditLogsTotal">5</div><div class="metric-trend">来自 SQLite audit_logs 表</div></article>
           <article class="metric-card"><div class="metric-label">试剂预警规则数 <span class="badge badge-b">库存</span></div><div class="metric-value">5</div><div class="metric-trend">30 / 14 / 7 / 0 天分层</div></article>
           <article class="metric-card"><div class="metric-label">今日配置变更数 <span>变更</span></div><div class="metric-value">8</div><div class="metric-trend">含接口测试与规则编辑</div></article>
           <article class="metric-card"><div class="metric-label">待审核配置变更数 <span class="badge badge-b">待审</span></div><div class="metric-value">3</div><div class="metric-trend">需科主任或信息科复核</div></article>
@@ -2039,9 +2039,19 @@
           </div>
         </section>
 
+        <section class="panel settings-panel" aria-label="用户列表">
+          <div class="panel-header"><div><h3 class="panel-title">用户列表</h3><p class="panel-subtitle">Electron 桌面版从 SQLite users 表读取用户、角色、科室和状态；网页端保留静态 fallback。</p></div><span class="badge badge-info">用户治理</span></div>
+          <div class="panel-body table-wrap"><table class="role-table"><thead><tr><th>用户名</th><th>显示名</th><th>角色</th><th>科室</th><th>状态</th></tr></thead><tbody id="settingsUserTable"></tbody></table></div>
+        </section>
+
         <section class="panel settings-panel" aria-label="角色与权限配置">
-          <div class="panel-header"><div><h3 class="panel-title">角色与权限配置</h3><p class="panel-subtitle">按角色、岗位、可访问模块和关键操作展示模拟权限矩阵。</p></div><span class="badge badge-info">权限治理</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">角色与权限配置</h3><p class="panel-subtitle">Electron 桌面版从 SQLite roles 表读取角色说明、权限摘要和状态；网页端保留静态 fallback。</p></div><span class="badge badge-info">权限治理</span></div>
           <div class="panel-body table-wrap"><table class="role-table"><thead><tr><th>角色名称</th><th>适用岗位</th><th>可访问模块</th><th>可执行操作</th><th>是否需要二次确认</th><th>状态</th></tr></thead><tbody id="roleConfigTable"></tbody></table></div>
+        </section>
+
+        <section class="panel settings-panel" aria-label="系统规则列表">
+          <div class="panel-header"><div><h3 class="panel-title">系统规则列表</h3><p class="panel-subtitle">Electron 桌面版从 SQLite system_rules 表读取规则类型、版本、状态、创建人与审批人。</p></div><span class="badge badge-a">数据库规则</span></div>
+          <div class="panel-body table-wrap"><table class="auto-release-table"><thead><tr><th>规则类型</th><th>规则名称</th><th>版本</th><th>状态</th><th>创建人</th><th>审批人</th><th>更新时间</th></tr></thead><tbody id="systemRuleTable"></tbody></table></div>
         </section>
 
         <section class="panel settings-panel" aria-label="自动放行规则配置">
@@ -2992,7 +3002,14 @@
       { time: "2026-06-11 08:55", user: "审核技师 陈某", action: "查看受影响样本", instrument: "HA-01", project: "WBC", result: "已转人工快速浏览", note: "未发现真实患者信息" }
     ];
 
-    const roleConfigs = [
+    let settingsUsers = [
+      { username: "terry.admin", displayName: "系统管理员", roleName: "管理员", department: "检验科", status: "启用" },
+      { username: "chen.review", displayName: "陈审核", roleName: "审核技师", department: "生化组", status: "启用" },
+      { username: "li.receive", displayName: "李签收", roleName: "签收人员", department: "样本接收室", status: "启用" },
+      { username: "wang.qc", displayName: "王质控", roleName: "质控负责人", department: "免疫组", status: "启用" }
+    ];
+
+    let roleConfigs = [
       { role: "管理员", post: "信息科 / LIS 管理员", modules: "全部模块、系统设置、审计日志", actions: "查看结果、修改规则、查看审计日志、测试接口连接", confirm: "关键规则和接口变更需要", status: "启用" },
       { role: "审核技师", post: "检验审核岗位", modules: "工作台、AI 预审、结果审核、危急值中心", actions: "查看结果、审核发布、自动放行确认、危急值闭环", confirm: "自动放行批量确认需要", status: "启用" },
       { role: "签收人员", post: "前处理 / 标本接收", modules: "样本签收、工作台", actions: "样本签收、退样登记、补采提醒", confirm: "退样登记需要", status: "启用" },
@@ -3047,7 +3064,12 @@
       { name: "危急值消息推送", object: "院内消息系统", type: "消息队列", status: "待配置", sync: "--", errors: "--", action: "补充消息模板和接收人规则" }
     ];
 
-    const settingsAudits = [
+    let systemRules = [
+      { ruleType: "critical_value", ruleName: "血钾危急值规则", versionNo: "v1.0", status: "启用", createdBy: "管理员", approvedBy: "审核技师", updatedAt: "2026-06-01 09:30:00" },
+      { ruleType: "ai_pre_review", ruleName: "正常结果自动放行候选规则", versionNo: "v1.0", status: "启用", createdBy: "管理员", approvedBy: "审核技师", updatedAt: "2026-06-01 09:40:00" }
+    ];
+
+    let settingsAudits = [
       { time: "2026-06-11 10:52", user: "管理员 周某", module: "自动放行规则", content: "编辑门诊生化常规自动放行阈值", before: "Delta < 15%", after: "Delta < 20%", review: "待审核", note: "模拟记录，需科主任确认" },
       { time: "2026-06-11 10:31", user: "质控负责人 王某", module: "试剂预警规则", content: "启用免疫发光高敏项目近效期规则", before: "暂停", after: "启用", review: "已通过", note: "关联质控复查" },
       { time: "2026-06-11 09:48", user: "信息科 李某", module: "仪器与接口配置", content: "测试条码扫描服务连接", before: "异常 6 次", after: "异常 5 次", review: "无需审核", note: "仍需排查网络" },
@@ -3831,12 +3853,103 @@
     }
 
 
+    function normalizeSettingsStatus(status) {
+      const activeStatuses = ["active", "enabled", "正常", "启用", "生效"];
+      if (activeStatuses.includes(status)) return "启用";
+      if (status === "draft") return "待审核";
+      if (status === "disabled") return "暂停";
+      return status || "--";
+    }
+
+    function renderSettingsMetrics(stats = {}) {
+      const metricMap = {
+        settingsUsersTotal: stats.usersTotal,
+        settingsActiveUsers: stats.activeUsers,
+        settingsRolesTotal: stats.rolesTotal,
+        settingsActiveRules: stats.activeRules,
+        settingsAuditLogsTotal: stats.auditLogsTotal
+      };
+
+      Object.entries(metricMap).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element && value !== undefined && value !== null) {
+          element.textContent = value;
+        }
+      });
+    }
+
     function getRuleStatusClass(status) {
       if (["启用", "正常", "已通过", "无需审核"].includes(status)) return "normal";
       if (["待审核", "延迟", "待配置"].includes(status)) return "warning";
       if (["暂停", "异常", "未通过"].includes(status)) return "danger";
       if (["已废弃"].includes(status)) return "gray";
       return "watch";
+    }
+
+    function renderSettingsUsers() {
+      const table = document.getElementById("settingsUserTable");
+      if (!table) return;
+      table.innerHTML = settingsUsers.map(item => `
+        <tr>
+          <td><strong>${item.username || "--"}</strong></td><td>${item.displayName || "--"}</td><td>${item.roleName || "--"}</td><td>${item.department || "--"}</td>
+          <td><span class="status-cell ${getRuleStatusClass(normalizeSettingsStatus(item.status))}">${normalizeSettingsStatus(item.status)}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderSystemRules() {
+      const table = document.getElementById("systemRuleTable");
+      if (!table) return;
+      table.innerHTML = systemRules.map(item => `
+        <tr>
+          <td>${item.ruleType || "--"}</td><td><strong>${item.ruleName || "--"}</strong></td><td>${item.versionNo || "--"}</td>
+          <td><span class="status-cell ${getRuleStatusClass(normalizeSettingsStatus(item.status))}">${normalizeSettingsStatus(item.status)}</span></td>
+          <td>${item.createdByName || item.createdBy || "--"}</td><td>${item.approvedByName || item.approvedBy || "--"}</td><td>${item.updatedAt || "--"}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function hydrateSystemSettingsData() {
+      if (!window.terryLisApi?.getSystemSettingsData) {
+        return;
+      }
+
+      try {
+        const data = await window.terryLisApi.getSystemSettingsData();
+        const userNameById = new Map((data.users || []).map(user => [user.id, user.displayName || user.username]));
+        settingsUsers = data.users || settingsUsers;
+        roleConfigs = (data.roles || []).map(role => ({
+          role: role.roleName,
+          post: role.description || "--",
+          modules: (role.permissions || []).filter(item => String(item).startsWith("模块:")).map(item => String(item).replace("模块:", "")).join("、") || "--",
+          actions: (role.permissions || []).filter(item => String(item).startsWith("操作:")).map(item => String(item).replace("操作:", "")).join("、") || (role.permissions || []).join("、") || "--",
+          confirm: "关键配置变更需按院内制度二次确认",
+          status: normalizeSettingsStatus(role.status)
+        }));
+        systemRules = (data.systemRules || []).map(rule => ({
+          ...rule,
+          status: normalizeSettingsStatus(rule.status),
+          createdByName: userNameById.get(rule.createdBy),
+          approvedByName: userNameById.get(rule.approvedBy)
+        }));
+        settingsAudits = (data.auditLogs || []).map(log => ({
+          time: log.createdAt || "--",
+          user: log.displayName || log.username || "系统",
+          module: log.moduleName || "--",
+          content: log.operationType || "--",
+          before: log.targetTable || "--",
+          after: log.targetId ? `ID ${log.targetId}` : "--",
+          review: "已记录",
+          note: log.remark || "--"
+        }));
+        renderSettingsMetrics(data.stats);
+        renderSettingsUsers();
+        renderRoleConfigs();
+        renderSystemRules();
+        renderSettingsAudits();
+      } catch (error) {
+        console.warn("系统设置页面读取 SQLite 数据失败，继续使用静态 fallback 数据。", error);
+      }
     }
 
     function renderRoleConfigs() {
@@ -3949,6 +4062,10 @@
         selectQualityEvent(0);
       }
 
+      if (target === "settings") {
+        hydrateSystemSettingsData();
+      }
+
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
@@ -4044,7 +4161,9 @@
     renderQualityBatchRisks();
     renderQualityRecords();
     hydrateQcDashboardData();
+    renderSettingsUsers();
     renderRoleConfigs();
+    renderSystemRules();
     renderAutoReleaseRules();
     renderAiPrecheckRules();
     renderCriticalRules();

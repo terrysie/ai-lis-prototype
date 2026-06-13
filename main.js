@@ -7,6 +7,7 @@ const { getAiPreReviewData } = require('./src/database/aiPreReview');
 const { getResultReviewData } = require('./src/database/resultReview');
 const { getCriticalValuesData } = require('./src/database/criticalValues');
 const { getQcDashboardData } = require('./src/database/qcDashboard');
+const { getSystemSettingsData } = require('./src/database/systemSettings');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -34,6 +35,7 @@ ipcMain.handle('aiPreReview:getData', async () => getAiPreReviewData({ electronA
 ipcMain.handle('resultReview:getData', async () => getResultReviewData({ electronApp: app }));
 ipcMain.handle('criticalValues:getData', async () => getCriticalValuesData({ electronApp: app }));
 ipcMain.handle('qcDashboard:getData', async () => getQcDashboardData({ electronApp: app }));
+ipcMain.handle('systemSettings:getData', async () => getSystemSettingsData({ electronApp: app }));
 
 app.whenReady().then(async () => {
   try {
