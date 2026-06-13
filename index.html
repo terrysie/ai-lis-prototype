@@ -1846,12 +1846,13 @@
         </section>
 
         <section class="metrics quality-metrics" aria-label="质控总览指标">
-          <article class="metric-card"><div class="metric-label">今日质控项目数 <span>总量</span></div><div class="metric-value">186</div><div class="metric-trend">生化 72 · 免疫 44 · 血液 38 · 凝血 32</div></article>
-          <article class="metric-card"><div class="metric-label">质控通过数 <span class="badge badge-a">在控</span></div><div class="metric-value">168</div><div class="metric-trend">符合模拟室内质控规则</div></article>
-          <article class="metric-card"><div class="metric-label">质控预警数 <span class="badge badge-b">关注</span></div><div class="metric-value">12</div><div class="metric-trend">主要为 1-2s 与趋势异常</div></article>
-          <article class="metric-card"><div class="metric-label">质控失控数 <span class="badge badge-c">失控</span></div><div class="metric-value">6</div><div class="metric-trend">已限制相关项目自动放行</div></article>
-          <article class="metric-card"><div class="metric-label">受影响检验项目数 <span class="badge badge-b">影响</span></div><div class="metric-value">14</div><div class="metric-trend">含 GLU、CA125、cTnI 等模拟项目</div></article>
-          <article class="metric-card"><div class="metric-label">待处理质控事件数 <span class="badge badge-c">待办</span></div><div class="metric-value">8</div><div class="metric-trend">3 条建议优先处理</div></article>
+          <article class="metric-card"><div class="metric-label">仪器总数 <span>总量</span></div><div class="metric-value" data-quality-stat="instrumentsTotal">186</div><div class="metric-trend">Electron 中优先读取 SQLite 仪器表</div></article>
+          <article class="metric-card"><div class="metric-label">运行中仪器数量 <span class="badge badge-a">在控</span></div><div class="metric-value" data-quality-stat="instrumentsRunning">168</div><div class="metric-trend">运行中 / online / normal / active</div></article>
+          <article class="metric-card"><div class="metric-label">质控事件数量 <span class="badge badge-b">事件</span></div><div class="metric-value" data-quality-stat="qcEventsTotal">12</div><div class="metric-trend">来自 qc_events 表</div></article>
+          <article class="metric-card"><div class="metric-label">未处理质控事件数 <span class="badge badge-c">待办</span></div><div class="metric-value" data-quality-stat="qcEventsOpen">6</div><div class="metric-trend">未关闭 / 未完成 / 未处理</div></article>
+          <article class="metric-card"><div class="metric-label">试剂批次数量 <span class="badge badge-b">批次</span></div><div class="metric-value" data-quality-stat="reagentBatchesTotal">14</div><div class="metric-trend">来自 reagent_batches 表</div></article>
+          <article class="metric-card"><div class="metric-label">试剂近效期预警数量 <span class="badge badge-b">预警</span></div><div class="metric-value" data-quality-stat="reagentExpiryAlerts">8</div><div class="metric-trend">来自 reagent_expiry_alerts 表</div></article>
+          <article class="metric-card"><div class="metric-label">高风险试剂数量 <span class="badge badge-c">高风险</span></div><div class="metric-value" data-quality-stat="highRiskReagents">2</div><div class="metric-trend">high / 高风险 / 已过期 / expired</div></article>
         </section>
 
         <p class="quality-risk-note"><strong>责任边界提示：</strong>AI 仅用于质控风险提示、规则解释和流程辅助，不替代检验科质控负责人、审核技师或医院制度规定的最终判断。</p>
@@ -1943,7 +1944,7 @@
             <div class="panel-body">
               <div class="table-wrap">
                 <table class="qc-batch-table">
-                  <thead><tr><th>批号</th><th>关联项目</th><th>受影响样本数</th><th>最近异常次数</th><th>是否需要复查</th><th>系统建议</th></tr></thead>
+                  <thead><tr><th>试剂名称</th><th>批号</th><th>适用项目</th><th>适用仪器</th><th>有效期</th><th>库存 / 状态</th></tr></thead>
                   <tbody id="qualityBatchRiskTable"></tbody>
                 </table>
               </div>
@@ -2948,7 +2949,7 @@
     let toastTimer;
 
 
-    const qualityInstruments = [
+    let qualityInstruments = [
       { name: "全自动生化分析仪 BA-02", code: "BA-02", group: "生化组", status: "正常", statusTone: "normal", qc: "今日质控通过", qcClass: "badge-a", projects: "GLU、ALT、Cr、电解质", calibratedAt: "2026-06-11 07:20", action: "继续观察，保持自动放行前置条件" },
       { name: "全自动免疫分析仪 IA-03", code: "IA-03", group: "免疫组", status: "质控失控", statusTone: "danger", qc: "1-3s 失控", qcClass: "badge-c", projects: "CA125、cTnI、TSH", calibratedAt: "2026-06-10 16:40", action: "暂停相关项目，复查质控品并评估校准" },
       { name: "血液分析仪 HA-01", code: "HA-01", group: "血液组", status: "质控预警", statusTone: "warning", qc: "1-2s 预警", qcClass: "badge-b", projects: "WBC、HGB、PLT", calibratedAt: "2026-06-09 08:15", action: "复查质控趋势，重点关注白细胞通道" },
@@ -2957,7 +2958,7 @@
       { name: "电解质分析仪 EL-02", code: "EL-02", group: "急诊组", status: "暂停使用", statusTone: "danger", qc: "R-4s 失控", qcClass: "badge-c", projects: "K、Na、Cl", calibratedAt: "2026-06-10 22:30", action: "暂停使用并切换备用仪器" }
     ];
 
-    const qualityEvents = [
+    let qualityEvents = [
       { id: "QC-260611-001", instrument: "全自动免疫分析仪 IA-03", project: "CA125", level: "水平 2", rule: "1-3s 失控", ruleClass: "badge-c", status: "待确认", statusClass: "badge-c", impact: "肿瘤标志物自动放行暂停，影响 18 份模拟样本", action: "暂停自动放行并复查质控品", ai: { conclusion: "该项目触发 1-3s 失控规则，建议暂停自动放行并复查质控品。", rules: ["同一质控水平结果超过均值 ±3SD", "关联仪器今日已有 2 次预警", "同批试剂 CA-2605-18 距有效期不足 10 天"], action: "暂停相关项目自动放行，复查质控品，必要时进行仪器校准并记录处理过程。" } },
       { id: "QC-260611-002", instrument: "电解质分析仪 EL-02", project: "K / Na / Cl", level: "水平 1 + 水平 2", rule: "R-4s 失控", ruleClass: "badge-c", status: "处理中", statusClass: "badge-b", impact: "急诊电解质 11 份模拟样本需复核", action: "暂停使用并切换备用仪器", ai: { conclusion: "电解质项目命中 R-4s 失控，提示随机误差风险较高。", rules: ["同批检测中两个质控水平差值超过 4SD", "当前仪器已被标记为暂停使用", "急诊来源结果对时效和准确性敏感"], action: "建议立即暂停 EL-02，启用备用仪器，复查质控品并核对近期已发布结果。" } },
       { id: "QC-260611-003", instrument: "血液分析仪 HA-01", project: "WBC", level: "水平 1", rule: "1-2s 预警", ruleClass: "badge-b", status: "已复查", statusClass: "badge-info", impact: "血常规自动放行降级为人工快速浏览", action: "查看趋势并复查散点图", ai: { conclusion: "白细胞通道触发 1-2s 预警，暂未达到失控，但需连续观察。", rules: ["单次质控结果超过均值 ±2SD", "仪器今日出现 3 次模拟通道报警", "复查结果回落但趋势仍偏高"], action: "建议保留人工浏览，关注下一批质控趋势；如再次预警，升级为质控事件处理。" } },
@@ -2966,7 +2967,7 @@
       { id: "QC-260611-006", instrument: "全自动免疫分析仪 IA-03", project: "cTnI", level: "水平 3", rule: "4-1s 趋势异常", ruleClass: "badge-b", status: "已关闭", statusClass: "badge-gray", impact: "胸痛中心 cTnI 结果已完成复核", action: "归档处理记录", ai: { conclusion: "cTnI 趋势异常已完成复核和记录，可关闭事件。", rules: ["连续 4 个质控点超过均值同侧 ±1SD", "复查质控品后回归可接受范围", "无新增仪器报警"], action: "建议保留事件归档，用于月度质控复盘；无需继续限制自动放行。" } }
     ];
 
-    const qualityReagents = [
+    let qualityReagents = [
       { name: "CA125 化学发光试剂", lot: "CA-2605-18", project: "CA125", instrument: "IA-03", start: "2026-05-28", expiry: "2026-06-19", days: 8, risk: "高风险", riskClass: "badge-c", action: "关联质控复查" },
       { name: "肌钙蛋白 I 试剂", lot: "TNI-2606-02", project: "cTnI", instrument: "IA-03", start: "2026-06-02", expiry: "2026-06-18", days: 7, risk: "预警", riskClass: "badge-b", action: "提醒更换" },
       { name: "葡萄糖测定试剂", lot: "GLU-2604-08", project: "GLU", instrument: "BA-02", start: "2026-05-30", expiry: "2026-06-15", days: 4, risk: "高风险", riskClass: "badge-c", action: "生成采购提醒" },
@@ -2976,7 +2977,7 @@
       { name: "肌酐酶法试剂", lot: "CREA-2605-21", project: "Cr", instrument: "BA-02", start: "2026-06-01", expiry: "2026-06-28", days: 17, risk: "关注", riskClass: "badge-info", action: "查看受影响项目" }
     ];
 
-    const qualityBatchRisks = [
+    let qualityBatchRisks = [
       { lot: "CA-2605-18", project: "CA125", samples: 18, abnormal: 3, recheck: "是", recheckClass: "badge-c", suggestion: "暂停自动放行，复查质控品并核对近效期" },
       { lot: "GLU-2604-08", project: "GLU", samples: 24, abnormal: 5, recheck: "是", recheckClass: "badge-c", suggestion: "生成试剂更换提醒，抽查近两小时结果" },
       { lot: "APTT-2605-11", project: "APTT", samples: 6, abnormal: 2, recheck: "是", recheckClass: "badge-b", suggestion: "校准后重做双水平质控，必要时复测样本" },
@@ -3720,6 +3721,113 @@
     }
 
 
+    function qualityBadgeClass(value) {
+      const text = String(value || "").toLowerCase();
+      if (["high", "高风险", "expired", "已过期", "open", "handling", "待确认", "处理中", "maintenance"].some(token => text.includes(String(token).toLowerCase()))) return "badge-c";
+      if (["medium", "warning", "预警", "关注", "pending"].some(token => text.includes(String(token).toLowerCase()))) return "badge-b";
+      if (["closed", "completed", "active", "online", "normal", "正常", "已处理", "已关闭"].some(token => text.includes(String(token).toLowerCase()))) return "badge-a";
+      return "badge-info";
+    }
+
+    function qualityStatusTone(value) {
+      const text = String(value || "").toLowerCase();
+      if (["maintenance", "paused", "offline", "停", "失控"].some(token => text.includes(String(token).toLowerCase()))) return "danger";
+      if (["warning", "pending", "预警", "待"].some(token => text.includes(String(token).toLowerCase()))) return "warning";
+      if (["closed", "gray", "维护"].some(token => text.includes(String(token).toLowerCase()))) return "gray";
+      return "normal";
+    }
+
+    function applyQualityStats(stats = {}) {
+      Object.entries(stats).forEach(([key, value]) => {
+        const node = document.querySelector(`[data-quality-stat="${key}"]`);
+        if (node) node.textContent = value ?? 0;
+      });
+    }
+
+    function applyQcDashboardData(data) {
+      if (!data) return;
+      applyQualityStats(data.stats || {});
+
+      if (Array.isArray(data.instruments)) {
+        qualityInstruments = data.instruments.map(item => ({
+          name: item.instrumentName || "--",
+          code: item.instrumentCode || "--",
+          group: item.departmentGroup || "--",
+          status: item.status || "--",
+          statusTone: qualityStatusTone(item.status),
+          qc: item.lastQcAt ? `最近质控：${item.lastQcAt}` : "暂无质控时间",
+          qcClass: qualityBadgeClass(item.status),
+          projects: "--",
+          calibratedAt: item.lastCalibratedAt || "--",
+          action: item.lastQcAt ? `最近质控时间：${item.lastQcAt}` : "请关注质控记录"
+        }));
+      }
+
+      if (Array.isArray(data.qcEvents)) {
+        qualityEvents = data.qcEvents.map(item => ({
+          id: item.eventNo || `QC-${item.id}`,
+          instrument: item.instrumentName || `仪器 #${item.instrumentId}`,
+          project: item.itemName || "--",
+          level: item.qcLevel || "--",
+          rule: item.triggerRule || "--",
+          ruleClass: qualityBadgeClass(item.triggerRule),
+          status: item.eventStatus || "--",
+          statusClass: qualityBadgeClass(item.eventStatus),
+          impact: item.impactScope || "--",
+          action: item.suggestedAction || "--",
+          ai: {
+            conclusion: item.impactScope || "请结合仪器、项目和质控规则进行人工判断。",
+            rules: [item.triggerRule || "未记录触发规则", item.eventStatus ? `当前状态：${item.eventStatus}` : "未记录事件状态"],
+            action: item.suggestedAction || "请按实验室质控制度处理并留痕。"
+          }
+        }));
+      }
+
+      if (Array.isArray(data.reagentExpiryAlerts)) {
+        qualityReagents = data.reagentExpiryAlerts.map(item => ({
+          name: item.reagentName || "--",
+          lot: item.batchNo || "--",
+          project: item.itemName || "--",
+          instrument: item.instrumentName || "--",
+          start: item.createdAt || "--",
+          expiry: item.daysLeft <= 0 ? "已到期 / 已过期" : `剩余 ${item.daysLeft} 天`,
+          days: item.daysLeft ?? 0,
+          risk: item.riskLevel || "--",
+          riskClass: qualityBadgeClass(item.riskLevel),
+          action: item.suggestedAction || "--",
+          alertStatus: item.alertStatus || "--"
+        }));
+      }
+
+      if (Array.isArray(data.reagentBatches)) {
+        qualityBatchRisks = data.reagentBatches.map(item => ({
+          name: item.reagentName || "--",
+          lot: item.batchNo || "--",
+          project: item.itemName || "--",
+          instrument: item.instrumentName || "--",
+          expiry: item.expiresAt || "--",
+          stockStatus: `${item.stockQty ?? "--"} / ${item.status || "--"}`
+        }));
+      }
+
+      renderQualityInstruments();
+      renderQualityEvents();
+      renderQualityReagents();
+      renderQualityBatchRisks();
+      selectQualityEvent(0);
+    }
+
+    async function hydrateQcDashboardData() {
+      if (!window.terryLisApi?.getQcDashboardData) return;
+
+      try {
+        const data = await window.terryLisApi.getQcDashboardData();
+        applyQcDashboardData(data);
+      } catch (error) {
+        console.warn("质控看板 SQLite 数据读取失败，继续使用静态 fallback 数据。", error);
+      }
+    }
+
     function renderQualityInstruments() {
       document.getElementById("qualityInstrumentTable").innerHTML = qualityInstruments.map(item => `
         <tr>
@@ -3748,6 +3856,7 @@
 
     function selectQualityEvent(index) {
       const item = qualityEvents[index];
+      if (!item) return;
       document.querySelectorAll("#qualityEventTable tr").forEach(row => row.classList.remove("selected"));
       const selectedRow = document.querySelector(`#qualityEventTable tr[data-index="${index}"]`);
       if (selectedRow) selectedRow.classList.add("selected");
@@ -3772,8 +3881,8 @@
     function renderQualityBatchRisks() {
       document.getElementById("qualityBatchRiskTable").innerHTML = qualityBatchRisks.map(item => `
         <tr>
-          <td>${item.lot}</td><td>${item.project}</td><td>${item.samples}</td><td>${item.abnormal}</td>
-          <td><span class="badge ${item.recheckClass}">${item.recheck}</span></td><td>${item.suggestion}</td>
+          <td>${item.name || item.lot}</td><td>${item.lot}</td><td>${item.project}</td><td>${item.instrument || item.samples}</td>
+          <td>${item.expiry || item.abnormal}</td><td>${item.stockStatus || item.suggestion}</td>
         </tr>
       `).join("");
     }
@@ -3902,6 +4011,7 @@
       }
 
       if (target === "quality") {
+        hydrateQcDashboardData();
         selectQualityEvent(0);
       }
 
@@ -3999,6 +4109,7 @@
     renderQualityReagents();
     renderQualityBatchRisks();
     renderQualityRecords();
+    hydrateQcDashboardData();
     renderRoleConfigs();
     renderAutoReleaseRules();
     renderAiPrecheckRules();

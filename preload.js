@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   getSampleReceptionData: () => ipcRenderer.invoke('sampleReception:getData'),
   getAiPreReviewData: () => ipcRenderer.invoke('aiPreReview:getData'),
   getResultReviewData: () => ipcRenderer.invoke('resultReview:getData'),
-  getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData')
+  getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData'),
+  getQcDashboardData: () => ipcRenderer.invoke('qcDashboard:getData')
 });
