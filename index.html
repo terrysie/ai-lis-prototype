@@ -454,6 +454,14 @@
     }
 
     .btn:hover { transform: translateY(-1px); box-shadow: 0 10px 20px rgba(11, 127, 171, 0.18); }
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.58;
+    }
+    .btn:disabled:hover {
+      transform: none;
+      box-shadow: none;
+    }
     .btn.secondary { color: var(--primary-dark); background: var(--primary-soft); }
     .btn.danger { background: var(--danger); }
 
@@ -1433,7 +1441,7 @@
               <p id="receivingAiAction">--</p>
             </div>
             <div class="action-row sample-action-row">
-              <button class="btn" data-receiving-action="确认签收">确认签收</button>
+              <button class="btn" id="confirmSampleReceptionButton" data-receiving-action="确认签收">确认签收</button>
               <button class="btn secondary" data-receiving-action="标记异常">标记异常</button>
               <button class="btn danger" data-receiving-action="生成退样">生成退样</button>
               <button class="btn secondary" data-receiving-action="生成补采任务">生成补采任务</button>
@@ -2277,6 +2285,9 @@
         aiAction: "建议联系病区补全采样时间；无法确认时按科室规则生成退样或补采。"
       }
     ];
+
+    let selectedReceivingSampleIndex = 0;
+    let isConfirmingSampleReception = false;
 
     const rejectTemplates = ["样本量不足", "容器类型错误", "送检时间超限", "条码信息不一致", "样本污染或疑似污染", "采集要求不符合规范"];
 
@@ -3147,9 +3158,14 @@
       return parts[1] ? parts[1].slice(0, 5) : String(value);
     }
 
+    function isPendingReceptionStatus(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+      return ["pending_receive", "pending", "待签收"].includes(normalized);
+    }
+
     function getReceptionStatusView(status) {
-      const normalized = String(status || "").toLowerCase();
-      if (["pending_receive", "pending", "待签收"].includes(normalized)) {
+      const normalized = String(status || "").trim().toLowerCase();
+      if (isPendingReceptionStatus(normalized)) {
         return { label: "待签收", badgeClass: "badge-info", action: "确认签收" };
       }
       if (["received", "reviewing", "released", "critical_pending", "已签收"].includes(normalized)) {
@@ -3162,6 +3178,10 @@
         return { label: "退样", badgeClass: "badge-c", action: "查看退样原因" };
       }
       return { label: status || "未知", badgeClass: "badge-gray", action: "查看详情" };
+    }
+
+    function canConfirmReceivingSample(sample) {
+      return Boolean(sample?.sampleId && isPendingReceptionStatus(sample.rawStatus || sample.status));
     }
 
     function mapDatabaseSampleToReceivingSample(sample) {
@@ -3182,6 +3202,10 @@
         : `当前样本状态为 ${statusView.label}，数据来自本地 SQLite samples 表。`;
 
       return {
+        sampleId: Number(sample.id),
+        sampleNo: sample.sampleNo,
+        rawStatus: sample.status,
+        receivedAt: sample.receivedAt,
         id: sample.sampleNo,
         source: sourceText,
         project: projectText,
@@ -3201,7 +3225,9 @@
         ],
         aiAction: sample.rejectReason || statusView.label === "退样"
           ? "建议查看退样原因并联系来源科室。"
-          : "当前版本仅展示数据库读取结果，不执行真实签收、退样或补采写入。"
+          : (statusView.label === "待签收"
+            ? "可点击确认签收写入本地 SQLite，并记录审计日志。"
+            : "确认签收仅支持待签收样本，其余动作仍为演示按钮。")
       };
     }
 
@@ -3214,12 +3240,27 @@
       });
     }
 
-    async function hydrateSampleReceptionData() {
+    function getSelectedReceivingSample() {
+      return receivingSamples[selectedReceivingSampleIndex] || null;
+    }
+
+    function updateConfirmSampleReceptionButton() {
+      const button = document.getElementById("confirmSampleReceptionButton");
+      if (!button) return;
+
+      const sample = getSelectedReceivingSample();
+      const hasApi = Boolean(window.terryLisApi?.confirmSampleReception);
+      button.disabled = isConfirmingSampleReception || !hasApi || !canConfirmReceivingSample(sample);
+      button.textContent = isConfirmingSampleReception ? "签收中..." : "确认签收";
+    }
+
+    async function hydrateSampleReceptionData(preferredSampleId = null) {
       if (!window.terryLisApi?.getSampleReceptionData) {
         return;
       }
 
       try {
+        const previousSampleId = preferredSampleId ?? receivingSamples[selectedReceivingSampleIndex]?.sampleId;
         const data = await window.terryLisApi.getSampleReceptionData();
         if (!Array.isArray(data?.samples)) {
           return;
@@ -3227,12 +3268,19 @@
 
         hydrateReceivingStats(data.stats || {});
         receivingSamples = data.samples.map(mapDatabaseSampleToReceivingSample);
+        const selectedIndex = previousSampleId
+          ? receivingSamples.findIndex(sample => sample.sampleId === previousSampleId)
+          : 0;
+        selectedReceivingSampleIndex = selectedIndex >= 0 ? selectedIndex : 0;
         renderReceivingSamples();
         if (receivingSamples.length > 0) {
-          selectReceivingSample(0);
+          selectReceivingSample(selectedReceivingSampleIndex);
+        } else {
+          updateConfirmSampleReceptionButton();
         }
       } catch (error) {
         console.warn("TERRY-LIS 样本签收数据读取失败，继续使用静态模拟数据。", error);
+        updateConfirmSampleReceptionButton();
       }
     }
 
@@ -3494,7 +3542,7 @@
 
     function renderReceivingSamples() {
       receivingTable.innerHTML = receivingSamples.map((sample, index) => `
-        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+        <tr data-index="${index}" class="${index === selectedReceivingSampleIndex ? "selected" : ""}">
           <td><strong>${sample.id}</strong></td>
           <td>${sample.source}</td>
           <td>${sample.project}</td>
@@ -3513,7 +3561,11 @@
 
     function selectReceivingSample(index) {
       const sample = receivingSamples[index];
-      if (!sample) return;
+      if (!sample) {
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+      selectedReceivingSampleIndex = index;
       document.querySelectorAll("#receivingTable tr").forEach(row => row.classList.remove("selected"));
       const selectedRow = document.querySelector(`#receivingTable tr[data-index="${index}"]`);
       if (selectedRow) selectedRow.classList.add("selected");
@@ -3525,6 +3577,7 @@
       document.getElementById("receivingAiConclusion").textContent = sample.conclusion;
       document.getElementById("receivingAiRules").innerHTML = sample.aiRules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("receivingAiAction").textContent = sample.aiAction;
+      updateConfirmSampleReceptionButton();
     }
 
     function renderTaskCards(containerId, items) {
@@ -4094,6 +4147,52 @@
       toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
     }
 
+    function getErrorMessage(error) {
+      return error?.message || String(error || "操作失败");
+    }
+
+    async function handleConfirmSampleReception() {
+      const sample = getSelectedReceivingSample();
+
+      if (!sample) {
+        showToast("请先选择需要签收的样本。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!isPendingReceptionStatus(sample.rawStatus || sample.status)) {
+        showToast("只有待签收状态样本可以确认签收。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!sample.sampleId) {
+        showToast("当前样本不是本地 SQLite 样本，无法真实签收。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!window.terryLisApi?.confirmSampleReception) {
+        showToast("当前环境未提供样本签收写入接口。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      isConfirmingSampleReception = true;
+      updateConfirmSampleReceptionButton();
+
+      try {
+        await window.terryLisApi.confirmSampleReception(sample.sampleId);
+        showToast(`确认签收成功：${sample.id}`);
+        await hydrateSampleReceptionData(sample.sampleId);
+      } catch (error) {
+        showToast(`确认签收失败：${getErrorMessage(error)}`);
+      } finally {
+        isConfirmingSampleReception = false;
+        updateConfirmSampleReceptionButton();
+      }
+    }
+
     document.querySelectorAll("[data-action]").forEach(button => {
       button.addEventListener("click", () => {
         const currentSample = document.getElementById("cardSample").textContent;
@@ -4103,6 +4202,11 @@
 
     document.querySelectorAll("[data-receiving-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.receivingAction === "确认签收") {
+          handleConfirmSampleReception();
+          return;
+        }
+
         const currentSample = document.getElementById("receivingCardSample").textContent;
         showToast(`模拟操作成功：${button.dataset.receivingAction}，当前样本：${currentSample}`);
       });
