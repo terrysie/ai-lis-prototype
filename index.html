@@ -1443,7 +1443,7 @@
             <div class="action-row sample-action-row">
               <button class="btn" id="confirmSampleReceptionButton" data-receiving-action="确认签收">确认签收</button>
               <button class="btn secondary" data-receiving-action="标记异常">标记异常</button>
-              <button class="btn danger" data-receiving-action="生成退样">生成退样</button>
+              <button class="btn danger" id="rejectSampleReceptionButton" data-receiving-action="退样/拒收">退样/拒收</button>
               <button class="btn secondary" data-receiving-action="生成补采任务">生成补采任务</button>
               <button class="btn secondary" data-receiving-action="查看流转记录">查看流转记录</button>
             </div>
@@ -2288,6 +2288,7 @@
 
     let selectedReceivingSampleIndex = 0;
     let isConfirmingSampleReception = false;
+    let isRejectingSampleReception = false;
 
     const rejectTemplates = ["样本量不足", "容器类型错误", "送检时间超限", "条码信息不一致", "样本污染或疑似污染", "采集要求不符合规范"];
 
@@ -3166,7 +3167,7 @@
     function getReceptionStatusView(status) {
       const normalized = String(status || "").trim().toLowerCase();
       if (isPendingReceptionStatus(normalized)) {
-        return { label: "待签收", badgeClass: "badge-info", action: "确认签收" };
+        return { label: "待签收", badgeClass: "badge-info", action: "确认签收 / 退样" };
       }
       if (["received", "reviewing", "released", "critical_pending", "已签收"].includes(normalized)) {
         return { label: "已签收", badgeClass: "badge-a", action: "查看流转记录" };
@@ -3181,6 +3182,10 @@
     }
 
     function canConfirmReceivingSample(sample) {
+      return Boolean(sample?.sampleId && isPendingReceptionStatus(sample.rawStatus || sample.status));
+    }
+
+    function canRejectReceivingSample(sample) {
       return Boolean(sample?.sampleId && isPendingReceptionStatus(sample.rawStatus || sample.status));
     }
 
@@ -3204,6 +3209,7 @@
       return {
         sampleId: Number(sample.id),
         sampleNo: sample.sampleNo,
+        rejectReason: sample.rejectReason || "",
         rawStatus: sample.status,
         receivedAt: sample.receivedAt,
         id: sample.sampleNo,
@@ -3226,7 +3232,7 @@
         aiAction: sample.rejectReason || statusView.label === "退样"
           ? "建议查看退样原因并联系来源科室。"
           : (statusView.label === "待签收"
-            ? "可点击确认签收写入本地 SQLite，并记录审计日志。"
+            ? "可点击确认签收或退样/拒收写入本地 SQLite，并记录审计日志。"
             : "确认签收仅支持待签收样本，其余动作仍为演示按钮。")
       };
     }
@@ -3244,14 +3250,28 @@
       return receivingSamples[selectedReceivingSampleIndex] || null;
     }
 
-    function updateConfirmSampleReceptionButton() {
-      const button = document.getElementById("confirmSampleReceptionButton");
+    function updateRejectSampleReceptionButton() {
+      const button = document.getElementById("rejectSampleReceptionButton");
       if (!button) return;
 
       const sample = getSelectedReceivingSample();
+      const hasApi = Boolean(window.terryLisApi?.rejectSampleReception);
+      button.disabled = isRejectingSampleReception || isConfirmingSampleReception || !hasApi || !canRejectReceivingSample(sample);
+      button.textContent = isRejectingSampleReception ? "退样中..." : "退样/拒收";
+    }
+
+    function updateConfirmSampleReceptionButton() {
+      const button = document.getElementById("confirmSampleReceptionButton");
+      if (!button) {
+        updateRejectSampleReceptionButton();
+        return;
+      }
+
+      const sample = getSelectedReceivingSample();
       const hasApi = Boolean(window.terryLisApi?.confirmSampleReception);
-      button.disabled = isConfirmingSampleReception || !hasApi || !canConfirmReceivingSample(sample);
+      button.disabled = isConfirmingSampleReception || isRejectingSampleReception || !hasApi || !canConfirmReceivingSample(sample);
       button.textContent = isConfirmingSampleReception ? "签收中..." : "确认签收";
+      updateRejectSampleReceptionButton();
     }
 
     async function hydrateSampleReceptionData(preferredSampleId = null) {
@@ -4193,10 +4213,65 @@
       }
     }
 
+    async function handleRejectSampleReception() {
+      const sample = getSelectedReceivingSample();
+
+      if (!sample) {
+        showToast("请先选择需要退样/拒收的样本。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!isPendingReceptionStatus(sample.rawStatus || sample.status)) {
+        showToast("只有待签收状态样本可以退样/拒收。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!sample.sampleId) {
+        showToast("当前样本不是本地 SQLite 样本，无法真实退样/拒收。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!window.terryLisApi?.rejectSampleReception) {
+        showToast("当前环境未提供样本退样/拒收写入接口。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      const reason = window.prompt(`请输入 ${sample.id} 的退样/拒收原因：`, sample.rejectReason || "");
+      if (reason === null) {
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      const rejectReason = reason.trim();
+      if (!rejectReason) {
+        showToast("拒收原因不能为空。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      isRejectingSampleReception = true;
+      updateConfirmSampleReceptionButton();
+
+      try {
+        await window.terryLisApi.rejectSampleReception(sample.sampleId, rejectReason);
+        showToast(`退样/拒收成功：${sample.id}`);
+        await hydrateSampleReceptionData(sample.sampleId);
+      } catch (error) {
+        showToast(`退样/拒收失败：${getErrorMessage(error)}`);
+      } finally {
+        isRejectingSampleReception = false;
+        updateConfirmSampleReceptionButton();
+      }
+    }
+
     document.querySelectorAll("[data-action]").forEach(button => {
       button.addEventListener("click", () => {
-        const currentSample = document.getElementById("cardSample").textContent;
-        showToast(`模拟操作成功：${button.dataset.action}，当前样本：${currentSample}`);
+        const workbenchCurrentSample = document.getElementById("cardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.action}，当前样本：${workbenchCurrentSample}`);
       });
     });
 
@@ -4207,8 +4282,13 @@
           return;
         }
 
-        const currentSample = document.getElementById("receivingCardSample").textContent;
-        showToast(`模拟操作成功：${button.dataset.receivingAction}，当前样本：${currentSample}`);
+        if (button.dataset.receivingAction === "退样/拒收") {
+          handleRejectSampleReception();
+          return;
+        }
+
+        const receivingCurrentSample = document.getElementById("receivingCardSample").textContent;
+        showToast(`模拟操作成功：${button.dataset.receivingAction}，当前样本：${receivingCurrentSample}`);
       });
     });
 

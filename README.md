@@ -135,9 +135,9 @@ Electron 桌面版样本签收页面现在会优先通过安全的 preload / IPC
 
 GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本地 SQLite 能力，因此样本签收页面会继续使用 `index.html` 中已有的静态 fallback 模拟数据；如果 Electron IPC 调用失败，页面同样会保留静态模拟数据并输出 `console.warn`，避免影响静态网页部署。
 
-当前版本在样本签收页面只实现“确认签收”真实写入。确认签收会把 `samples.status` 更新为 `reviewing`，写入 `received_at` / `updated_at`，并在 `audit_logs` 记录 `confirm_sample_reception` 审计日志。
+当前版本在样本签收页面支持“确认签收”和“退样/拒收”真实写入。确认签收会把 `samples.status` 更新为 `reviewing`，写入 `received_at` / `updated_at`，并在 `audit_logs` 记录 `confirm_sample_reception` 审计日志；退样/拒收会把待签收样本更新为 `rejected`，写入 `reject_reason` / `updated_at`，并记录退样原因、操作者、原状态和新状态。
 
-退样、补采、标记异常、查看流转记录仍为演示按钮，不会修改数据库。后续会逐步加入退样记录、补采任务等写入流程。
+补采、标记异常、查看流转记录仍为演示按钮，不会修改数据库。后续会逐步加入补采任务等写入流程。
 
 ## AI 预审页面数据库驱动
 
