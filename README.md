@@ -135,9 +135,11 @@ Electron 桌面版样本签收页面现在会优先通过安全的 preload / IPC
 
 GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本地 SQLite 能力，因此样本签收页面会继续使用 `index.html` 中已有的静态 fallback 模拟数据；如果 Electron IPC 调用失败，页面同样会保留静态模拟数据并输出 `console.warn`，避免影响静态网页部署。
 
-当前版本在样本签收页面支持“确认签收”、“退样/拒收”和“生成补采任务”真实写入。确认签收会把 `samples.status` 更新为 `reviewing`，写入 `received_at` / `updated_at`，并在 `audit_logs` 记录 `confirm_sample_reception` 审计日志；退样/拒收会把待签收样本更新为 `rejected`，写入 `reject_reason` / `updated_at`，并记录退样原因、操作者、原状态和新状态；生成补采任务会写入 `sample_recollection_tasks`，并在 `audit_logs` 记录补采原因、操作者、样本编号、样本原状态和任务状态。
+当前版本在样本签收页面支持“确认签收”、“退样/拒收”、“生成补采任务”和“流转记录 / 操作历史”读取。确认签收会把 `samples.status` 更新为 `reviewing`，写入 `received_at` / `updated_at`，并在 `audit_logs` 记录 `confirm_sample_reception` 审计日志；退样/拒收会把待签收样本更新为 `rejected`，写入 `reject_reason` / `updated_at`，并记录退样原因、操作者、原状态和新状态；生成补采任务会写入 `sample_recollection_tasks`，并在 `audit_logs` 记录补采原因、操作者、样本编号、样本原状态和任务状态。样本详情区会按当前样本读取相关 `audit_logs`，补采任务日志会通过 `before_json` / `after_json` 中的样本信息关联回来。
 
-标记异常、查看流转记录仍为演示按钮，不会修改数据库。后续会逐步加入更多样本流转写入流程。
+标记异常仍为演示按钮，不会修改数据库。后续会逐步加入更多样本流转写入流程。
+
+`npm run smoke:sample-reception` 会覆盖样本接收模块的确认签收、退样/拒收、补采任务写入，以及对应流转记录读取验证。
 
 ## AI 预审页面数据库驱动
 

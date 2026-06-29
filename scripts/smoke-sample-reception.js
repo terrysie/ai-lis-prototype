@@ -5,6 +5,7 @@ const path = require('path');
 const initSqlJs = require('sql.js');
 const { getDefaultDatabasePath, resetDatabase } = require('../src/database/initDatabase');
 const {
+  getSampleReceptionHistory,
   confirmSampleReception,
   rejectSampleReception,
   createSampleRecollectionTask
@@ -35,6 +36,16 @@ const assertEqual = (actual, expected, message) => {
 const assertIncludes = (value, expected, message) => {
   if (!String(value || '').includes(expected)) {
     throw new Error(`${message}: expected "${value}" to include "${expected}"`);
+  }
+};
+
+const assertHistoryContains = (history, predicate, message) => {
+  if (!Array.isArray(history)) {
+    throw new Error(`${message}: expected history to be an array`);
+  }
+
+  if (!history.some(predicate)) {
+    throw new Error(`${message}: matching audit log not found`);
   }
 };
 
@@ -118,6 +129,19 @@ const runConfirmSmoke = async () => {
     console.log('PASS confirmSampleReception writes audit log');
   });
 
+  const history = await getSampleReceptionHistory(5);
+  assertHistoryContains(
+    history,
+    (record) => (
+      record.operation_type === 'confirm_sample_reception' &&
+      record.target_table === 'samples' &&
+      record.target_id === 5 &&
+      record.after_json?.status === 'reviewing'
+    ),
+    'confirmSampleReception history lookup'
+  );
+  console.log('PASS getSampleReceptionHistory reads confirm audit log');
+
   await expectReject(
     () => confirmSampleReception(5, SMOKE_OPERATOR),
     null,
@@ -145,6 +169,20 @@ const runRejectSmoke = async () => {
     assertEqual(getCount(database, 'audit_logs'), 6, 'rejectSampleReception audit log count');
     console.log('PASS rejectSampleReception writes audit log');
   });
+
+  const history = await getSampleReceptionHistory(5);
+  assertHistoryContains(
+    history,
+    (record) => (
+      record.operation_type === '样本退样' &&
+      record.target_table === 'samples' &&
+      record.target_id === 5 &&
+      record.after_json?.status === 'rejected' &&
+      record.after_json?.reject_reason === 'smoke reject reason'
+    ),
+    'rejectSampleReception history lookup'
+  );
+  console.log('PASS getSampleReceptionHistory reads rejection audit log');
 
   await expectReject(
     () => rejectSampleReception(5, '', SMOKE_OPERATOR),
@@ -189,6 +227,20 @@ const runRecollectionSmoke = async () => {
     console.log('PASS createSampleRecollectionTask writes audit log');
   });
 
+  const history = await getSampleReceptionHistory(5);
+  assertHistoryContains(
+    history,
+    (record) => (
+      record.operation_type === '创建补采任务' &&
+      record.target_table === 'sample_recollection_tasks' &&
+      record.after_json?.sample_id === 5 &&
+      record.after_json?.reason === 'smoke recollection reason'
+    ),
+    'createSampleRecollectionTask history lookup'
+  );
+  console.log('PASS getSampleReceptionHistory reads recollection audit log');
+  console.log('PASS getSampleReceptionHistory links sample_recollection_tasks by sampleId');
+
   await expectReject(
     () => createSampleRecollectionTask(5, '', SMOKE_OPERATOR),
     null,
@@ -203,6 +255,11 @@ const runRecollectionSmoke = async () => {
 };
 
 const main = async () => {
+  await expectReject(
+    () => getSampleReceptionHistory(),
+    null,
+    'getSampleReceptionHistory requires sampleId'
+  );
   await runConfirmSmoke();
   await runRejectSmoke();
   await runRecollectionSmoke();

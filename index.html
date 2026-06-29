@@ -1481,11 +1481,11 @@
             <div class="panel-body task-list" id="recollectList"></div>
           </div>
 
-          <div class="panel" aria-label="签收操作记录">
+          <div class="panel" aria-label="流转记录 / 操作历史">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">签收操作记录</h3>
-                <p class="panel-subtitle">记录最近模拟操作，辅助追溯签收岗位动作。</p>
+                <h3 class="panel-title">流转记录 / 操作历史</h3>
+                <p class="panel-subtitle">展示当前样本在 audit_logs 中的签收、退样和补采任务记录。</p>
               </div>
             </div>
             <div class="panel-body task-list" id="receivingLogList"></div>
@@ -2290,6 +2290,7 @@
     let isConfirmingSampleReception = false;
     let isRejectingSampleReception = false;
     let isCreatingSampleRecollectionTask = false;
+    let latestReceivingHistoryRequestId = 0;
 
     const rejectTemplates = ["样本量不足", "容器类型错误", "送检时间超限", "条码信息不一致", "样本污染或疑似污染", "采集要求不符合规范"];
 
@@ -3620,6 +3621,7 @@
       document.getElementById("receivingAiRules").innerHTML = sample.aiRules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("receivingAiAction").textContent = sample.aiAction;
       updateConfirmSampleReceptionButton();
+      hydrateSampleReceptionHistory(sample.sampleId);
     }
 
     function renderTaskCards(containerId, items) {
@@ -3629,6 +3631,95 @@
           <small>${item.detail}</small>
         </div>
       `).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatAuditSnapshot(snapshot) {
+      if (!snapshot) return "--";
+      if (typeof snapshot === "string") return snapshot.slice(0, 120);
+
+      const parts = [
+        snapshot.sample_no ? `样本号 ${snapshot.sample_no}` : "",
+        snapshot.status ? `状态 ${snapshot.status}` : "",
+        snapshot.reject_reason ? `退样原因 ${snapshot.reject_reason}` : "",
+        snapshot.reason ? `原因 ${snapshot.reason}` : "",
+        snapshot.sample_id ? `样本ID ${snapshot.sample_id}` : ""
+      ].filter(Boolean);
+
+      if (parts.length > 0) return parts.join("；");
+      return JSON.stringify(snapshot).slice(0, 120);
+    }
+
+    function getAuditBadgeClass(record) {
+      const operation = String(record?.operation_type || "").toLowerCase();
+      if (operation.includes("reject") || operation.includes("退样")) return "badge-c";
+      if (operation.includes("recollection") || operation.includes("补采")) return "badge-b";
+      if (operation.includes("confirm") || operation.includes("receive") || operation.includes("签收")) return "badge-a";
+      return "badge-info";
+    }
+
+    function renderReceivingHistory(records) {
+      const container = document.getElementById("receivingLogList");
+      if (!container) return;
+
+      if (!Array.isArray(records) || records.length === 0) {
+        container.innerHTML = `
+          <div class="task-card">
+            <strong>暂无流转记录<span class="badge badge-gray">audit_logs</span></strong>
+            <small>当前样本尚未查询到签收、退样或补采任务操作记录。</small>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = records.map(record => {
+        const beforeSummary = formatAuditSnapshot(record.before_json);
+        const afterSummary = formatAuditSnapshot(record.after_json);
+        const detail = [
+          `模块：${record.module_name || "--"}`,
+          `目标表：${record.target_table || "--"}`,
+          `操作人：${record.operator_id || "--"}`,
+          `时间：${record.created_at || "--"}`,
+          `前：${beforeSummary}`,
+          `后：${afterSummary}`
+        ].join("；");
+
+        return `
+          <div class="task-card">
+            <strong>${escapeHtml(record.operation_type || "未知操作")}<span class="badge ${getAuditBadgeClass(record)}">${escapeHtml(record.target_table || "--")}</span></strong>
+            <small>${escapeHtml(detail)}</small>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function hydrateSampleReceptionHistory(sampleId) {
+      if (!window.terryLisApi?.getSampleReceptionHistory || !sampleId) {
+        return;
+      }
+
+      const requestId = ++latestReceivingHistoryRequestId;
+      renderReceivingHistory([{ operation_type: "读取中", target_table: "audit_logs", module_name: "--", operator_id: "--", created_at: "--", before_json: null, after_json: "正在读取当前样本流转记录" }]);
+
+      try {
+        const history = await window.terryLisApi.getSampleReceptionHistory(sampleId);
+        if (requestId === latestReceivingHistoryRequestId) {
+          renderReceivingHistory(history);
+        }
+      } catch (error) {
+        if (requestId === latestReceivingHistoryRequestId) {
+          console.warn("TERRY-LIS 样本流转记录读取失败。", error);
+          renderReceivingHistory([]);
+        }
+      }
     }
 
     function renderRejectTemplates() {
@@ -4227,6 +4318,7 @@
         await window.terryLisApi.confirmSampleReception(sample.sampleId);
         showToast(`确认签收成功：${sample.id}`);
         await hydrateSampleReceptionData(sample.sampleId);
+        await hydrateSampleReceptionHistory(sample.sampleId);
       } catch (error) {
         showToast(`确认签收失败：${getErrorMessage(error)}`);
       } finally {
@@ -4282,6 +4374,7 @@
         await window.terryLisApi.rejectSampleReception(sample.sampleId, rejectReason);
         showToast(`退样/拒收成功：${sample.id}`);
         await hydrateSampleReceptionData(sample.sampleId);
+        await hydrateSampleReceptionHistory(sample.sampleId);
       } catch (error) {
         showToast(`退样/拒收失败：${getErrorMessage(error)}`);
       } finally {
@@ -4337,6 +4430,7 @@
         await window.terryLisApi.createSampleRecollectionTask(sample.sampleId, recollectionReason);
         showToast(`补采任务已生成：${sample.id}`);
         await hydrateSampleReceptionData(sample.sampleId);
+        await hydrateSampleReceptionHistory(sample.sampleId);
       } catch (error) {
         showToast(`生成补采任务失败：${getErrorMessage(error)}`);
       } finally {
@@ -4367,6 +4461,15 @@
         if (button.dataset.receivingAction === "生成补采任务") {
           handleCreateSampleRecollectionTask();
           return;
+        }
+
+        if (button.dataset.receivingAction === "查看流转记录") {
+          const sample = getSelectedReceivingSample();
+          if (sample?.sampleId) {
+            hydrateSampleReceptionHistory(sample.sampleId);
+            showToast(`已刷新流转记录：${sample.id}`);
+            return;
+          }
         }
 
         const receivingCurrentSample = document.getElementById("receivingCardSample").textContent;
