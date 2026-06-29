@@ -1444,7 +1444,7 @@
               <button class="btn" id="confirmSampleReceptionButton" data-receiving-action="确认签收">确认签收</button>
               <button class="btn secondary" data-receiving-action="标记异常">标记异常</button>
               <button class="btn danger" id="rejectSampleReceptionButton" data-receiving-action="退样/拒收">退样/拒收</button>
-              <button class="btn secondary" data-receiving-action="生成补采任务">生成补采任务</button>
+              <button class="btn secondary" id="createSampleRecollectionTaskButton" data-receiving-action="生成补采任务">生成补采任务</button>
               <button class="btn secondary" data-receiving-action="查看流转记录">查看流转记录</button>
             </div>
           </aside>
@@ -2289,6 +2289,7 @@
     let selectedReceivingSampleIndex = 0;
     let isConfirmingSampleReception = false;
     let isRejectingSampleReception = false;
+    let isCreatingSampleRecollectionTask = false;
 
     const rejectTemplates = ["样本量不足", "容器类型错误", "送检时间超限", "条码信息不一致", "样本污染或疑似污染", "采集要求不符合规范"];
 
@@ -3189,6 +3190,15 @@
       return Boolean(sample?.sampleId && isPendingReceptionStatus(sample.rawStatus || sample.status));
     }
 
+    function isRecollectionAllowedReceptionStatus(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+      return isPendingReceptionStatus(normalized) || ["rejected", "退样", "reviewing"].includes(normalized);
+    }
+
+    function canCreateSampleRecollectionTask(sample) {
+      return Boolean(sample?.sampleId && isRecollectionAllowedReceptionStatus(sample.rawStatus || sample.status));
+    }
+
     function mapDatabaseSampleToReceivingSample(sample) {
       const statusView = getReceptionStatusView(sample.status);
       const collectedAt = formatReceptionTime(sample.collectedAt);
@@ -3232,8 +3242,8 @@
         aiAction: sample.rejectReason || statusView.label === "退样"
           ? "建议查看退样原因并联系来源科室。"
           : (statusView.label === "待签收"
-            ? "可点击确认签收或退样/拒收写入本地 SQLite，并记录审计日志。"
-            : "确认签收仅支持待签收样本，其余动作仍为演示按钮。")
+            ? "可点击确认签收、退样/拒收或生成补采任务写入本地 SQLite，并记录审计日志。"
+            : "确认签收仅支持待签收样本；补采任务支持待签收、退样和审核中样本。")
       };
     }
 
@@ -3256,22 +3266,34 @@
 
       const sample = getSelectedReceivingSample();
       const hasApi = Boolean(window.terryLisApi?.rejectSampleReception);
-      button.disabled = isRejectingSampleReception || isConfirmingSampleReception || !hasApi || !canRejectReceivingSample(sample);
+      button.disabled = isRejectingSampleReception || isConfirmingSampleReception || isCreatingSampleRecollectionTask || !hasApi || !canRejectReceivingSample(sample);
       button.textContent = isRejectingSampleReception ? "退样中..." : "退样/拒收";
+    }
+
+    function updateCreateSampleRecollectionTaskButton() {
+      const button = document.getElementById("createSampleRecollectionTaskButton");
+      if (!button) return;
+
+      const sample = getSelectedReceivingSample();
+      const hasApi = Boolean(window.terryLisApi?.createSampleRecollectionTask);
+      button.disabled = isCreatingSampleRecollectionTask || isConfirmingSampleReception || isRejectingSampleReception || !hasApi || !canCreateSampleRecollectionTask(sample);
+      button.textContent = isCreatingSampleRecollectionTask ? "生成中..." : "生成补采任务";
     }
 
     function updateConfirmSampleReceptionButton() {
       const button = document.getElementById("confirmSampleReceptionButton");
       if (!button) {
         updateRejectSampleReceptionButton();
+        updateCreateSampleRecollectionTaskButton();
         return;
       }
 
       const sample = getSelectedReceivingSample();
       const hasApi = Boolean(window.terryLisApi?.confirmSampleReception);
-      button.disabled = isConfirmingSampleReception || isRejectingSampleReception || !hasApi || !canConfirmReceivingSample(sample);
+      button.disabled = isConfirmingSampleReception || isRejectingSampleReception || isCreatingSampleRecollectionTask || !hasApi || !canConfirmReceivingSample(sample);
       button.textContent = isConfirmingSampleReception ? "签收中..." : "确认签收";
       updateRejectSampleReceptionButton();
+      updateCreateSampleRecollectionTaskButton();
     }
 
     async function hydrateSampleReceptionData(preferredSampleId = null) {
@@ -4268,6 +4290,61 @@
       }
     }
 
+    async function handleCreateSampleRecollectionTask() {
+      const sample = getSelectedReceivingSample();
+
+      if (!sample) {
+        showToast("请先选择需要补采的样本。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!isRecollectionAllowedReceptionStatus(sample.rawStatus || sample.status)) {
+        showToast("当前样本状态不允许生成补采任务。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!sample.sampleId) {
+        showToast("当前样本不是本地 SQLite 样本，无法真实生成补采任务。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!window.terryLisApi?.createSampleRecollectionTask) {
+        showToast("当前环境未提供补采任务写入接口。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      const reason = window.prompt(`请输入 ${sample.id} 的补采原因：`, sample.rejectReason || "");
+      if (reason === null) {
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      const recollectionReason = reason.trim();
+      if (!recollectionReason) {
+        showToast("补采原因不能为空。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      isCreatingSampleRecollectionTask = true;
+      updateConfirmSampleReceptionButton();
+
+      try {
+        await window.terryLisApi.createSampleRecollectionTask(sample.sampleId, recollectionReason);
+        showToast(`补采任务已生成：${sample.id}`);
+        await hydrateSampleReceptionData(sample.sampleId);
+      } catch (error) {
+        showToast(`生成补采任务失败：${getErrorMessage(error)}`);
+      } finally {
+        isCreatingSampleRecollectionTask = false;
+        updateConfirmSampleReceptionButton();
+      }
+    }
+
     document.querySelectorAll("[data-action]").forEach(button => {
       button.addEventListener("click", () => {
         const workbenchCurrentSample = document.getElementById("cardSample").textContent;
@@ -4284,6 +4361,11 @@
 
         if (button.dataset.receivingAction === "退样/拒收") {
           handleRejectSampleReception();
+          return;
+        }
+
+        if (button.dataset.receivingAction === "生成补采任务") {
+          handleCreateSampleRecollectionTask();
           return;
         }
 

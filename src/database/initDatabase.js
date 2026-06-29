@@ -11,6 +11,7 @@ const CORE_TABLES = [
   'users',
   'roles',
   'samples',
+  'sample_recollection_tasks',
   'test_items',
   'test_results',
   'ai_pre_reviews',

@@ -2,7 +2,12 @@ const path = require('path');
 const { app, BrowserWindow, ipcMain } = require('electron');
 const { initializeDatabase } = require('./src/database/initDatabase');
 const { getDashboardStats } = require('./src/database/dashboardStats');
-const { getSampleReceptionData, confirmSampleReception, rejectSampleReception } = require('./src/database/sampleReception');
+const {
+  getSampleReceptionData,
+  confirmSampleReception,
+  rejectSampleReception,
+  createSampleRecollectionTask
+} = require('./src/database/sampleReception');
 const { getAiPreReviewData } = require('./src/database/aiPreReview');
 const { getResultReviewData } = require('./src/database/resultReview');
 const { getCriticalValuesData } = require('./src/database/criticalValues');
@@ -37,6 +42,12 @@ ipcMain.handle('sampleReception:confirm', async (_event, sampleId) => confirmSam
   { electronApp: app }
 ));
 ipcMain.handle('sampleReception:reject', async (_event, sampleId, reason) => rejectSampleReception(
+  sampleId,
+  reason,
+  { userId: 3, username: 'li.receive' },
+  { electronApp: app }
+));
+ipcMain.handle('sampleReception:createRecollectionTask', async (_event, sampleId, reason) => createSampleRecollectionTask(
   sampleId,
   reason,
   { userId: 3, username: 'li.receive' },
