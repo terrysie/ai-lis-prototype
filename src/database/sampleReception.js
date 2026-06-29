@@ -9,6 +9,24 @@ const STATUS_GROUPS = {
   rejected: ['rejected', '退样']
 };
 
+const SAMPLE_SELECT_COLUMNS = `
+  id,
+  sample_no,
+  patient_code,
+  source_type,
+  department,
+  test_group,
+  sample_type,
+  container_type,
+  collected_at,
+  received_at,
+  status,
+  priority,
+  reject_reason,
+  created_at,
+  updated_at
+`;
+
 const openDatabase = async (options = {}) => {
   const { databasePath } = await initializeDatabase(options);
   const initSqlJs = require('sql.js');
@@ -24,6 +42,11 @@ const openDatabase = async (options = {}) => {
     database: new SQL.Database(fs.readFileSync(databasePath)),
     databasePath
   };
+};
+
+const saveDatabase = (database, databasePath) => {
+  const exportedDatabase = database.export();
+  fs.writeFileSync(databasePath, Buffer.from(exportedDatabase));
 };
 
 const getRows = (database, sql, params = {}) => {
@@ -42,6 +65,8 @@ const getRows = (database, sql, params = {}) => {
     statement.free();
   }
 };
+
+const getRow = (database, sql, params = {}) => getRows(database, sql, params)[0] || null;
 
 const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
 
@@ -117,6 +142,135 @@ const getSampleReceptionData = async (options = {}) => {
   }
 };
 
+const padDatePart = (value) => String(value).padStart(2, '0');
+
+const getCurrentTimestamp = () => {
+  const now = new Date();
+
+  return [
+    `${now.getFullYear()}-${padDatePart(now.getMonth() + 1)}-${padDatePart(now.getDate())}`,
+    `${padDatePart(now.getHours())}:${padDatePart(now.getMinutes())}:${padDatePart(now.getSeconds())}`
+  ].join(' ');
+};
+
+const getOperatorUserId = (operator = {}) => {
+  const userId = Number(operator.userId ?? operator.id);
+  return Number.isFinite(userId) && userId > 0 ? userId : null;
+};
+
+const confirmSampleReception = async (sampleId, operator = {}, options = {}) => {
+  const numericSampleId = Number(sampleId);
+
+  if (!Number.isInteger(numericSampleId) || numericSampleId <= 0) {
+    throw new Error('样本 ID 无效，无法确认签收。');
+  }
+
+  const { database, databasePath } = await openDatabase(options);
+  let transactionStarted = false;
+
+  try {
+    database.run('PRAGMA foreign_keys = ON;');
+    database.run('BEGIN TRANSACTION;');
+    transactionStarted = true;
+
+    const beforeSample = getRow(database, `
+      SELECT ${SAMPLE_SELECT_COLUMNS}
+      FROM samples
+      WHERE id = :sampleId;
+    `, {
+      ':sampleId': numericSampleId
+    });
+
+    if (!beforeSample) {
+      throw new Error(`样本不存在，无法确认签收：${numericSampleId}`);
+    }
+
+    if (String(beforeSample.received_at || '').trim()) {
+      throw new Error(`样本 ${beforeSample.sample_no} 已有签收时间，不能重复签收。`);
+    }
+
+    if (!isStatusInGroup(beforeSample.status, 'pendingReceive')) {
+      throw new Error(`样本 ${beforeSample.sample_no} 当前状态为 ${beforeSample.status}，仅待签收样本允许确认签收。`);
+    }
+
+    const now = getCurrentTimestamp();
+
+    database.run(`
+      UPDATE samples
+      SET
+        status = 'reviewing',
+        received_at = :receivedAt,
+        updated_at = :updatedAt
+      WHERE id = :sampleId;
+    `, {
+      ':receivedAt': now,
+      ':updatedAt': now,
+      ':sampleId': numericSampleId
+    });
+
+    const afterSample = getRow(database, `
+      SELECT ${SAMPLE_SELECT_COLUMNS}
+      FROM samples
+      WHERE id = :sampleId;
+    `, {
+      ':sampleId': numericSampleId
+    });
+
+    database.run(`
+      INSERT INTO audit_logs (
+        user_id,
+        module_name,
+        operation_type,
+        target_table,
+        target_id,
+        before_json,
+        after_json,
+        remark,
+        created_at
+      ) VALUES (
+        :userId,
+        'sample_reception',
+        'confirm_sample_reception',
+        'samples',
+        :targetId,
+        :beforeJson,
+        :afterJson,
+        :remark,
+        :createdAt
+      );
+    `, {
+      ':userId': getOperatorUserId(operator),
+      ':targetId': numericSampleId,
+      ':beforeJson': JSON.stringify(beforeSample),
+      ':afterJson': JSON.stringify(afterSample),
+      ':remark': `Confirmed sample reception for ${beforeSample.sample_no}.`,
+      ':createdAt': now
+    });
+
+    database.run('COMMIT;');
+    transactionStarted = false;
+    saveDatabase(database, databasePath);
+
+    return {
+      sample: toSampleDto(afterSample),
+      databasePath
+    };
+  } catch (error) {
+    if (transactionStarted) {
+      try {
+        database.run('ROLLBACK;');
+      } catch (rollbackError) {
+        error.rollbackError = rollbackError;
+      }
+    }
+
+    throw error;
+  } finally {
+    database.close();
+  }
+};
+
 module.exports = {
-  getSampleReceptionData
+  getSampleReceptionData,
+  confirmSampleReception
 };
