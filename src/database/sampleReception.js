@@ -158,6 +158,11 @@ const getOperatorUserId = (operator = {}) => {
   return Number.isFinite(userId) && userId > 0 ? userId : null;
 };
 
+const getOperatorName = (operator = {}) => {
+  const operatorName = operator.displayName || operator.username || operator.name || operator.operatorName;
+  return String(operatorName || operator.userId || operator.id || 'unknown').trim() || 'unknown';
+};
+
 const confirmSampleReception = async (sampleId, operator = {}, options = {}) => {
   const numericSampleId = Number(sampleId);
 
@@ -270,7 +275,130 @@ const confirmSampleReception = async (sampleId, operator = {}, options = {}) => 
   }
 };
 
+const rejectSampleReception = async (sampleId, reason, operator = {}, options = {}) => {
+  const numericSampleId = Number(sampleId);
+  const rejectReason = String(reason || '').trim();
+
+  if (!Number.isInteger(numericSampleId) || numericSampleId <= 0) {
+    throw new Error('样本 ID 无效，无法退样/拒收。');
+  }
+
+  if (!rejectReason) {
+    throw new Error('拒收原因不能为空。');
+  }
+
+  const { database, databasePath } = await openDatabase(options);
+  let transactionStarted = false;
+
+  try {
+    database.run('PRAGMA foreign_keys = ON;');
+    database.run('BEGIN TRANSACTION;');
+    transactionStarted = true;
+
+    const beforeSample = getRow(database, `
+      SELECT ${SAMPLE_SELECT_COLUMNS}
+      FROM samples
+      WHERE id = :sampleId;
+    `, {
+      ':sampleId': numericSampleId
+    });
+
+    if (!beforeSample) {
+      throw new Error(`样本不存在，无法退样/拒收：${numericSampleId}`);
+    }
+
+    if (!isStatusInGroup(beforeSample.status, 'pendingReceive')) {
+      throw new Error(`样本 ${beforeSample.sample_no} 当前状态为 ${beforeSample.status}，仅待签收样本允许退样/拒收。`);
+    }
+
+    const now = getCurrentTimestamp();
+
+    database.run(`
+      UPDATE samples
+      SET
+        status = 'rejected',
+        reject_reason = :rejectReason,
+        updated_at = :updatedAt
+      WHERE id = :sampleId;
+    `, {
+      ':rejectReason': rejectReason,
+      ':updatedAt': now,
+      ':sampleId': numericSampleId
+    });
+
+    const afterSample = getRow(database, `
+      SELECT ${SAMPLE_SELECT_COLUMNS}
+      FROM samples
+      WHERE id = :sampleId;
+    `, {
+      ':sampleId': numericSampleId
+    });
+
+    const operatorName = getOperatorName(operator);
+    const remark = [
+      `样本退样：${beforeSample.sample_no}`,
+      `拒收原因：${rejectReason}`,
+      `操作者：${operatorName}`,
+      `原状态：${beforeSample.status}`,
+      `新状态：${afterSample.status}`
+    ].join('；');
+
+    database.run(`
+      INSERT INTO audit_logs (
+        user_id,
+        module_name,
+        operation_type,
+        target_table,
+        target_id,
+        before_json,
+        after_json,
+        remark,
+        created_at
+      ) VALUES (
+        :userId,
+        '样本签收',
+        '样本退样',
+        'samples',
+        :targetId,
+        :beforeJson,
+        :afterJson,
+        :remark,
+        :createdAt
+      );
+    `, {
+      ':userId': getOperatorUserId(operator),
+      ':targetId': numericSampleId,
+      ':beforeJson': JSON.stringify(beforeSample),
+      ':afterJson': JSON.stringify(afterSample),
+      ':remark': remark,
+      ':createdAt': now
+    });
+
+    database.run('COMMIT;');
+    transactionStarted = false;
+    saveDatabase(database, databasePath);
+
+    return {
+      sample: toSampleDto(afterSample),
+      databasePath
+    };
+  } catch (error) {
+    if (transactionStarted) {
+      try {
+        database.run('ROLLBACK;');
+      } catch (rollbackError) {
+        error.rollbackError = rollbackError;
+      }
+    }
+
+    throw error;
+  } finally {
+    database.close();
+  }
+};
+
 module.exports = {
   getSampleReceptionData,
-  confirmSampleReception
+  confirmSampleReception,
+  rejectSampleReception
 };
