@@ -9,7 +9,8 @@
     "build": "electron-builder --win",
     "db:init": "node scripts/db-init.js",
     "db:reset": "node scripts/db-reset.js",
-    "db:check": "node scripts/db-check.js"
+    "db:check": "node scripts/db-check.js",
+    "smoke:sample-reception": "node scripts/smoke-sample-reception.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
