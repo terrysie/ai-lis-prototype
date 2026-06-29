@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('terryLisApi', {
   getDashboardStats: () => ipcRenderer.invoke('dashboard:getStats'),
   getSampleReceptionData: () => ipcRenderer.invoke('sampleReception:getData'),
+  getSampleReceptionHistory: (sampleId) => ipcRenderer.invoke('sampleReception:getHistory', sampleId),
   confirmSampleReception: (sampleId) => ipcRenderer.invoke('sampleReception:confirm', sampleId),
   rejectSampleReception: (sampleId, reason) => ipcRenderer.invoke('sampleReception:reject', sampleId, reason),
   createSampleRecollectionTask: (sampleId, reason) => ipcRenderer.invoke('sampleReception:createRecollectionTask', sampleId, reason),

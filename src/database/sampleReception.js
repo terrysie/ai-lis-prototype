@@ -81,6 +81,35 @@ const getRow = (database, sql, params = {}) => getRows(database, sql, params)[0]
 
 const normalizeStatus = (status) => String(status || '').trim().toLowerCase();
 
+const parseAuditJson = (value) => {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch (_error) {
+    return value;
+  }
+};
+
+const auditJsonMatchesSampleId = (value, sampleId) => {
+  if (!value || typeof value !== 'object') return false;
+
+  const explicitSampleId = value.sample_id ?? value.sampleId;
+  if (explicitSampleId !== undefined) {
+    return Number(explicitSampleId) === sampleId;
+  }
+
+  const looksLikeSampleRow = (
+    value.sample_no !== undefined ||
+    value.patient_code !== undefined ||
+    value.source_type !== undefined ||
+    value.received_at !== undefined ||
+    value.reject_reason !== undefined
+  );
+
+  return looksLikeSampleRow && Number(value.id) === sampleId;
+};
+
 const isStatusInGroup = (status, group) => {
   const normalizedStatus = normalizeStatus(status);
   return STATUS_GROUPS[group].some((candidate) => normalizeStatus(candidate) === normalizedStatus);
@@ -120,6 +149,19 @@ const toSampleRecollectionTaskDto = (row) => ({
   createdBy: row.created_by === null || row.created_by === undefined ? null : Number(row.created_by),
   createdAt: row.created_at,
   updatedAt: row.updated_at
+});
+
+const toAuditLogDto = (row) => ({
+  id: Number(row.id),
+  module_name: row.module_name,
+  operation_type: row.operation_type,
+  target_table: row.target_table,
+  target_id: row.target_id === null || row.target_id === undefined ? null : Number(row.target_id),
+  operator_id: row.operator_id === null || row.operator_id === undefined ? null : Number(row.operator_id),
+  before_json: parseAuditJson(row.before_json),
+  after_json: parseAuditJson(row.after_json),
+  remark: row.remark || '',
+  created_at: row.created_at
 });
 
 const getSampleReceptionData = async (options = {}) => {
@@ -168,6 +210,46 @@ const getSampleReceptionData = async (options = {}) => {
       samples,
       databasePath: getDefaultDatabasePath(options)
     };
+  } finally {
+    database.close();
+  }
+};
+
+const getSampleReceptionHistory = async (sampleId, options = {}) => {
+  const numericSampleId = Number(sampleId);
+
+  if (!Number.isInteger(numericSampleId) || numericSampleId <= 0) {
+    throw new Error('样本 ID 缺失或无效，无法读取流转记录。');
+  }
+
+  const { database } = await openDatabase(options);
+
+  try {
+    database.run('PRAGMA foreign_keys = ON;');
+
+    const rows = getRows(database, `
+      SELECT
+        id,
+        user_id AS operator_id,
+        module_name,
+        operation_type,
+        target_table,
+        target_id,
+        before_json,
+        after_json,
+        remark,
+        created_at
+      FROM audit_logs
+      ORDER BY datetime(created_at) DESC, id DESC;
+    `);
+
+    return rows
+      .map(toAuditLogDto)
+      .filter((log) => (
+        (log.target_table === 'samples' && log.target_id === numericSampleId) ||
+        auditJsonMatchesSampleId(log.before_json, numericSampleId) ||
+        auditJsonMatchesSampleId(log.after_json, numericSampleId)
+      ));
   } finally {
     database.close();
   }
@@ -571,6 +653,7 @@ const createSampleRecollectionTask = async (sampleId, reason, operator = {}, opt
 
 module.exports = {
   getSampleReceptionData,
+  getSampleReceptionHistory,
   confirmSampleReception,
   rejectSampleReception,
   createSampleRecollectionTask

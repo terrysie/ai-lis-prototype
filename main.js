@@ -4,6 +4,7 @@ const { initializeDatabase } = require('./src/database/initDatabase');
 const { getDashboardStats } = require('./src/database/dashboardStats');
 const {
   getSampleReceptionData,
+  getSampleReceptionHistory,
   confirmSampleReception,
   rejectSampleReception,
   createSampleRecollectionTask
@@ -36,6 +37,7 @@ const createMainWindow = () => {
 
 ipcMain.handle('dashboard:getStats', async () => getDashboardStats({ electronApp: app }));
 ipcMain.handle('sampleReception:getData', async () => getSampleReceptionData({ electronApp: app }));
+ipcMain.handle('sampleReception:getHistory', async (_event, sampleId) => getSampleReceptionHistory(sampleId, { electronApp: app }));
 ipcMain.handle('sampleReception:confirm', async (_event, sampleId) => confirmSampleReception(
   sampleId,
   { userId: 3, username: 'li.receive' },
