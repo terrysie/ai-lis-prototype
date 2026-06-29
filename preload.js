@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   getSampleReceptionData: () => ipcRenderer.invoke('sampleReception:getData'),
   confirmSampleReception: (sampleId) => ipcRenderer.invoke('sampleReception:confirm', sampleId),
   rejectSampleReception: (sampleId, reason) => ipcRenderer.invoke('sampleReception:reject', sampleId, reason),
+  createSampleRecollectionTask: (sampleId, reason) => ipcRenderer.invoke('sampleReception:createRecollectionTask', sampleId, reason),
   getAiPreReviewData: () => ipcRenderer.invoke('aiPreReview:getData'),
   getResultReviewData: () => ipcRenderer.invoke('resultReview:getData'),
   getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData'),

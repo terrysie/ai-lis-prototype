@@ -43,6 +43,19 @@ CREATE TABLE IF NOT EXISTS samples (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS sample_recollection_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sample_id INTEGER NOT NULL,
+  sample_no TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (sample_id) REFERENCES samples(id),
+  FOREIGN KEY (created_by) REFERENCES users(id)
+);
+
 CREATE TABLE IF NOT EXISTS test_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   item_code TEXT NOT NULL UNIQUE,
@@ -250,6 +263,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_samples_status_priority ON samples(status, priority);
 CREATE INDEX IF NOT EXISTS idx_samples_received_at ON samples(received_at);
+CREATE INDEX IF NOT EXISTS idx_sample_recollection_tasks_sample_id ON sample_recollection_tasks(sample_id);
 CREATE INDEX IF NOT EXISTS idx_results_sample_id ON test_results(sample_id);
 CREATE INDEX IF NOT EXISTS idx_results_item_status ON test_results(test_item_id, result_status);
 CREATE INDEX IF NOT EXISTS idx_ai_pre_reviews_sample_id ON ai_pre_reviews(sample_id);
