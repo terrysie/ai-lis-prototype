@@ -10,7 +10,8 @@
     "db:init": "node scripts/db-init.js",
     "db:reset": "node scripts/db-reset.js",
     "db:check": "node scripts/db-check.js",
-    "smoke:sample-reception": "node scripts/smoke-sample-reception.js"
+    "smoke:sample-reception": "node scripts/smoke-sample-reception.js",
+    "smoke:result-review": "node scripts/smoke-result-review.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",

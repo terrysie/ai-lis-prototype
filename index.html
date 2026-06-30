@@ -1802,10 +1802,10 @@
             <div class="decision-block"><h4>命中规则</h4><ul id="reviewAiRules"></ul></div>
             <div class="decision-block"><h4>建议动作</h4><p id="reviewAiAction">--</p></div>
             <div class="action-row review-actions">
-              <button class="btn" data-review-action="确认发布">确认发布</button>
+              <button class="btn" id="approveResultReviewButton" data-review-action="审核通过">审核通过</button>
               <button class="btn secondary" data-review-action="转重点复核">转重点复核</button>
               <button class="btn secondary" data-review-action="建议复检">建议复检</button>
-              <button class="btn secondary" data-review-action="暂缓发布">暂缓发布</button>
+              <button class="btn danger" id="rejectResultReviewButton" data-review-action="驳回/退回修改">驳回/退回修改</button>
               <button class="btn danger" data-review-action="标记危急值">标记危急值</button>
               <button class="btn secondary" data-review-action="查看完整留痕">查看完整留痕</button>
             </div>
@@ -2503,6 +2503,10 @@
       }
     }
 
+
+    let selectedResultReviewIndex = 0;
+    let isApprovingResultReview = false;
+    let isRejectingResultReview = false;
 
     let reviewResults = [
       {
@@ -3380,6 +3384,7 @@
       const status = review.reviewStatus || review.resultStatus || "pending_review";
       const normalized = String(status).toLowerCase();
       if (["approved", "reviewed", "released", "release"].includes(normalized)) return "已审核 / 已发布";
+      if (["rejected", "review_rejected"].includes(normalized)) return "已驳回";
       if (["pending", "pending_review", "reviewing", "auto_release_candidate"].includes(normalized)) return "待人工审核";
       return status;
     }
@@ -3402,6 +3407,9 @@
       const resultValue = review.resultText || review.resultValue || "--";
       const summary = [review.itemName, resultValue, review.unit].filter(Boolean).join(" ");
       return {
+        reviewId: review.reviewId ? Number(review.reviewId) : null,
+        rawReviewStatus: review.reviewStatus,
+        rawResultStatus: review.resultStatus,
         id: review.sampleNo,
         patientCode: review.patientCode,
         source: review.department || "--",
@@ -3412,7 +3420,7 @@
         riskTag: risk.text,
         riskClass: risk.badgeClass,
         status: getReviewStatusText(review),
-        action: review.aiSuggestedAction || review.reviewAction || "当前版本仅展示读取结果",
+        action: review.aiSuggestedAction || review.reviewAction || "可审核通过或驳回写入 SQLite",
         details: {
           sample: review.sampleNo,
           projectName: review.itemName || "--",
@@ -3436,7 +3444,7 @@
             `审核人：${review.reviewerName || "未指定"}`,
             `审核意见：${review.reviewOpinion || "暂无"}`
           ],
-          action: review.aiSuggestedAction || review.reviewAction || "当前仅实现 SQLite 读取，不执行审核写入。"
+          action: review.aiSuggestedAction || review.reviewAction || "可点击审核通过或驳回/退回修改写入 SQLite，并记录审计日志。"
         },
         history: [
           { date: (review.createdAt || "--").slice(0, 10), item: review.itemName || "--", result: resultValue, unit: review.unit || "", change: "当前记录", width: 64 }
@@ -3467,12 +3475,43 @@
       });
     }
 
-    async function hydrateResultReviewData() {
+    function isPendingResultReviewStatus(status) {
+      const normalized = String(status || "").trim().toLowerCase();
+      return ["pending", "pending_review", "reviewing", "auto_release_candidate", "待审核", "待复核"].includes(normalized);
+    }
+
+    function canWriteResultReview(item) {
+      return Boolean(item?.reviewId && isPendingResultReviewStatus(item.rawReviewStatus || item.rawResultStatus));
+    }
+
+    function getSelectedResultReview() {
+      return reviewResults[selectedResultReviewIndex] || null;
+    }
+
+    function updateResultReviewActionButtons() {
+      const approveButton = document.getElementById("approveResultReviewButton");
+      const rejectButton = document.getElementById("rejectResultReviewButton");
+      const item = getSelectedResultReview();
+      const canWrite = canWriteResultReview(item);
+
+      if (approveButton) {
+        approveButton.disabled = isApprovingResultReview || isRejectingResultReview || !window.terryLisApi?.approveResultReview || !canWrite;
+        approveButton.textContent = isApprovingResultReview ? "审核中..." : "审核通过";
+      }
+
+      if (rejectButton) {
+        rejectButton.disabled = isRejectingResultReview || isApprovingResultReview || !window.terryLisApi?.rejectResultReview || !canWrite;
+        rejectButton.textContent = isRejectingResultReview ? "驳回中..." : "驳回/退回修改";
+      }
+    }
+
+    async function hydrateResultReviewData(preferredReviewId = null) {
       if (!window.terryLisApi?.getResultReviewData) {
         return;
       }
 
       try {
+        const previousReviewId = preferredReviewId ?? reviewResults[selectedResultReviewIndex]?.reviewId;
         const data = await window.terryLisApi.getResultReviewData();
         if (!Array.isArray(data?.reviews)) {
           return;
@@ -3480,19 +3519,26 @@
 
         hydrateResultReviewStats(data.stats || {});
         reviewResults = data.reviews.map(toResultReviewView);
+        const selectedIndex = previousReviewId
+          ? reviewResults.findIndex(item => item.reviewId === previousReviewId)
+          : 0;
+        selectedResultReviewIndex = selectedIndex >= 0 ? selectedIndex : 0;
         renderReviewResults();
         if (reviewResults.length > 0) {
-          selectReviewResult(0);
+          selectReviewResult(selectedResultReviewIndex);
+        } else {
+          updateResultReviewActionButtons();
         }
       } catch (error) {
         console.warn("TERRY-LIS 结果审核数据读取失败，继续使用静态模拟数据。", error);
+        updateResultReviewActionButtons();
       }
     }
 
 
     function renderReviewResults() {
       reviewTable.innerHTML = reviewResults.map((item, index) => `
-        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+        <tr data-index="${index}" class="${index === selectedResultReviewIndex ? "selected" : ""}">
           <td><strong>${item.id}</strong><br /><small>${item.patientCode || "--"}</small></td>
           <td>${item.source}</td>
           <td>${item.project}</td>
@@ -3511,8 +3557,14 @@
 
     function selectReviewResult(index) {
       const item = reviewResults[index];
+      if (!item) {
+        updateResultReviewActionButtons();
+        return;
+      }
+      selectedResultReviewIndex = index;
       document.querySelectorAll("#reviewTable tr").forEach(row => row.classList.remove("selected"));
-      document.querySelector(`#reviewTable tr[data-index="${index}"]`).classList.add("selected");
+      const selectedRow = document.querySelector(`#reviewTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
 
       document.getElementById("reviewCardSample").textContent = `${item.id} · ${item.project}`;
       document.getElementById("reviewCardMeta").textContent = `${item.source} / ${item.grade} / ${item.status}`;
@@ -3553,6 +3605,7 @@
       document.getElementById("reviewAuditList").innerHTML = item.audit.map(record => `
         <div class="audit-item"><strong>${record.time} · ${record.user}</strong><br />操作内容：${record.content}<br />AI 命中规则：${record.rules}<br />人工处理意见：${record.opinion}<br />状态：${record.status}</div>
       `).join("");
+      updateResultReviewActionButtons();
     }
 
     function renderPositiveAlerts() {
@@ -4484,8 +4537,103 @@
       });
     });
 
+    async function handleApproveResultReview() {
+      const item = getSelectedResultReview();
+
+      if (!item) {
+        showToast("请先选择需要审核的结果。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!canWriteResultReview(item)) {
+        showToast("当前结果状态不允许重复审核。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.approveResultReview) {
+        showToast("当前环境未提供结果审核通过写入接口。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      isApprovingResultReview = true;
+      updateResultReviewActionButtons();
+
+      try {
+        await window.terryLisApi.approveResultReview(item.reviewId);
+        showToast(`审核通过已写入 SQLite：${item.id}`);
+        await hydrateResultReviewData(item.reviewId);
+      } catch (error) {
+        showToast(`审核通过失败：${getErrorMessage(error)}`);
+      } finally {
+        isApprovingResultReview = false;
+        updateResultReviewActionButtons();
+      }
+    }
+
+    async function handleRejectResultReview() {
+      const item = getSelectedResultReview();
+
+      if (!item) {
+        showToast("请先选择需要驳回的结果。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!canWriteResultReview(item)) {
+        showToast("当前结果状态不允许重复驳回。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.rejectResultReview) {
+        showToast("当前环境未提供结果审核驳回写入接口。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      const reason = window.prompt(`请输入 ${item.id} 的驳回原因：`, "");
+      if (reason === null) {
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      const rejectReason = reason.trim();
+      if (!rejectReason) {
+        showToast("驳回原因不能为空。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      isRejectingResultReview = true;
+      updateResultReviewActionButtons();
+
+      try {
+        await window.terryLisApi.rejectResultReview(item.reviewId, rejectReason);
+        showToast(`审核驳回已写入 SQLite：${item.id}`);
+        await hydrateResultReviewData(item.reviewId);
+      } catch (error) {
+        showToast(`审核驳回失败：${getErrorMessage(error)}`);
+      } finally {
+        isRejectingResultReview = false;
+        updateResultReviewActionButtons();
+      }
+    }
+
     document.querySelectorAll("[data-review-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.reviewAction === "审核通过") {
+          handleApproveResultReview();
+          return;
+        }
+
+        if (button.dataset.reviewAction === "驳回/退回修改") {
+          handleRejectResultReview();
+          return;
+        }
+
         const currentResult = document.getElementById("reviewCardSample").textContent;
         showToast(`模拟操作成功：${button.dataset.reviewAction}，当前审核结果：${currentResult}`);
       });

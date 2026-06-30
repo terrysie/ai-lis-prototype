@@ -176,9 +176,11 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 Electron 桌面版结果审核页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `samples`、`test_results`、`test_items`、`ai_pre_reviews`、`result_reviews`、`users` 表读取结果审核数据，并用读取结果更新结果审核总览统计、结果审核队列和右侧结果详情 / AI 建议 / 审核留痕卡片。
 
+结果审核页面现在支持“审核通过”和“驳回/退回修改”真实写入。操作会更新 `result_reviews` 和关联 `test_results.result_status`，并在 `audit_logs` 记录“审核通过”或“审核驳回”。`npm run smoke:result-review` 会覆盖这两类写入、重复操作失败、缺失审核 ID 失败和审计日志写入验证。
+
 GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本地 SQLite 能力，因此结果审核页面会继续使用 `index.html` 中已有的静态 fallback 模拟数据；如果 Electron IPC 调用失败，页面同样会保留静态模拟数据并输出 `console.warn`，避免影响静态网页部署。
 
-当前版本仅实现结果审核数据读取，不实现确认发布、复检、暂缓发布、危急值标记等写入操作。页面中的确认发布、转重点复核、建议复检、暂缓发布、标记危急值等按钮仍为原型演示交互，不会修改数据库。
+当前版本不实现报告正式发布、复检、危急值标记等写入操作。页面中的转重点复核、建议复检、标记危急值等按钮仍为原型演示交互，不会修改数据库。
 
 后续会逐步加入审核动作写入、结果状态更新、危急值触发和审计日志，让结果审核、危急值闭环和数据库留痕形成完整闭环。
 

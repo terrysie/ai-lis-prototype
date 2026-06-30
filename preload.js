@@ -9,6 +9,8 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   createSampleRecollectionTask: (sampleId, reason) => ipcRenderer.invoke('sampleReception:createRecollectionTask', sampleId, reason),
   getAiPreReviewData: () => ipcRenderer.invoke('aiPreReview:getData'),
   getResultReviewData: () => ipcRenderer.invoke('resultReview:getData'),
+  approveResultReview: (reviewId) => ipcRenderer.invoke('resultReview:approve', reviewId),
+  rejectResultReview: (reviewId, reason) => ipcRenderer.invoke('resultReview:reject', reviewId, reason),
   getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData'),
   getQcDashboardData: () => ipcRenderer.invoke('qcDashboard:getData'),
   getSystemSettingsData: () => ipcRenderer.invoke('systemSettings:getData')
