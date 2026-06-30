@@ -11,6 +11,7 @@ const {
 } = require('./src/database/sampleReception');
 const { getAiPreReviewData } = require('./src/database/aiPreReview');
 const { getResultReviewData, approveResultReview, rejectResultReview } = require('./src/database/resultReview');
+const { getReportPreviewData, generateReportHtml, exportReportHtml } = require('./src/database/reportOutput');
 const {
   getCriticalValuesData,
   notifyCriticalValue,
@@ -70,6 +71,20 @@ ipcMain.handle('resultReview:approve', async (_event, reviewId) => approveResult
 ipcMain.handle('resultReview:reject', async (_event, reviewId, reason) => rejectResultReview(
   reviewId,
   reason,
+  { userId: 2, username: 'chen.review' },
+  { electronApp: app }
+));
+ipcMain.handle('reportOutput:getPreview', async (_event, resultId) => getReportPreviewData(
+  resultId,
+  { electronApp: app }
+));
+ipcMain.handle('reportOutput:generateHtml', async (_event, resultId) => generateReportHtml(
+  resultId,
+  { userId: 2, username: 'chen.review' },
+  { electronApp: app }
+));
+ipcMain.handle('reportOutput:exportHtml', async (_event, resultId) => exportReportHtml(
+  resultId,
   { userId: 2, username: 'chen.review' },
   { electronApp: app }
 ));

@@ -1808,6 +1808,8 @@
               <button class="btn danger" id="rejectResultReviewButton" data-review-action="驳回/退回修改">驳回/退回修改</button>
               <button class="btn danger" data-review-action="标记危急值">标记危急值</button>
               <button class="btn secondary" data-review-action="查看完整留痕">查看完整留痕</button>
+              <button class="btn secondary" id="generateReportHtmlButton" data-review-action="生成报告HTML">生成报告HTML</button>
+              <button class="btn secondary" id="exportReportHtmlButton" data-review-action="导出报告HTML">导出报告HTML</button>
             </div>
           </aside>
         </section>
@@ -2507,6 +2509,8 @@
     let selectedResultReviewIndex = 0;
     let isApprovingResultReview = false;
     let isRejectingResultReview = false;
+    let isGeneratingReportHtml = false;
+    let isExportingReportHtml = false;
 
     let reviewResults = [
       {
@@ -3412,6 +3416,7 @@
       const summary = [review.itemName, resultValue, review.unit].filter(Boolean).join(" ");
       return {
         reviewId: review.reviewId ? Number(review.reviewId) : null,
+        resultId: review.resultId ? Number(review.resultId) : null,
         rawReviewStatus: review.reviewStatus,
         rawResultStatus: review.resultStatus,
         id: review.sampleNo,
@@ -3488,6 +3493,14 @@
       return Boolean(item?.reviewId && isPendingResultReviewStatus(item.rawReviewStatus || item.rawResultStatus));
     }
 
+    function canGenerateReportForResult(item) {
+      return Boolean(
+        item?.resultId &&
+        String(item.rawReviewStatus || "").trim().toLowerCase() === "approved" &&
+        String(item.rawResultStatus || "").trim().toLowerCase() === "reviewed"
+      );
+    }
+
     function getSelectedResultReview() {
       return reviewResults[selectedResultReviewIndex] || null;
     }
@@ -3495,8 +3508,11 @@
     function updateResultReviewActionButtons() {
       const approveButton = document.getElementById("approveResultReviewButton");
       const rejectButton = document.getElementById("rejectResultReviewButton");
+      const generateReportButton = document.getElementById("generateReportHtmlButton");
+      const exportReportButton = document.getElementById("exportReportHtmlButton");
       const item = getSelectedResultReview();
       const canWrite = canWriteResultReview(item);
+      const canGenerateReport = canGenerateReportForResult(item);
 
       if (approveButton) {
         approveButton.disabled = isApprovingResultReview || isRejectingResultReview || !window.terryLisApi?.approveResultReview || !canWrite;
@@ -3506,6 +3522,16 @@
       if (rejectButton) {
         rejectButton.disabled = isRejectingResultReview || isApprovingResultReview || !window.terryLisApi?.rejectResultReview || !canWrite;
         rejectButton.textContent = isRejectingResultReview ? "驳回中..." : "驳回/退回修改";
+      }
+
+      if (generateReportButton) {
+        generateReportButton.disabled = isGeneratingReportHtml || isExportingReportHtml || !window.terryLisApi?.generateReportHtml || !canGenerateReport;
+        generateReportButton.textContent = isGeneratingReportHtml ? "生成中..." : "生成报告HTML";
+      }
+
+      if (exportReportButton) {
+        exportReportButton.disabled = isExportingReportHtml || isGeneratingReportHtml || !window.terryLisApi?.exportReportHtml || !canGenerateReport;
+        exportReportButton.textContent = isExportingReportHtml ? "导出中..." : "导出报告HTML";
       }
     }
 
@@ -4717,6 +4743,82 @@
       }
     }
 
+    async function handleGenerateReportHtml() {
+      const item = getSelectedResultReview();
+
+      if (!item) {
+        showToast("请先选择需要生成报告的结果。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!canGenerateReportForResult(item)) {
+        showToast("只有审核通过且结果状态为 reviewed 的结果可以生成报告。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.generateReportHtml) {
+        showToast("当前环境未提供报告 HTML 生成接口。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      isGeneratingReportHtml = true;
+      updateResultReviewActionButtons();
+
+      try {
+        const report = await window.terryLisApi.generateReportHtml(item.resultId);
+        const previewWindow = window.open("", "_blank");
+        if (previewWindow) {
+          previewWindow.document.open();
+          previewWindow.document.write(report.html);
+          previewWindow.document.close();
+        }
+        showToast(`报告已生成：${report.reportData?.sampleNo || item.id}`);
+      } catch (error) {
+        showToast(`报告生成失败：${getErrorMessage(error)}`);
+      } finally {
+        isGeneratingReportHtml = false;
+        updateResultReviewActionButtons();
+      }
+    }
+
+    async function handleExportReportHtml() {
+      const item = getSelectedResultReview();
+
+      if (!item) {
+        showToast("请先选择需要导出的结果。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!canGenerateReportForResult(item)) {
+        showToast("只有审核通过且结果状态为 reviewed 的结果可以导出报告。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.exportReportHtml) {
+        showToast("当前环境未提供报告 HTML 导出接口。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      isExportingReportHtml = true;
+      updateResultReviewActionButtons();
+
+      try {
+        const report = await window.terryLisApi.exportReportHtml(item.resultId);
+        showToast(`报告已导出：${report.filePath}`);
+      } catch (error) {
+        showToast(`报告导出失败：${getErrorMessage(error)}`);
+      } finally {
+        isExportingReportHtml = false;
+        updateResultReviewActionButtons();
+      }
+    }
+
     async function handleNotifyCriticalValue() {
       const item = getSelectedCriticalValue();
 
@@ -4853,6 +4955,16 @@
 
         if (button.dataset.reviewAction === "驳回/退回修改") {
           handleRejectResultReview();
+          return;
+        }
+
+        if (button.dataset.reviewAction === "生成报告HTML") {
+          handleGenerateReportHtml();
+          return;
+        }
+
+        if (button.dataset.reviewAction === "导出报告HTML") {
+          handleExportReportHtml();
           return;
         }
 
