@@ -12,6 +12,9 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   approveResultReview: (reviewId) => ipcRenderer.invoke('resultReview:approve', reviewId),
   rejectResultReview: (reviewId, reason) => ipcRenderer.invoke('resultReview:reject', reviewId, reason),
   getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData'),
+  notifyCriticalValue: (notificationId, remark) => ipcRenderer.invoke('criticalValues:notify', notificationId, remark),
+  acknowledgeCriticalValue: (notificationId) => ipcRenderer.invoke('criticalValues:acknowledge', notificationId),
+  completeCriticalValue: (notificationId, resolution) => ipcRenderer.invoke('criticalValues:complete', notificationId, resolution),
   getQcDashboardData: () => ipcRenderer.invoke('qcDashboard:getData'),
   getSystemSettingsData: () => ipcRenderer.invoke('systemSettings:getData')
 });

@@ -11,7 +11,8 @@
     "db:reset": "node scripts/db-reset.js",
     "db:check": "node scripts/db-check.js",
     "smoke:sample-reception": "node scripts/smoke-sample-reception.js",
-    "smoke:result-review": "node scripts/smoke-result-review.js"
+    "smoke:result-review": "node scripts/smoke-result-review.js",
+    "smoke:critical-values": "node scripts/smoke-critical-values.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
