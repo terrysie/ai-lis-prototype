@@ -11,7 +11,12 @@ const {
 } = require('./src/database/sampleReception');
 const { getAiPreReviewData } = require('./src/database/aiPreReview');
 const { getResultReviewData, approveResultReview, rejectResultReview } = require('./src/database/resultReview');
-const { getCriticalValuesData } = require('./src/database/criticalValues');
+const {
+  getCriticalValuesData,
+  notifyCriticalValue,
+  acknowledgeCriticalValue,
+  completeCriticalValue
+} = require('./src/database/criticalValues');
 const { getQcDashboardData } = require('./src/database/qcDashboard');
 const { getSystemSettingsData } = require('./src/database/systemSettings');
 
@@ -69,6 +74,23 @@ ipcMain.handle('resultReview:reject', async (_event, reviewId, reason) => reject
   { electronApp: app }
 ));
 ipcMain.handle('criticalValues:getData', async () => getCriticalValuesData({ electronApp: app }));
+ipcMain.handle('criticalValues:notify', async (_event, notificationId, remark) => notifyCriticalValue(
+  notificationId,
+  remark,
+  { userId: 4, username: 'wang.qc' },
+  { electronApp: app }
+));
+ipcMain.handle('criticalValues:acknowledge', async (_event, notificationId) => acknowledgeCriticalValue(
+  notificationId,
+  { userId: 4, username: 'wang.qc' },
+  { electronApp: app }
+));
+ipcMain.handle('criticalValues:complete', async (_event, notificationId, resolution) => completeCriticalValue(
+  notificationId,
+  resolution,
+  { userId: 4, username: 'wang.qc' },
+  { electronApp: app }
+));
 ipcMain.handle('qcDashboard:getData', async () => getQcDashboardData({ electronApp: app }));
 ipcMain.handle('systemSettings:getData', async () => getSystemSettingsData({ electronApp: app }));
 

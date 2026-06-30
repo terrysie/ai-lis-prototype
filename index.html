@@ -2974,6 +2974,10 @@
     const questionList = document.getElementById("questionList");
     const toast = document.getElementById("toast");
     let toastTimer;
+    let selectedCriticalValueIndex = 0;
+    let isNotifyingCriticalValue = false;
+    let isAcknowledgingCriticalValue = false;
+    let isCompletingCriticalValue = false;
 
 
     let qualityInstruments = [
@@ -3816,15 +3820,92 @@
       return "待处理";
     }
 
+    function normalizeCriticalActionStatus(value) {
+      return String(value || "").trim().toLowerCase();
+    }
+
+    function isClosedCriticalValue(item) {
+      const rawStatus = normalizeCriticalActionStatus(item?.rawStatus || item?.status);
+      const confirmStatus = normalizeCriticalActionStatus(item?.rawConfirmStatus || item?.confirmStatus);
+      return Boolean(item?.closedAt)
+        || ["closed", "completed", "已闭环"].includes(rawStatus)
+        || ["closed", "completed", "已闭环", "已完成"].includes(confirmStatus);
+    }
+
+    function canNotifyCriticalValueRecord(item) {
+      const confirmStatus = normalizeCriticalActionStatus(item?.rawConfirmStatus || item?.confirmStatus);
+      return Boolean(item?.notificationId)
+        && !isClosedCriticalValue(item)
+        && ["pending", "pending_confirm", "待确认", "待处理"].includes(confirmStatus);
+    }
+
+    function canAcknowledgeCriticalValueRecord(item) {
+      const confirmStatus = normalizeCriticalActionStatus(item?.rawConfirmStatus || item?.confirmStatus);
+      return Boolean(item?.notificationId)
+        && !isClosedCriticalValue(item)
+        && !item?.latestConfirmedAt
+        && Boolean(item?.latestNotifiedAt)
+        && ["notified", "已通知"].includes(confirmStatus);
+    }
+
+    function canCompleteCriticalValueRecord(item) {
+      const confirmStatus = normalizeCriticalActionStatus(item?.rawConfirmStatus || item?.confirmStatus);
+      return Boolean(item?.notificationId)
+        && !isClosedCriticalValue(item)
+        && Boolean(item?.latestConfirmedAt)
+        && ["confirmed", "已确认"].includes(confirmStatus);
+    }
+
+    function getSelectedCriticalValue() {
+      return criticalValues[selectedCriticalValueIndex] || null;
+    }
+
+    function updateCriticalValueActionButtons() {
+      const item = getSelectedCriticalValue();
+      const notifyButton = document.querySelector('[data-critical-action="确认已通知"]');
+      const acknowledgeButton = document.querySelector('[data-critical-action="标记临床已确认"]');
+      const completeButton = document.querySelector('[data-critical-action="完成闭环"]');
+
+      if (notifyButton) {
+        notifyButton.disabled = isNotifyingCriticalValue
+          || isAcknowledgingCriticalValue
+          || isCompletingCriticalValue
+          || !window.terryLisApi?.notifyCriticalValue
+          || !canNotifyCriticalValueRecord(item);
+        notifyButton.textContent = isNotifyingCriticalValue ? "写入中..." : "确认已通知";
+      }
+
+      if (acknowledgeButton) {
+        acknowledgeButton.disabled = isAcknowledgingCriticalValue
+          || isNotifyingCriticalValue
+          || isCompletingCriticalValue
+          || !window.terryLisApi?.acknowledgeCriticalValue
+          || !canAcknowledgeCriticalValueRecord(item);
+        acknowledgeButton.textContent = isAcknowledgingCriticalValue ? "写入中..." : "标记临床已确认";
+      }
+
+      if (completeButton) {
+        completeButton.disabled = isCompletingCriticalValue
+          || isNotifyingCriticalValue
+          || isAcknowledgingCriticalValue
+          || !window.terryLisApi?.completeCriticalValue
+          || !canCompleteCriticalValueRecord(item);
+        completeButton.textContent = isCompletingCriticalValue ? "写入中..." : "完成闭环";
+      }
+    }
+
     function toCriticalValueView(item, notifications) {
       const status = normalizeCriticalStatus(item.status);
       const resultText = `${item.resultValue || "--"}${item.unit ? ` ${item.unit}` : ""}`;
       const itemNotifications = notifications.filter(record => Number(record.criticalValueId) === Number(item.id));
+      const latestNotification = itemNotifications.find(record => Number(record.id) === Number(item.latestNotificationId)) || itemNotifications[0] || null;
       const notifyTime = formatCriticalDateTime(item.latestNotifiedAt);
       const confirmTime = formatCriticalDateTime(item.latestConfirmedAt);
       const notifyTarget = item.latestNotifyTarget || item.responsibleDoctor || "待匹配通知对象";
       return {
         id: `CV-${item.id}`,
+        criticalValueId: Number(item.id),
+        notificationId: latestNotification ? Number(latestNotification.id) : null,
         sample: item.sampleNo || `样本 ${item.sampleId}`,
         patientCode: item.patientCode || "--",
         department: item.department || "--",
@@ -3842,6 +3923,11 @@
         doctor: item.responsibleDoctor || notifyTarget,
         notifyTime,
         confirmTime,
+        rawStatus: item.status || "",
+        rawConfirmStatus: item.latestConfirmStatus || "",
+        closedAt: item.closedAt || null,
+        latestNotifiedAt: item.latestNotifiedAt || null,
+        latestConfirmedAt: item.latestConfirmedAt || null,
         confirmStatus: item.latestConfirmStatus || "--",
         notifyMethod: item.latestNotifyMethod || "--",
         systemNote: `${item.itemName || "项目"}结果 ${resultText} 命中危急值阈值（${item.thresholdText || "未记录阈值"}），当前状态为${status.text}。`,
@@ -3881,12 +3967,13 @@
       });
     }
 
-    async function hydrateCriticalValuesData() {
+    async function hydrateCriticalValuesData(preferredCriticalValueId = null) {
       if (!window.terryLisApi?.getCriticalValuesData) {
         return;
       }
 
       try {
+        const currentCriticalValueId = preferredCriticalValueId || getSelectedCriticalValue()?.criticalValueId || null;
         const data = await window.terryLisApi.getCriticalValuesData();
         if (!Array.isArray(data?.criticalValues)) {
           return;
@@ -3894,9 +3981,15 @@
 
         hydrateCriticalValuesStats(data.stats || {});
         criticalValues = data.criticalValues.map(item => toCriticalValueView(item, data.notifications || []));
+        const nextIndex = currentCriticalValueId
+          ? criticalValues.findIndex(item => Number(item.criticalValueId) === Number(currentCriticalValueId))
+          : selectedCriticalValueIndex;
+        selectedCriticalValueIndex = nextIndex >= 0
+          ? nextIndex
+          : Math.min(selectedCriticalValueIndex, Math.max(criticalValues.length - 1, 0));
         renderCriticalValues();
         if (criticalValues.length > 0) {
-          selectCriticalValue(0);
+          selectCriticalValue(selectedCriticalValueIndex);
         }
       } catch (error) {
         console.warn("TERRY-LIS 危急值中心数据读取失败，继续使用静态模拟数据。", error);
@@ -3905,7 +3998,7 @@
 
     function renderCriticalValues() {
       criticalTable.innerHTML = criticalValues.map((item, index) => `
-        <tr data-index="${index}" class="${index === 0 ? "selected" : ""}">
+        <tr data-index="${index}" class="${index === selectedCriticalValueIndex ? "selected" : ""}">
           <td><strong>${item.sample}</strong></td>
           <td>${item.department}</td>
           <td>${item.project}</td>
@@ -3927,6 +4020,7 @@
     function selectCriticalValue(index) {
       const item = criticalValues[index];
       if (!item) return;
+      selectedCriticalValueIndex = index;
       document.querySelectorAll("#criticalTable tr").forEach(row => row.classList.remove("selected"));
       const selectedRow = document.querySelector(`#criticalTable tr[data-index="${index}"]`);
       if (selectedRow) selectedRow.classList.add("selected");
@@ -3978,6 +4072,7 @@
       document.getElementById("criticalNoticeTable").innerHTML = item.notices.map(record => `
         <tr><td>${record[0]}</td><td>${record[1]}</td><td>${record[2]}</td><td>${record[3]}</td><td>${record[4]}</td><td>${record[5]}</td><td>${record[6]}</td></tr>
       `).join("");
+      updateCriticalValueActionButtons();
     }
 
 
@@ -4622,6 +4717,133 @@
       }
     }
 
+    async function handleNotifyCriticalValue() {
+      const item = getSelectedCriticalValue();
+
+      if (!item) {
+        showToast("请先选择需要处理的危急值。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!canNotifyCriticalValueRecord(item)) {
+        showToast("当前危急值通知状态不允许重复确认通知。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.notifyCriticalValue) {
+        showToast("当前环境未提供危急值通知写入接口。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      const remarkInput = window.prompt(`请输入 ${item.id} 的通知说明：`, item.notifyMethod === "--" ? "" : item.notifyMethod);
+      if (remarkInput === null) {
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      isNotifyingCriticalValue = true;
+      updateCriticalValueActionButtons();
+
+      try {
+        await window.terryLisApi.notifyCriticalValue(item.notificationId, remarkInput.trim());
+        showToast(`危急值通知已写入 SQLite：${item.id}`);
+        await hydrateCriticalValuesData(item.criticalValueId);
+      } catch (error) {
+        showToast(`危急值通知失败：${getErrorMessage(error)}`);
+      } finally {
+        isNotifyingCriticalValue = false;
+        updateCriticalValueActionButtons();
+      }
+    }
+
+    async function handleAcknowledgeCriticalValue() {
+      const item = getSelectedCriticalValue();
+
+      if (!item) {
+        showToast("请先选择需要确认的危急值。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!canAcknowledgeCriticalValueRecord(item)) {
+        showToast("当前危急值状态不允许重复临床确认。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.acknowledgeCriticalValue) {
+        showToast("当前环境未提供危急值确认写入接口。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      isAcknowledgingCriticalValue = true;
+      updateCriticalValueActionButtons();
+
+      try {
+        await window.terryLisApi.acknowledgeCriticalValue(item.notificationId);
+        showToast(`危急值临床确认已写入 SQLite：${item.id}`);
+        await hydrateCriticalValuesData(item.criticalValueId);
+      } catch (error) {
+        showToast(`危急值确认失败：${getErrorMessage(error)}`);
+      } finally {
+        isAcknowledgingCriticalValue = false;
+        updateCriticalValueActionButtons();
+      }
+    }
+
+    async function handleCompleteCriticalValue() {
+      const item = getSelectedCriticalValue();
+
+      if (!item) {
+        showToast("请先选择需要闭环的危急值。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!canCompleteCriticalValueRecord(item)) {
+        showToast("当前危急值状态不允许完成或重复完成闭环。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.completeCriticalValue) {
+        showToast("当前环境未提供危急值完成写入接口。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      const resolutionInput = window.prompt(`请输入 ${item.id} 的处理说明：`, "");
+      if (resolutionInput === null) {
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      const resolution = resolutionInput.trim();
+      if (!resolution) {
+        showToast("危急值处理说明不能为空。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      isCompletingCriticalValue = true;
+      updateCriticalValueActionButtons();
+
+      try {
+        await window.terryLisApi.completeCriticalValue(item.notificationId, resolution);
+        showToast(`危急值闭环已写入 SQLite：${item.id}`);
+        await hydrateCriticalValuesData(item.criticalValueId);
+      } catch (error) {
+        showToast(`危急值闭环失败：${getErrorMessage(error)}`);
+      } finally {
+        isCompletingCriticalValue = false;
+        updateCriticalValueActionButtons();
+      }
+    }
+
     document.querySelectorAll("[data-review-action]").forEach(button => {
       button.addEventListener("click", () => {
         if (button.dataset.reviewAction === "审核通过") {
@@ -4642,8 +4864,23 @@
 
     document.querySelectorAll("[data-critical-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.criticalAction === "确认已通知") {
+          handleNotifyCriticalValue();
+          return;
+        }
+
+        if (button.dataset.criticalAction === "标记临床已确认") {
+          handleAcknowledgeCriticalValue();
+          return;
+        }
+
+        if (button.dataset.criticalAction === "完成闭环") {
+          handleCompleteCriticalValue();
+          return;
+        }
+
         const currentCritical = document.getElementById("criticalDetailTitle").textContent;
-        showToast(`模拟操作成功：${button.dataset.criticalAction}，当前危急值：${currentCritical}`);
+        showToast(`原型演示操作：${button.dataset.criticalAction}，当前危急值：${currentCritical}。未写入数据库。`);
       });
     });
 
