@@ -196,6 +196,8 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 当前 seed 没有 `approved + reviewed` 的报告输出基线结果时，该 smoke 会按现有 schema 构造一条 `REPORT-SMOKE` 运行时测试数据；它不修改 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。导出的 smoke HTML 文件会在脚本结束前删除。
 
+`npm run smoke:report-publish` 用于验证已审核结果可正式发布、发布后 `test_results.result_status = published`、`audit_logs` 记录“发布报告”、重复发布失败、未审核结果不能发布，以及已发布结果仍可生成 HTML 报告。当前 seed 没有 `approved + reviewed` 的发布基线结果时，该 smoke 会构造 `PUBLISH-SMOKE` 运行时测试数据；它不修改 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
+
 ## 系统设置页面数据库驱动
 
 Electron 桌面版系统设置页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `users`、`roles`、`system_rules`、`audit_logs` 表读取用户、角色、系统规则和审计日志数据，并用读取结果更新系统设置总览指标、用户列表、角色权限列表、系统规则列表和最近审计日志列表。
