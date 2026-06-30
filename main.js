@@ -10,7 +10,7 @@ const {
   createSampleRecollectionTask
 } = require('./src/database/sampleReception');
 const { getAiPreReviewData } = require('./src/database/aiPreReview');
-const { getResultReviewData } = require('./src/database/resultReview');
+const { getResultReviewData, approveResultReview, rejectResultReview } = require('./src/database/resultReview');
 const { getCriticalValuesData } = require('./src/database/criticalValues');
 const { getQcDashboardData } = require('./src/database/qcDashboard');
 const { getSystemSettingsData } = require('./src/database/systemSettings');
@@ -57,6 +57,17 @@ ipcMain.handle('sampleReception:createRecollectionTask', async (_event, sampleId
 ));
 ipcMain.handle('aiPreReview:getData', async () => getAiPreReviewData({ electronApp: app }));
 ipcMain.handle('resultReview:getData', async () => getResultReviewData({ electronApp: app }));
+ipcMain.handle('resultReview:approve', async (_event, reviewId) => approveResultReview(
+  reviewId,
+  { userId: 2, username: 'chen.review' },
+  { electronApp: app }
+));
+ipcMain.handle('resultReview:reject', async (_event, reviewId, reason) => rejectResultReview(
+  reviewId,
+  reason,
+  { userId: 2, username: 'chen.review' },
+  { electronApp: app }
+));
 ipcMain.handle('criticalValues:getData', async () => getCriticalValuesData({ electronApp: app }));
 ipcMain.handle('qcDashboard:getData', async () => getQcDashboardData({ electronApp: app }));
 ipcMain.handle('systemSettings:getData', async () => getSystemSettingsData({ electronApp: app }));
