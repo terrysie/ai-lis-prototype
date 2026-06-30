@@ -1810,6 +1810,7 @@
               <button class="btn secondary" data-review-action="查看完整留痕">查看完整留痕</button>
               <button class="btn secondary" id="generateReportHtmlButton" data-review-action="生成报告HTML">生成报告HTML</button>
               <button class="btn secondary" id="exportReportHtmlButton" data-review-action="导出报告HTML">导出报告HTML</button>
+              <button class="btn" id="publishReportButton" data-review-action="正式发布报告">正式发布报告</button>
             </div>
           </aside>
         </section>
@@ -2511,6 +2512,7 @@
     let isRejectingResultReview = false;
     let isGeneratingReportHtml = false;
     let isExportingReportHtml = false;
+    let isPublishingReport = false;
 
     let reviewResults = [
       {
@@ -3391,6 +3393,7 @@
     function getReviewStatusText(review) {
       const status = review.reviewStatus || review.resultStatus || "pending_review";
       const normalized = String(status).toLowerCase();
+      if (["published"].includes(String(review.resultStatus || "").toLowerCase())) return "已正式发布";
       if (["approved", "reviewed", "released", "release"].includes(normalized)) return "已审核 / 已发布";
       if (["rejected", "review_rejected"].includes(normalized)) return "已驳回";
       if (["pending", "pending_review", "reviewing", "auto_release_candidate"].includes(normalized)) return "待人工审核";
@@ -3497,6 +3500,14 @@
       return Boolean(
         item?.resultId &&
         String(item.rawReviewStatus || "").trim().toLowerCase() === "approved" &&
+        ["reviewed", "published"].includes(String(item.rawResultStatus || "").trim().toLowerCase())
+      );
+    }
+
+    function canPublishReportForResult(item) {
+      return Boolean(
+        item?.resultId &&
+        String(item.rawReviewStatus || "").trim().toLowerCase() === "approved" &&
         String(item.rawResultStatus || "").trim().toLowerCase() === "reviewed"
       );
     }
@@ -3510,9 +3521,11 @@
       const rejectButton = document.getElementById("rejectResultReviewButton");
       const generateReportButton = document.getElementById("generateReportHtmlButton");
       const exportReportButton = document.getElementById("exportReportHtmlButton");
+      const publishReportButton = document.getElementById("publishReportButton");
       const item = getSelectedResultReview();
       const canWrite = canWriteResultReview(item);
       const canGenerateReport = canGenerateReportForResult(item);
+      const canPublishReport = canPublishReportForResult(item);
 
       if (approveButton) {
         approveButton.disabled = isApprovingResultReview || isRejectingResultReview || !window.terryLisApi?.approveResultReview || !canWrite;
@@ -3525,13 +3538,18 @@
       }
 
       if (generateReportButton) {
-        generateReportButton.disabled = isGeneratingReportHtml || isExportingReportHtml || !window.terryLisApi?.generateReportHtml || !canGenerateReport;
+        generateReportButton.disabled = isGeneratingReportHtml || isExportingReportHtml || isPublishingReport || !window.terryLisApi?.generateReportHtml || !canGenerateReport;
         generateReportButton.textContent = isGeneratingReportHtml ? "生成中..." : "生成报告HTML";
       }
 
       if (exportReportButton) {
-        exportReportButton.disabled = isExportingReportHtml || isGeneratingReportHtml || !window.terryLisApi?.exportReportHtml || !canGenerateReport;
+        exportReportButton.disabled = isExportingReportHtml || isGeneratingReportHtml || isPublishingReport || !window.terryLisApi?.exportReportHtml || !canGenerateReport;
         exportReportButton.textContent = isExportingReportHtml ? "导出中..." : "导出报告HTML";
+      }
+
+      if (publishReportButton) {
+        publishReportButton.disabled = isPublishingReport || isGeneratingReportHtml || isExportingReportHtml || !window.terryLisApi?.publishReport || !canPublishReport;
+        publishReportButton.textContent = isPublishingReport ? "发布中..." : "正式发布报告";
       }
     }
 
@@ -4819,6 +4837,42 @@
       }
     }
 
+    async function handlePublishReport() {
+      const item = getSelectedResultReview();
+
+      if (!item) {
+        showToast("请先选择需要发布的结果。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!canPublishReportForResult(item)) {
+        showToast("只有审核通过且结果状态为 reviewed 的结果可以正式发布。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.publishReport) {
+        showToast("当前环境未提供报告正式发布接口。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      isPublishingReport = true;
+      updateResultReviewActionButtons();
+
+      try {
+        await window.terryLisApi.publishReport(item.resultId);
+        showToast(`报告已正式发布：${item.id}`);
+        await hydrateResultReviewData(item.reviewId);
+      } catch (error) {
+        showToast(`报告发布失败：${getErrorMessage(error)}`);
+      } finally {
+        isPublishingReport = false;
+        updateResultReviewActionButtons();
+      }
+    }
+
     async function handleNotifyCriticalValue() {
       const item = getSelectedCriticalValue();
 
@@ -4965,6 +5019,11 @@
 
         if (button.dataset.reviewAction === "导出报告HTML") {
           handleExportReportHtml();
+          return;
+        }
+
+        if (button.dataset.reviewAction === "正式发布报告") {
+          handlePublishReport();
           return;
         }
 

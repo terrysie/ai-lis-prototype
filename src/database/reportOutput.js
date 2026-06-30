@@ -214,8 +214,8 @@ const getReportPreviewData = async (resultId, options = {}) => {
       throw new Error(`检验结果 ${numericResultId} 尚未审核通过，无法生成报告。`);
     }
 
-    if (normalizeText(row.result_status) !== 'reviewed') {
-      throw new Error(`检验结果 ${numericResultId} 当前结果状态为 ${row.result_status || '--'}，必须为 reviewed 才能生成报告。`);
+    if (!['reviewed', 'published'].includes(normalizeText(row.result_status))) {
+      throw new Error(`检验结果 ${numericResultId} 当前结果状态为 ${row.result_status || '--'}，必须为 reviewed 或 published 才能生成报告。`);
     }
 
     return {

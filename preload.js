@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   getReportPreviewData: (resultId) => ipcRenderer.invoke('reportOutput:getPreview', resultId),
   generateReportHtml: (resultId) => ipcRenderer.invoke('reportOutput:generateHtml', resultId),
   exportReportHtml: (resultId) => ipcRenderer.invoke('reportOutput:exportHtml', resultId),
+  getReportPublishPreview: (resultId) => ipcRenderer.invoke('reportPublish:getPreview', resultId),
+  publishReport: (resultId) => ipcRenderer.invoke('reportPublish:publish', resultId),
   getCriticalValuesData: () => ipcRenderer.invoke('criticalValues:getData'),
   notifyCriticalValue: (notificationId, remark) => ipcRenderer.invoke('criticalValues:notify', notificationId, remark),
   acknowledgeCriticalValue: (notificationId) => ipcRenderer.invoke('criticalValues:acknowledge', notificationId),

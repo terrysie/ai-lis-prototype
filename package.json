@@ -14,7 +14,8 @@
     "smoke:result-review": "node scripts/smoke-result-review.js",
     "smoke:critical-values": "node scripts/smoke-critical-values.js",
     "smoke:e2e-workflow": "node scripts/smoke-e2e-workflow.js",
-    "smoke:report-output": "node scripts/smoke-report-output.js"
+    "smoke:report-output": "node scripts/smoke-report-output.js",
+    "smoke:report-publish": "node scripts/smoke-report-publish.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
