@@ -184,6 +184,12 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 后续会逐步加入审核动作写入、结果状态更新、危急值触发和审计日志，让结果审核、危急值闭环和数据库留痕形成完整闭环。
 
+## v0.3 主流程端到端 smoke
+
+`npm run smoke:e2e-workflow` 用于验证 v0.3 主流程写入闭环，覆盖样本接收确认、结果审核通过、危急值通知、危急值临床确认、危急值完成闭环和 `audit_logs` 追溯。
+
+当前 seed 没有同一个待签收样本同时关联待审核结果和待处理危急值通知，因此该 smoke 会在 `db:reset` 后按现有 schema 构造一条 `E2E-SMOKE` 运行时测试链路；它不修改 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
+
 ## 系统设置页面数据库驱动
 
 Electron 桌面版系统设置页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `users`、`roles`、`system_rules`、`audit_logs` 表读取用户、角色、系统规则和审计日志数据，并用读取结果更新系统设置总览指标、用户列表、角色权限列表、系统规则列表和最近审计日志列表。
