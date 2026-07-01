@@ -16,7 +16,8 @@
     "smoke:e2e-workflow": "node scripts/smoke-e2e-workflow.js",
     "smoke:report-output": "node scripts/smoke-report-output.js",
     "smoke:report-publish": "node scripts/smoke-report-publish.js",
-    "smoke:system-rules": "node scripts/smoke-system-rules.js"
+    "smoke:system-rules": "node scripts/smoke-system-rules.js",
+    "smoke:qc-events": "node scripts/smoke-qc-events.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
