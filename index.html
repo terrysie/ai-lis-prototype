@@ -2032,14 +2032,14 @@
           <div class="panel-header">
             <div>
               <h3 class="panel-title">高频配置操作</h3>
-              <p class="panel-subtitle">按钮仅触发模拟提示，不连接后端、不写入数据库。</p>
+              <p class="panel-subtitle">规则值修改和规则启停会写入 SQLite system_rules，其它按钮仍保留原型提示。</p>
             </div>
-            <span class="badge badge-gray">模拟交互</span>
+            <span class="badge badge-a">规则写入</span>
           </div>
           <div class="panel-body">
             <div class="settings-actions">
               <button class="btn" data-settings-action="新建规则">新建规则</button>
-              <button class="btn secondary" data-settings-action="编辑规则">编辑规则</button>
+              <button class="btn secondary" data-settings-action="修改规则值">修改规则值</button>
               <button class="btn secondary" data-settings-action="启用规则">启用规则</button>
               <button class="btn secondary" data-settings-action="暂停规则">暂停规则</button>
               <button class="btn" data-settings-action="提交审核">提交审核</button>
@@ -2061,7 +2061,7 @@
         </section>
 
         <section class="panel settings-panel" aria-label="系统规则列表">
-          <div class="panel-header"><div><h3 class="panel-title">系统规则列表</h3><p class="panel-subtitle">Electron 桌面版从 SQLite system_rules 表读取规则类型、版本、状态、创建人与审批人。</p></div><span class="badge badge-a">数据库规则</span></div>
+          <div class="panel-header"><div><h3 class="panel-title">系统规则列表</h3><p class="panel-subtitle">Electron 桌面版从 SQLite system_rules 表读取规则类型、版本、状态、创建人与审批人；选中规则后可修改配置值或启停状态。</p></div><span class="badge badge-a">数据库规则</span></div>
           <div class="panel-body table-wrap"><table class="auto-release-table"><thead><tr><th>规则类型</th><th>规则名称</th><th>版本</th><th>状态</th><th>创建人</th><th>审批人</th><th>更新时间</th></tr></thead><tbody id="systemRuleTable"></tbody></table></div>
         </section>
 
@@ -3096,6 +3096,7 @@
       { ruleType: "critical_value", ruleName: "血钾危急值规则", versionNo: "v1.0", status: "启用", createdBy: "管理员", approvedBy: "审核技师", updatedAt: "2026-06-01 09:30:00" },
       { ruleType: "ai_pre_review", ruleName: "正常结果自动放行候选规则", versionNo: "v1.0", status: "启用", createdBy: "管理员", approvedBy: "审核技师", updatedAt: "2026-06-01 09:40:00" }
     ];
+    let selectedSystemRuleIndex = 0;
 
     let settingsAudits = [
       { time: "2026-06-11 10:52", user: "管理员 周某", module: "自动放行规则", content: "编辑门诊生化常规自动放行阈值", before: "Delta < 15%", after: "Delta < 20%", review: "待审核", note: "模拟记录，需科主任确认" },
@@ -4235,7 +4236,7 @@
       const activeStatuses = ["active", "enabled", "正常", "启用", "生效"];
       if (activeStatuses.includes(status)) return "启用";
       if (status === "draft") return "待审核";
-      if (status === "disabled") return "暂停";
+      if (["disabled", "inactive", "停用"].includes(status)) return "暂停";
       return status || "--";
     }
 
@@ -4278,13 +4279,46 @@
     function renderSystemRules() {
       const table = document.getElementById("systemRuleTable");
       if (!table) return;
-      table.innerHTML = systemRules.map(item => `
-        <tr>
+      table.innerHTML = systemRules.map((item, index) => `
+        <tr data-index="${index}" class="${index === selectedSystemRuleIndex ? "selected" : ""}">
           <td>${item.ruleType || "--"}</td><td><strong>${item.ruleName || "--"}</strong></td><td>${item.versionNo || "--"}</td>
           <td><span class="status-cell ${getRuleStatusClass(normalizeSettingsStatus(item.status))}">${normalizeSettingsStatus(item.status)}</span></td>
           <td>${item.createdByName || item.createdBy || "--"}</td><td>${item.approvedByName || item.approvedBy || "--"}</td><td>${item.updatedAt || "--"}</td>
         </tr>
       `).join("");
+      table.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectSystemRule(Number(row.dataset.index)));
+      });
+      updateSystemRuleActionButtons();
+    }
+
+    function getSelectedSystemRule() {
+      return systemRules[selectedSystemRuleIndex] || null;
+    }
+
+    function selectSystemRule(index) {
+      if (!systemRules.length) {
+        selectedSystemRuleIndex = 0;
+        updateSystemRuleActionButtons();
+        return;
+      }
+
+      selectedSystemRuleIndex = Math.min(Math.max(Number(index) || 0, 0), systemRules.length - 1);
+      document.querySelectorAll("#systemRuleTable tr").forEach(row => row.classList.remove("selected"));
+      const selectedRow = document.querySelector(`#systemRuleTable tr[data-index="${selectedSystemRuleIndex}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
+      updateSystemRuleActionButtons();
+    }
+
+    function updateSystemRuleActionButtons() {
+      const hasWritableRule = Boolean(getSelectedSystemRule()?.id && window.terryLisApi?.updateSystemRule);
+
+      ["修改规则值", "启用规则", "暂停规则"].forEach(action => {
+        const button = document.querySelector(`[data-settings-action="${action}"]`);
+        if (button) {
+          button.disabled = !hasWritableRule;
+        }
+      });
     }
 
     async function hydrateSystemSettingsData() {
@@ -4306,6 +4340,8 @@
         }));
         systemRules = (data.systemRules || []).map(rule => ({
           ...rule,
+          rawStatus: rule.status,
+          ruleConfigJson: rule.ruleConfigJson || (rule.ruleConfig ? JSON.stringify(rule.ruleConfig) : "{}"),
           status: normalizeSettingsStatus(rule.status),
           createdByName: userNameById.get(rule.createdBy),
           approvedByName: userNameById.get(rule.approvedBy)
@@ -4324,6 +4360,7 @@
         renderSettingsUsers();
         renderRoleConfigs();
         renderSystemRules();
+        selectSystemRule(selectedSystemRuleIndex);
         renderSettingsAudits();
       } catch (error) {
         console.warn("系统设置页面读取 SQLite 数据失败，继续使用静态 fallback 数据。", error);
@@ -4474,6 +4511,80 @@
 
     function getErrorMessage(error) {
       return error?.message || String(error || "操作失败");
+    }
+
+    function getSystemRuleConfigText(rule) {
+      if (rule?.ruleConfigJson) {
+        return rule.ruleConfigJson;
+      }
+
+      if (rule?.ruleConfig) {
+        return JSON.stringify(rule.ruleConfig);
+      }
+
+      return "{}";
+    }
+
+    async function handleUpdateSystemRuleValue() {
+      const rule = getSelectedSystemRule();
+
+      if (!rule?.id) {
+        showToast("请先选择可写入的系统规则。");
+        return;
+      }
+
+      if (!window.terryLisApi?.updateSystemRule) {
+        showToast("当前环境未启用系统规则写入接口。");
+        return;
+      }
+
+      const currentValue = getSystemRuleConfigText(rule);
+      const nextValue = window.prompt(`请输入 ${rule.ruleName || "系统规则"} 的新规则配置 JSON：`, currentValue);
+
+      if (nextValue === null) {
+        return;
+      }
+
+      if (!nextValue.trim()) {
+        showToast("系统规则配置值不能为空。");
+        return;
+      }
+
+      try {
+        await window.terryLisApi.updateSystemRule(rule.id, { rule_config_json: nextValue.trim() });
+        showToast("系统规则已更新");
+        await hydrateSystemSettingsData();
+      } catch (error) {
+        showToast(getErrorMessage(error));
+      }
+    }
+
+    async function handleToggleSystemRule(enabled) {
+      const rule = getSelectedSystemRule();
+
+      if (!rule?.id) {
+        showToast("请先选择可写入的系统规则。");
+        return;
+      }
+
+      if (!window.terryLisApi?.toggleSystemRule) {
+        showToast("当前环境未启用系统规则启停接口。");
+        return;
+      }
+
+      const actionText = enabled ? "启用" : "暂停";
+
+      if (!window.confirm(`确认${actionText}系统规则：${rule.ruleName || rule.ruleType || rule.id}？`)) {
+        return;
+      }
+
+      try {
+        await window.terryLisApi.toggleSystemRule(rule.id, enabled);
+        showToast("系统规则已更新");
+        await hydrateSystemSettingsData();
+      } catch (error) {
+        showToast(getErrorMessage(error));
+      }
     }
 
     async function handleConfirmSampleReception() {
@@ -5064,6 +5175,21 @@
 
     document.querySelectorAll("[data-settings-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.settingsAction === "修改规则值") {
+          handleUpdateSystemRuleValue();
+          return;
+        }
+
+        if (button.dataset.settingsAction === "启用规则") {
+          handleToggleSystemRule(true);
+          return;
+        }
+
+        if (button.dataset.settingsAction === "暂停规则") {
+          handleToggleSystemRule(false);
+          return;
+        }
+
         showToast(`模拟操作成功：${button.dataset.settingsAction}。该操作仅用于静态原型展示，未连接后端或数据库。`);
       });
     });
@@ -5089,6 +5215,7 @@
     renderSettingsUsers();
     renderRoleConfigs();
     renderSystemRules();
+    selectSystemRule(0);
     renderAutoReleaseRules();
     renderAiPrecheckRules();
     renderCriticalRules();
