@@ -20,7 +20,12 @@ const {
   completeCriticalValue
 } = require('./src/database/criticalValues');
 const { getQcDashboardData } = require('./src/database/qcDashboard');
-const { getSystemSettingsData } = require('./src/database/systemSettings');
+const {
+  getSystemSettingsData,
+  getSystemRulesData,
+  updateSystemRule,
+  toggleSystemRule
+} = require('./src/database/systemSettings');
 
 const createMainWindow = () => {
   const mainWindow = new BrowserWindow({
@@ -118,6 +123,19 @@ ipcMain.handle('criticalValues:complete', async (_event, notificationId, resolut
 ));
 ipcMain.handle('qcDashboard:getData', async () => getQcDashboardData({ electronApp: app }));
 ipcMain.handle('systemSettings:getData', async () => getSystemSettingsData({ electronApp: app }));
+ipcMain.handle('systemRules:getData', async () => getSystemRulesData({ electronApp: app }));
+ipcMain.handle('systemRules:update', async (_event, ruleId, updates) => updateSystemRule(
+  ruleId,
+  updates,
+  { userId: 1, username: 'admin' },
+  { electronApp: app }
+));
+ipcMain.handle('systemRules:toggle', async (_event, ruleId, enabled) => toggleSystemRule(
+  ruleId,
+  enabled,
+  { userId: 1, username: 'admin' },
+  { electronApp: app }
+));
 
 app.whenReady().then(async () => {
   try {
