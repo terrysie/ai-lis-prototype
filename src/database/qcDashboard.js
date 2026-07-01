@@ -84,6 +84,7 @@ const getRiskClass = (risk) => ({
 }[String(risk || '').toLowerCase()] || 'badge-info');
 
 const CLOSED_QC_EVENT_STATUSES = ['closed', 'resolved', 'handled', 'completed', '已关闭', '已处理', '已完成'];
+const CLOSED_REAGENT_EXPIRY_ALERT_STATUSES = ['closed', 'resolved', 'handled', 'completed', 'ignored', '已关闭', '已处理', '已完成', '已忽略'];
 
 const padDatePart = (value) => String(value).padStart(2, '0');
 
@@ -111,9 +112,20 @@ const ensureQcEventId = (eventId) => {
   return numericEventId;
 };
 
+const ensureReagentExpiryAlertId = (alertId) => {
+  const numericAlertId = Number(alertId);
+
+  if (!Number.isInteger(numericAlertId) || numericAlertId <= 0) {
+    throw new Error('试剂近效期预警 ID 无效，无法处理。');
+  }
+
+  return numericAlertId;
+};
+
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 
 const isQcEventClosed = (event) => CLOSED_QC_EVENT_STATUSES.some((status) => normalizeText(status) === normalizeText(event?.event_status));
+const isReagentExpiryAlertClosed = (alert) => CLOSED_REAGENT_EXPIRY_ALERT_STATUSES.some((status) => normalizeText(status) === normalizeText(alert?.alert_status));
 
 const normalizeHandlingNote = (handling = {}) => {
   const source = typeof handling === 'string'
@@ -127,6 +139,37 @@ const normalizeHandlingNote = (handling = {}) => {
 
   return note;
 };
+
+const normalizeReagentExpiryHandlingNote = (handling = {}) => {
+  const source = typeof handling === 'string'
+    ? handling
+    : handling.action ?? handling.resolution ?? handling.handlingNote ?? handling.note;
+  const note = String(source ?? '').trim();
+
+  if (!note) {
+    throw new Error('试剂近效期预警处理措施不能为空。');
+  }
+
+  return note;
+};
+
+const getReagentAlertStatusText = (status) => ({
+  open: '待处理',
+  handling: '处理中',
+  handled: '已处理',
+  closed: '已关闭',
+  resolved: '已处理',
+  ignored: '已忽略'
+}[String(status || '').toLowerCase()] || status || '--');
+
+const getReagentAlertStatusClass = (status) => ({
+  open: 'badge-b',
+  handling: 'badge-info',
+  handled: 'badge-a',
+  closed: 'badge-gray',
+  resolved: 'badge-a',
+  ignored: 'badge-gray'
+}[String(status || '').toLowerCase()] || 'badge-info');
 
 const getQcEventRawRow = (database, eventId) => getRow(database, `
   SELECT
@@ -147,6 +190,22 @@ const getQcEventRawRow = (database, eventId) => getRow(database, `
   WHERE id = :eventId;
 `, {
   ':eventId': eventId
+});
+
+const getReagentExpiryAlertRawRow = (database, alertId) => getRow(database, `
+  SELECT
+    id,
+    reagent_batch_id,
+    days_left,
+    risk_level,
+    suggested_action,
+    alert_status,
+    created_at,
+    updated_at
+  FROM reagent_expiry_alerts
+  WHERE id = :alertId;
+`, {
+  ':alertId': alertId
 });
 
 const toQcEventDto = (row) => ({
@@ -174,6 +233,27 @@ const toQcEventDto = (row) => ({
   }
 });
 
+const toReagentExpiryAlertDto = (row) => ({
+  alertId: Number(row.alert_id ?? row.id),
+  reagentBatchId: row.reagent_batch_id === null || row.reagent_batch_id === undefined ? null : Number(row.reagent_batch_id),
+  name: row.reagent_name || '--',
+  lot: row.batch_no || '--',
+  project: row.item_name || row.item_code || '--',
+  instrument: row.instrument_code || row.instrument_name || '--',
+  start: formatDateTime(row.enabled_at),
+  expiry: row.expires_at || '--',
+  days: Number(row.days_left || 0),
+  risk: getRiskText(row.risk_level),
+  riskClass: getRiskClass(row.risk_level),
+  rawRiskLevel: row.risk_level,
+  rawStatus: row.alert_status,
+  status: getReagentAlertStatusText(row.alert_status),
+  statusClass: getReagentAlertStatusClass(row.alert_status),
+  action: row.suggested_action || '--',
+  createdAt: row.created_at || null,
+  updatedAt: row.updated_at || null
+});
+
 const getQcEventRows = (database) => getRows(database, `
   SELECT
     qe.id AS event_id,
@@ -194,6 +274,31 @@ const getQcEventRows = (database) => getRows(database, `
   LEFT JOIN instruments i ON i.id = qe.instrument_id
   LEFT JOIN test_items ti ON ti.id = qe.test_item_id
   ORDER BY datetime(qe.created_at) DESC, qe.id DESC;
+`);
+
+const getReagentExpiryAlertRows = (database) => getRows(database, `
+  SELECT
+    rea.id AS alert_id,
+    rea.reagent_batch_id,
+    rea.days_left,
+    rea.risk_level,
+    rea.suggested_action,
+    rea.alert_status,
+    rea.created_at,
+    rea.updated_at,
+    rb.reagent_name,
+    rb.batch_no,
+    rb.enabled_at,
+    rb.expires_at,
+    ti.item_name,
+    ti.item_code,
+    i.instrument_name,
+    i.instrument_code
+  FROM reagent_expiry_alerts rea
+  LEFT JOIN reagent_batches rb ON rb.id = rea.reagent_batch_id
+  LEFT JOIN test_items ti ON ti.id = rb.test_item_id
+  LEFT JOIN instruments i ON i.id = rb.instrument_id
+  ORDER BY CASE rea.risk_level WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, rea.days_left, rea.id;
 `);
 
 const writeQcEventAuditLog = (database, {
@@ -231,6 +336,48 @@ const writeQcEventAuditLog = (database, {
     ':userId': userId,
     ':operationType': operationType,
     ':eventId': eventId,
+    ':beforeJson': JSON.stringify(beforeRow),
+    ':afterJson': JSON.stringify(afterRow),
+    ':remark': remark,
+    ':createdAt': createdAt
+  });
+};
+
+const writeReagentExpiryAlertAuditLog = (database, {
+  userId,
+  operationType,
+  alertId,
+  beforeRow,
+  afterRow,
+  remark,
+  createdAt
+}) => {
+  database.run(`
+    INSERT INTO audit_logs (
+      user_id,
+      module_name,
+      operation_type,
+      target_table,
+      target_id,
+      before_json,
+      after_json,
+      remark,
+      created_at
+    ) VALUES (
+      :userId,
+      '试剂管理',
+      :operationType,
+      'reagent_expiry_alerts',
+      :alertId,
+      :beforeJson,
+      :afterJson,
+      :remark,
+      :createdAt
+    );
+  `, {
+    ':userId': userId,
+    ':operationType': operationType,
+    ':alertId': alertId,
     ':beforeJson': JSON.stringify(beforeRow),
     ':afterJson': JSON.stringify(afterRow),
     ':remark': remark,
@@ -291,26 +438,7 @@ const getQcDashboardData = async (options = {}) => {
       ORDER BY date(rb.expires_at), rb.id;
     `);
 
-    const reagentExpiryAlerts = getRows(database, `
-      SELECT rea.*, rb.reagent_name, rb.batch_no, rb.enabled_at, rb.expires_at,
-        ti.item_name, ti.item_code, i.instrument_name, i.instrument_code
-      FROM reagent_expiry_alerts rea
-      LEFT JOIN reagent_batches rb ON rb.id = rea.reagent_batch_id
-      LEFT JOIN test_items ti ON ti.id = rb.test_item_id
-      LEFT JOIN instruments i ON i.id = rb.instrument_id
-      ORDER BY CASE rea.risk_level WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, rea.days_left;
-    `).map((row) => ({
-      name: row.reagent_name,
-      lot: row.batch_no,
-      project: row.item_name || row.item_code || '--',
-      instrument: row.instrument_code || row.instrument_name || '--',
-      start: formatDateTime(row.enabled_at),
-      expiry: row.expires_at,
-      days: Number(row.days_left || 0),
-      risk: getRiskText(row.risk_level),
-      riskClass: getRiskClass(row.risk_level),
-      action: row.suggested_action || '--'
-    }));
+    const reagentExpiryAlerts = getReagentExpiryAlertRows(database).map(toReagentExpiryAlertDto);
 
     const batchRisks = reagentBatches.map((row) => ({
       lot: row.batch_no,
@@ -360,6 +488,21 @@ const getQcEventsData = async (options = {}) => {
 
     return {
       qcEvents: getQcEventRows(database).map(toQcEventDto),
+      databasePath
+    };
+  } finally {
+    database.close();
+  }
+};
+
+const getReagentExpiryAlertsData = async (options = {}) => {
+  const { database, databasePath } = await openDatabase(options);
+
+  try {
+    database.run('PRAGMA foreign_keys = ON;');
+
+    return {
+      reagentExpiryAlerts: getReagentExpiryAlertRows(database).map(toReagentExpiryAlertDto),
       databasePath
     };
   } finally {
@@ -448,8 +591,87 @@ const handleQcEvent = async (eventId, handling = {}, operator = {}, options = {}
   }
 };
 
+const handleReagentExpiryAlert = async (alertId, handling = {}, operator = {}, options = {}) => {
+  const numericAlertId = ensureReagentExpiryAlertId(alertId);
+  const handlingNote = normalizeReagentExpiryHandlingNote(handling);
+  const { database, databasePath } = await openDatabase(options);
+  let transactionStarted = false;
+
+  try {
+    database.run('PRAGMA foreign_keys = ON;');
+    database.run('BEGIN TRANSACTION;');
+    transactionStarted = true;
+
+    const beforeRow = getReagentExpiryAlertRawRow(database, numericAlertId);
+
+    if (!beforeRow) {
+      throw new Error(`试剂近效期预警不存在，无法处理：${numericAlertId}`);
+    }
+
+    if (isReagentExpiryAlertClosed(beforeRow)) {
+      throw new Error(`试剂近效期预警 ${numericAlertId} 当前状态为 ${beforeRow.alert_status}，不能重复处理。`);
+    }
+
+    const now = getCurrentTimestamp();
+
+    database.run(`
+      UPDATE reagent_expiry_alerts
+      SET
+        alert_status = 'handled',
+        suggested_action = :handlingNote,
+        updated_at = :updatedAt
+      WHERE id = :alertId;
+    `, {
+      ':handlingNote': handlingNote,
+      ':updatedAt': now,
+      ':alertId': numericAlertId
+    });
+
+    const afterRow = getReagentExpiryAlertRawRow(database, numericAlertId);
+
+    writeReagentExpiryAlertAuditLog(database, {
+      userId: getOperatorUserId(operator),
+      operationType: '处理试剂近效期预警',
+      alertId: numericAlertId,
+      beforeRow,
+      afterRow,
+      remark: '处理试剂近效期预警',
+      createdAt: now
+    });
+
+    const auditLogId = Number(getRow(database, 'SELECT last_insert_rowid() AS id;').id);
+
+    database.run('COMMIT;');
+    transactionStarted = false;
+    saveDatabase(database, databasePath);
+
+    return {
+      alert: toReagentExpiryAlertDto({
+        ...afterRow,
+        alert_id: afterRow.id
+      }),
+      auditLogId,
+      databasePath
+    };
+  } catch (error) {
+    if (transactionStarted) {
+      try {
+        database.run('ROLLBACK;');
+      } catch (rollbackError) {
+        error.rollbackError = rollbackError;
+      }
+    }
+
+    throw error;
+  } finally {
+    database.close();
+  }
+};
+
 module.exports = {
   getQcDashboardData,
   getQcEventsData,
-  handleQcEvent
+  getReagentExpiryAlertsData,
+  handleQcEvent,
+  handleReagentExpiryAlert
 };
