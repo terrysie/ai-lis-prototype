@@ -1583,7 +1583,7 @@
             <div class="panel-header">
               <div>
                 <h3 class="panel-title">传染病阳性预警</h3>
-                <p class="panel-subtitle">仅展示模拟数据；用于复核、通知与留痕流程提醒。</p>
+                <p class="panel-subtitle">Electron 桌面版读取 SQLite infectious_alerts；处理动作会写入本地数据库和审计日志。</p>
               </div>
               <span class="badge badge-c">预警入口</span>
             </div>
@@ -1592,6 +1592,7 @@
               <div class="inline-actions">
                 <button class="btn secondary" data-precheck-action="标记阳性预警已复核">标记阳性预警已复核</button>
                 <button class="btn" data-precheck-action="生成阳性结果通知记录">生成阳性结果通知记录</button>
+                <button class="btn secondary" data-precheck-action="处理传染病预警">处理传染病预警</button>
               </div>
               <div class="table-wrap">
                 <table class="alert-table">
@@ -2504,6 +2505,12 @@
         if (precheckResults.length > 0) {
           selectPrecheckResult(0);
         }
+
+        if (Array.isArray(data.infectiousAlerts) && data.infectiousAlerts.length > 0) {
+          positiveAlerts = data.infectiousAlerts;
+          renderPositiveAlerts();
+          selectPositiveAlert(Math.min(selectedPositiveAlertIndex, positiveAlerts.length - 1));
+        }
       } catch (error) {
         console.warn("TERRY-LIS AI 预审数据读取失败，继续使用静态模拟数据。", error);
       }
@@ -2735,7 +2742,7 @@
       }
     ];
 
-    const positiveAlerts = [
+    let positiveAlerts = [
       { project: "乙肝表面抗原阳性", source: "感染性疾病科", review: "待复核", notice: "待通知", limit: "30 分钟内", action: "复核后生成通知记录", badgeClass: "badge-c" },
       { project: "HIV 初筛阳性", source: "体检中心", review: "待复核", notice: "待留痕", limit: "立即处理", action: "双人复核并留痕", badgeClass: "badge-c" },
       { project: "梅毒抗体阳性", source: "皮肤科", review: "已复核", notice: "待通知", limit: "60 分钟内", action: "通知临床并记录", badgeClass: "badge-b" },
@@ -2743,6 +2750,7 @@
       { project: "新冠核酸阳性", source: "发热门诊", review: "待复核", notice: "待通知", limit: "15 分钟内", action: "优先复核并通知", badgeClass: "badge-c" },
       { project: "流感抗原阳性", source: "儿科门诊", review: "已复核", notice: "已通知", limit: "当班完成", action: "待留痕", badgeClass: "badge-info" }
     ];
+    let selectedPositiveAlertIndex = 0;
 
     const reagentAlerts = [
       { name: "血常规稀释液", lot: "DIL-2604-18", project: "血常规", instrument: "HA-01", expiry: "2026-07-15", days: 36, risk: "关注", badgeClass: "badge-b", action: "生成采购提醒" },
@@ -3663,8 +3671,8 @@
     }
 
     function renderPositiveAlerts() {
-      positiveAlertTable.innerHTML = positiveAlerts.map(item => `
-        <tr>
+      positiveAlertTable.innerHTML = positiveAlerts.map((item, index) => `
+        <tr data-index="${index}" class="${index === selectedPositiveAlertIndex ? "selected" : ""}">
           <td><strong>${item.project}</strong></td>
           <td>${item.source}</td>
           <td><span class="badge ${item.badgeClass}">${item.review}</span></td>
@@ -3673,6 +3681,51 @@
           <td>${item.action}</td>
         </tr>
       `).join("");
+      positiveAlertTable.querySelectorAll("tr").forEach(row => {
+        row.addEventListener("click", () => selectPositiveAlert(Number(row.dataset.index)));
+      });
+      updatePositiveAlertActionButtons();
+    }
+
+    function getSelectedPositiveAlert() {
+      return positiveAlerts[selectedPositiveAlertIndex] || null;
+    }
+
+    function isClosedPositiveAlertStatus(status) {
+      return ["closed", "resolved", "handled", "completed", "ignored", "已关闭", "已处理", "已完成", "已忽略"].includes(String(status || "").trim().toLowerCase());
+    }
+
+    function isPositiveAlertHandled(item) {
+      return isClosedPositiveAlertStatus(item?.rawReviewStatus)
+        || isClosedPositiveAlertStatus(item?.rawNotifyStatus)
+        || isClosedPositiveAlertStatus(item?.rawInfectionControlStatus)
+        || isClosedPositiveAlertStatus(item?.rawReportHintStatus)
+        || isClosedPositiveAlertStatus(item?.review)
+        || isClosedPositiveAlertStatus(item?.notice);
+    }
+
+    function selectPositiveAlert(index) {
+      const item = positiveAlerts[index];
+      if (!item) {
+        selectedPositiveAlertIndex = 0;
+        updatePositiveAlertActionButtons();
+        return;
+      }
+
+      selectedPositiveAlertIndex = index;
+      document.querySelectorAll("#positiveAlertTable tr").forEach(row => row.classList.remove("selected"));
+      const selectedRow = document.querySelector(`#positiveAlertTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
+      updatePositiveAlertActionButtons();
+    }
+
+    function updatePositiveAlertActionButtons() {
+      const item = getSelectedPositiveAlert();
+      const canHandle = Boolean(item?.alertId && window.terryLisApi?.handleInfectiousAlert && !isPositiveAlertHandled(item));
+
+      document.querySelectorAll('[data-precheck-action="处理传染病预警"]').forEach(button => {
+        button.disabled = !canHandle;
+      });
     }
 
     function renderReagentAlerts() {
@@ -4582,6 +4635,50 @@
       return error?.message || String(error || "操作失败");
     }
 
+    async function handleInfectiousAlertWrite() {
+      const item = getSelectedPositiveAlert();
+
+      if (!item) {
+        showToast("请先选择需要处理的传染病阳性预警。");
+        return;
+      }
+
+      if (!item.alertId) {
+        showToast("当前传染病阳性预警不是本地 SQLite 预警，无法真实处理。");
+        return;
+      }
+
+      if (isPositiveAlertHandled(item)) {
+        showToast("当前传染病阳性预警已处理，不能重复处理。");
+        updatePositiveAlertActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.handleInfectiousAlert) {
+        showToast("当前环境未提供传染病阳性预警处理接口。");
+        return;
+      }
+
+      const handlingNote = window.prompt(`请输入 ${item.project || "传染病阳性预警"} 的处理措施：`, item.action || "");
+
+      if (handlingNote === null) {
+        return;
+      }
+
+      if (!handlingNote.trim()) {
+        showToast("传染病阳性预警处理措施不能为空。");
+        return;
+      }
+
+      try {
+        await window.terryLisApi.handleInfectiousAlert(item.alertId, { handlingNote: handlingNote.trim() });
+        showToast("传染病阳性预警已处理");
+        await hydrateAiPreReviewData();
+      } catch (error) {
+        showToast(getErrorMessage(error));
+      }
+    }
+
     async function handleQualityEventWrite() {
       const item = getSelectedQualityEvent();
 
@@ -4939,6 +5036,11 @@
 
     document.querySelectorAll("[data-precheck-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.precheckAction === "处理传染病预警") {
+          handleInfectiousAlertWrite();
+          return;
+        }
+
         const currentResult = document.getElementById("precheckCardSample").textContent;
         showToast(`模拟操作成功：${button.dataset.precheckAction}，当前预审结果：${currentResult}`);
       });
@@ -5392,6 +5494,7 @@
     renderInterfaceConfigs();
     renderSettingsAudits();
     renderPositiveAlerts();
+    selectPositiveAlert(0);
     renderReagentAlerts();
     renderTaskCards("exceptionList", exceptionAlerts);
     renderRejectTemplates();

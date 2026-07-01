@@ -143,11 +143,13 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 ## AI 预审页面数据库驱动
 
-Electron 桌面版 AI 预审页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `ai_pre_reviews`、`samples`、`test_results`、`test_items` 表读取 AI 预审数据，并用读取结果更新 A 类自动放行、B 类快速复核、C 类重点复核、风险预警等统计卡片，以及 AI 预审结果队列和右侧 AI 判定详情卡片。
+Electron 桌面版 AI 预审页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `ai_pre_reviews`、`samples`、`test_results`、`test_items`、`infectious_alerts` 表读取 AI 预审和传染病阳性预警数据，并用读取结果更新 A 类自动放行、B 类快速复核、C 类重点复核、风险预警等统计卡片、AI 预审结果队列、右侧 AI 判定详情卡片和传染病阳性预警列表。
 
 GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本地 SQLite 能力，因此 AI 预审页面会继续使用 `index.html` 中已有的静态 fallback 模拟数据；如果 Electron IPC 调用失败，页面同样会保留静态模拟数据并输出 `console.warn`，避免影响静态网页部署。
 
-当前版本仅实现 AI 预审数据读取，不实现自动放行、人工复核、转重点复核、人工覆盖等写入操作。页面中的相关按钮仍为原型演示交互，不会修改数据库。
+当前版本支持“处理传染病预警”真实写入。操作会更新 `infectious_alerts` 的复核、通知、院感跟进、报告提示状态和更新时间，并在 `audit_logs` 记录“处理传染病阳性预警”；自动放行、人工复核、转重点复核、人工覆盖等其它 AI 预审按钮仍为原型演示交互。
+
+`npm run smoke:infectious-alerts` 用于验证传染病阳性预警处理写入、非法处理失败、重复处理失败，以及 `audit_logs` 记录传染病阳性预警处理。该脚本不修改 `database/schema.sql` 或 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
 
 后续会逐步加入 AI 预审状态更新、人工覆盖、审核动作和审计日志，让 AI 预审、人工审核与数据库留痕形成完整闭环。
 

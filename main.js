@@ -9,7 +9,7 @@ const {
   rejectSampleReception,
   createSampleRecollectionTask
 } = require('./src/database/sampleReception');
-const { getAiPreReviewData } = require('./src/database/aiPreReview');
+const { getAiPreReviewData, getInfectiousAlertsData, handleInfectiousAlert } = require('./src/database/aiPreReview');
 const { getResultReviewData, approveResultReview, rejectResultReview } = require('./src/database/resultReview');
 const { getReportPreviewData, generateReportHtml, exportReportHtml } = require('./src/database/reportOutput');
 const { getReportPublishPreview, publishReport } = require('./src/database/reportPublish');
@@ -74,6 +74,13 @@ ipcMain.handle('sampleReception:createRecollectionTask', async (_event, sampleId
   { electronApp: app }
 ));
 ipcMain.handle('aiPreReview:getData', async () => getAiPreReviewData({ electronApp: app }));
+ipcMain.handle('infectiousAlerts:getData', async () => getInfectiousAlertsData({ electronApp: app }));
+ipcMain.handle('infectiousAlerts:handle', async (_event, alertId, handling) => handleInfectiousAlert(
+  alertId,
+  handling,
+  { userId: 1, username: 'admin' },
+  { electronApp: app }
+));
 ipcMain.handle('resultReview:getData', async () => getResultReviewData({ electronApp: app }));
 ipcMain.handle('resultReview:approve', async (_event, reviewId) => approveResultReview(
   reviewId,
