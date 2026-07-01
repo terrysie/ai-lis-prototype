@@ -1928,9 +1928,12 @@
           <div class="panel-header">
             <div>
               <h3 class="panel-title">试剂近效期预警</h3>
-              <p class="panel-subtitle">按剩余天数、风险等级和关联质控风险提示更换、复查、暂停或采购提醒。</p>
+              <p class="panel-subtitle">按剩余天数、风险等级和关联质控风险提示更换、复查、暂停或采购提醒；处理动作会写入 SQLite。</p>
             </div>
-            <span class="badge badge-b">近效期优先</span>
+            <div class="action-row">
+              <button class="btn secondary" data-quality-action="处理近效期预警">处理近效期预警</button>
+              <span class="badge badge-b">近效期优先</span>
+            </div>
           </div>
           <div class="panel-body">
             <div class="table-wrap">
@@ -3014,6 +3017,7 @@
       { name: "尿液质控液", lot: "UAQC-2606-01", project: "尿干化学", instrument: "UA-01", start: "2026-06-05", expiry: "2026-07-15", days: 34, risk: "正常", riskClass: "badge-a", action: "继续观察" },
       { name: "肌酐酶法试剂", lot: "CREA-2605-21", project: "Cr", instrument: "BA-02", start: "2026-06-01", expiry: "2026-06-28", days: 17, risk: "关注", riskClass: "badge-info", action: "查看受影响项目" }
     ];
+    let selectedReagentExpiryAlertIndex = 0;
 
     let qualityBatchRisks = [
       { lot: "CA-2605-18", project: "CA125", samples: 18, abnormal: 3, recheck: "是", recheckClass: "badge-c", suggestion: "暂停自动放行，复查质控品并核对近效期" },
@@ -4154,6 +4158,7 @@
         if (Array.isArray(data.reagentExpiryAlerts) && data.reagentExpiryAlerts.length > 0) {
           qualityReagents = data.reagentExpiryAlerts;
           renderQualityReagents();
+          selectReagentExpiryAlert(Math.min(selectedReagentExpiryAlertIndex, qualityReagents.length - 1));
         }
 
         if (Array.isArray(data.reagentBatches) && data.reagentBatches.length > 0) {
@@ -4231,13 +4236,50 @@
     }
 
     function renderQualityReagents() {
-      document.getElementById("qualityReagentTable").innerHTML = qualityReagents.map(item => `
-        <tr>
+      document.getElementById("qualityReagentTable").innerHTML = qualityReagents.map((item, index) => `
+        <tr data-index="${index}" class="${index === selectedReagentExpiryAlertIndex ? "selected" : ""}">
           <td>${item.name}</td><td>${item.lot}</td><td>${item.project}</td><td>${item.instrument}</td>
           <td>${item.start}</td><td>${item.expiry}</td><td>${item.days} 天</td>
           <td><span class="badge ${item.riskClass}">${item.risk}</span></td><td>${item.action}</td>
         </tr>
       `).join("");
+
+      document.querySelectorAll("#qualityReagentTable tr").forEach(row => {
+        row.addEventListener("click", () => selectReagentExpiryAlert(Number(row.dataset.index)));
+      });
+      updateReagentExpiryAlertActionButtons();
+    }
+
+    function getSelectedReagentExpiryAlert() {
+      return qualityReagents[selectedReagentExpiryAlertIndex] || null;
+    }
+
+    function isClosedReagentExpiryAlertStatus(status) {
+      return ["closed", "resolved", "handled", "completed", "ignored", "已关闭", "已处理", "已完成", "已忽略"].includes(String(status || "").trim().toLowerCase());
+    }
+
+    function selectReagentExpiryAlert(index) {
+      const item = qualityReagents[index];
+      if (!item) {
+        selectedReagentExpiryAlertIndex = 0;
+        updateReagentExpiryAlertActionButtons();
+        return;
+      }
+
+      selectedReagentExpiryAlertIndex = index;
+      document.querySelectorAll("#qualityReagentTable tr").forEach(row => row.classList.remove("selected"));
+      const selectedRow = document.querySelector(`#qualityReagentTable tr[data-index="${index}"]`);
+      if (selectedRow) selectedRow.classList.add("selected");
+      updateReagentExpiryAlertActionButtons();
+    }
+
+    function updateReagentExpiryAlertActionButtons() {
+      const item = getSelectedReagentExpiryAlert();
+      const canHandle = Boolean(item?.alertId && window.terryLisApi?.handleReagentExpiryAlert && !isClosedReagentExpiryAlertStatus(item.rawStatus || item.status));
+
+      document.querySelectorAll('[data-quality-action="处理近效期预警"]').forEach(button => {
+        button.disabled = !canHandle;
+      });
     }
 
     function renderQualityBatchRisks() {
@@ -4578,6 +4620,50 @@
       try {
         await window.terryLisApi.handleQcEvent(item.eventId, { handlingNote: handlingNote.trim() });
         showToast("质控事件已处理");
+        await hydrateQcDashboardData();
+      } catch (error) {
+        showToast(getErrorMessage(error));
+      }
+    }
+
+    async function handleReagentExpiryAlertWrite() {
+      const item = getSelectedReagentExpiryAlert();
+
+      if (!item) {
+        showToast("请先选择需要处理的试剂近效期预警。");
+        return;
+      }
+
+      if (!item.alertId) {
+        showToast("当前试剂近效期预警不是本地 SQLite 预警，无法真实处理。");
+        return;
+      }
+
+      if (isClosedReagentExpiryAlertStatus(item.rawStatus || item.status)) {
+        showToast("当前试剂近效期预警已处理，不能重复处理。");
+        updateReagentExpiryAlertActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.handleReagentExpiryAlert) {
+        showToast("当前环境未提供试剂近效期预警处理接口。");
+        return;
+      }
+
+      const handlingNote = window.prompt(`请输入 ${item.name || "试剂近效期预警"} 的处理措施：`, item.action || "");
+
+      if (handlingNote === null) {
+        return;
+      }
+
+      if (!handlingNote.trim()) {
+        showToast("试剂近效期预警处理措施不能为空。");
+        return;
+      }
+
+      try {
+        await window.terryLisApi.handleReagentExpiryAlert(item.alertId, { handlingNote: handlingNote.trim() });
+        showToast("试剂近效期预警已处理");
         await hydrateQcDashboardData();
       } catch (error) {
         showToast(getErrorMessage(error));
@@ -5244,6 +5330,11 @@
           return;
         }
 
+        if (button.dataset.qualityAction === "处理近效期预警") {
+          handleReagentExpiryAlertWrite();
+          return;
+        }
+
         const currentQualityEvent = document.getElementById("qualityAiTitle").textContent;
         showToast(`模拟操作成功：${button.dataset.qualityAction}，当前质控事件：${currentQualityEvent}`);
       });
@@ -5285,6 +5376,7 @@
     renderQualityInstruments();
     renderQualityEvents();
     renderQualityReagents();
+    selectReagentExpiryAlert(0);
     renderQualityBatchRisks();
     renderQualityRecords();
     hydrateQcDashboardData();

@@ -23,6 +23,8 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   getQcDashboardData: () => ipcRenderer.invoke('qcDashboard:getData'),
   getQcEventsData: () => ipcRenderer.invoke('qcEvents:getData'),
   handleQcEvent: (eventId, handling) => ipcRenderer.invoke('qcEvents:handle', eventId, handling),
+  getReagentExpiryAlertsData: () => ipcRenderer.invoke('reagentExpiryAlerts:getData'),
+  handleReagentExpiryAlert: (alertId, handling) => ipcRenderer.invoke('reagentExpiryAlerts:handle', alertId, handling),
   getSystemSettingsData: () => ipcRenderer.invoke('systemSettings:getData'),
   getSystemRulesData: () => ipcRenderer.invoke('systemRules:getData'),
   updateSystemRule: (ruleId, updates) => ipcRenderer.invoke('systemRules:update', ruleId, updates),

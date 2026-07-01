@@ -174,6 +174,8 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 `npm run smoke:qc-events` 用于验证质控事件处理写入、非法处理失败、重复处理失败，以及 `audit_logs` 记录质控事件处理。该脚本不修改 `database/schema.sql` 或 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
 
+当前版本也支持“处理近效期预警”真实写入。操作会更新 `reagent_expiry_alerts` 的预警状态、处理措施和更新时间，并在 `audit_logs` 记录“处理试剂近效期预警”。`npm run smoke:reagent-expiry-alerts` 用于验证试剂近效期预警处理写入、非法处理失败、重复处理失败，以及审计日志写入；该脚本不修改 `database/schema.sql` 或 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
+
 ## 结果审核页面数据库驱动
 
 Electron 桌面版结果审核页面现在会优先通过安全的 preload / IPC 桥接，从本地 SQLite 数据库的 `samples`、`test_results`、`test_items`、`ai_pre_reviews`、`result_reviews`、`users` 表读取结果审核数据，并用读取结果更新结果审核总览统计、结果审核队列和右侧结果详情 / AI 建议 / 审核留痕卡片。

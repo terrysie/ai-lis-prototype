@@ -19,7 +19,13 @@ const {
   acknowledgeCriticalValue,
   completeCriticalValue
 } = require('./src/database/criticalValues');
-const { getQcDashboardData, getQcEventsData, handleQcEvent } = require('./src/database/qcDashboard');
+const {
+  getQcDashboardData,
+  getQcEventsData,
+  getReagentExpiryAlertsData,
+  handleQcEvent,
+  handleReagentExpiryAlert
+} = require('./src/database/qcDashboard');
 const {
   getSystemSettingsData,
   getSystemRulesData,
@@ -125,6 +131,13 @@ ipcMain.handle('qcDashboard:getData', async () => getQcDashboardData({ electronA
 ipcMain.handle('qcEvents:getData', async () => getQcEventsData({ electronApp: app }));
 ipcMain.handle('qcEvents:handle', async (_event, eventId, handling) => handleQcEvent(
   eventId,
+  handling,
+  { userId: 1, username: 'admin' },
+  { electronApp: app }
+));
+ipcMain.handle('reagentExpiryAlerts:getData', async () => getReagentExpiryAlertsData({ electronApp: app }));
+ipcMain.handle('reagentExpiryAlerts:handle', async (_event, alertId, handling) => handleReagentExpiryAlert(
+  alertId,
   handling,
   { userId: 1, username: 'admin' },
   { electronApp: app }
