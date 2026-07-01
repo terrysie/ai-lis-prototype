@@ -21,6 +21,8 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   acknowledgeCriticalValue: (notificationId) => ipcRenderer.invoke('criticalValues:acknowledge', notificationId),
   completeCriticalValue: (notificationId, resolution) => ipcRenderer.invoke('criticalValues:complete', notificationId, resolution),
   getQcDashboardData: () => ipcRenderer.invoke('qcDashboard:getData'),
+  getQcEventsData: () => ipcRenderer.invoke('qcEvents:getData'),
+  handleQcEvent: (eventId, handling) => ipcRenderer.invoke('qcEvents:handle', eventId, handling),
   getSystemSettingsData: () => ipcRenderer.invoke('systemSettings:getData'),
   getSystemRulesData: () => ipcRenderer.invoke('systemRules:getData'),
   updateSystemRule: (ruleId, updates) => ipcRenderer.invoke('systemRules:update', ruleId, updates),

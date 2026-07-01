@@ -1871,10 +1871,10 @@
           <div class="panel" aria-label="质控事件队列">
             <div class="panel-header">
               <div>
-                <h3 class="panel-title">质控事件队列</h3>
-                <p class="panel-subtitle">点击任一事件，右侧 AI 质控建议卡片将按结论、命中规则、建议动作三段式更新。</p>
+              <h3 class="panel-title">质控事件队列</h3>
+                <p class="panel-subtitle">点击任一事件，右侧 AI 质控建议卡片将按结论、命中规则、建议动作三段式更新；确认处理会写入 SQLite。</p>
               </div>
-              <span class="badge badge-gray">模拟事件</span>
+              <span class="badge badge-a">数据库事件</span>
             </div>
             <div class="panel-body">
               <div class="table-wrap">
@@ -1965,7 +1965,7 @@
             <div class="panel-header">
               <div>
                 <h3 class="panel-title">质控快捷操作</h3>
-                <p class="panel-subtitle">按钮仅触发模拟提示，不连接后端、不写入数据库。</p>
+                <p class="panel-subtitle">确认质控事件会写入 SQLite，其它按钮仍为原型提示。</p>
               </div>
             </div>
             <div class="panel-body">
@@ -1978,7 +1978,7 @@
                 <button class="btn secondary" data-quality-action="查看受影响样本">查看受影响样本</button>
                 <button class="btn danger" data-quality-action="关闭质控事件">关闭质控事件</button>
               </div>
-              <p class="safety-note" style="margin-bottom:0;">所有操作均为静态原型模拟交互，用于展示岗位流程，不代表真实 LIS、仪器中间件或库存系统操作。</p>
+              <p class="safety-note" style="margin-bottom:0;">确认质控事件会记录本地 SQLite 和审计日志；其它操作仍为静态原型模拟交互。</p>
             </div>
           </div>
         </section>
@@ -3003,6 +3003,7 @@
       { id: "QC-260611-005", instrument: "全自动生化分析仪 BA-02", project: "GLU", level: "水平 1", rule: "10x 系统漂移", ruleClass: "badge-b", status: "待确认", statusClass: "badge-b", impact: "空腹血糖趋势偏移，影响 24 份模拟样本", action: "关联质控复查并核对试剂批号", ai: { conclusion: "GLU 出现连续同侧偏移，提示可能存在系统性漂移。", rules: ["连续 10 次质控结果位于均值同侧", "同批葡萄糖试剂 GLU-2604-08 剩余 4 天", "患者结果中位数较前日轻度上移"], action: "建议关联质控复查，核对试剂批号和校准曲线，必要时生成试剂更换提醒。" } },
       { id: "QC-260611-006", instrument: "全自动免疫分析仪 IA-03", project: "cTnI", level: "水平 3", rule: "4-1s 趋势异常", ruleClass: "badge-b", status: "已关闭", statusClass: "badge-gray", impact: "胸痛中心 cTnI 结果已完成复核", action: "归档处理记录", ai: { conclusion: "cTnI 趋势异常已完成复核和记录，可关闭事件。", rules: ["连续 4 个质控点超过均值同侧 ±1SD", "复查质控品后回归可接受范围", "无新增仪器报警"], action: "建议保留事件归档，用于月度质控复盘；无需继续限制自动放行。" } }
     ];
+    let selectedQualityEventIndex = 0;
 
     let qualityReagents = [
       { name: "CA125 化学发光试剂", lot: "CA-2605-18", project: "CA125", instrument: "IA-03", start: "2026-05-28", expiry: "2026-06-19", days: 8, risk: "高风险", riskClass: "badge-c", action: "关联质控复查" },
@@ -4177,7 +4178,7 @@
 
     function renderQualityEvents() {
       document.getElementById("qualityEventTable").innerHTML = qualityEvents.map((item, index) => `
-        <tr data-index="${index}">
+        <tr data-index="${index}" class="${index === selectedQualityEventIndex ? "selected" : ""}">
           <td>${item.id}</td><td>${item.instrument}</td><td>${item.project}</td><td>${item.level}</td>
           <td><span class="badge ${item.ruleClass}">${item.rule}</span></td>
           <td><span class="badge ${item.statusClass}">${item.status}</span></td>
@@ -4188,10 +4189,26 @@
       document.querySelectorAll("#qualityEventTable tr").forEach(row => {
         row.addEventListener("click", () => selectQualityEvent(Number(row.dataset.index)));
       });
+      updateQualityEventActionButtons();
+    }
+
+    function getSelectedQualityEvent() {
+      return qualityEvents[selectedQualityEventIndex] || null;
+    }
+
+    function isClosedQualityEventStatus(status) {
+      return ["closed", "resolved", "handled", "completed", "已关闭", "已处理", "已完成"].includes(String(status || "").trim().toLowerCase());
     }
 
     function selectQualityEvent(index) {
       const item = qualityEvents[index];
+      if (!item) {
+        selectedQualityEventIndex = 0;
+        updateQualityEventActionButtons();
+        return;
+      }
+
+      selectedQualityEventIndex = index;
       document.querySelectorAll("#qualityEventTable tr").forEach(row => row.classList.remove("selected"));
       const selectedRow = document.querySelector(`#qualityEventTable tr[data-index="${index}"]`);
       if (selectedRow) selectedRow.classList.add("selected");
@@ -4201,6 +4218,16 @@
       document.getElementById("qualityAiConclusion").textContent = item.ai.conclusion;
       document.getElementById("qualityAiRules").innerHTML = item.ai.rules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("qualityAiAction").textContent = item.ai.action;
+      updateQualityEventActionButtons();
+    }
+
+    function updateQualityEventActionButtons() {
+      const item = getSelectedQualityEvent();
+      const canHandle = Boolean(item?.eventId && window.terryLisApi?.handleQcEvent && !isClosedQualityEventStatus(item.rawStatus || item.status));
+
+      document.querySelectorAll('[data-quality-action="确认质控事件"]').forEach(button => {
+        button.disabled = !canHandle;
+      });
     }
 
     function renderQualityReagents() {
@@ -4511,6 +4538,50 @@
 
     function getErrorMessage(error) {
       return error?.message || String(error || "操作失败");
+    }
+
+    async function handleQualityEventWrite() {
+      const item = getSelectedQualityEvent();
+
+      if (!item) {
+        showToast("请先选择需要处理的质控事件。");
+        return;
+      }
+
+      if (!item.eventId) {
+        showToast("当前质控事件不是本地 SQLite 事件，无法真实处理。");
+        return;
+      }
+
+      if (isClosedQualityEventStatus(item.rawStatus || item.status)) {
+        showToast("当前质控事件已关闭，不能重复处理。");
+        updateQualityEventActionButtons();
+        return;
+      }
+
+      if (!window.terryLisApi?.handleQcEvent) {
+        showToast("当前环境未提供质控事件处理接口。");
+        return;
+      }
+
+      const handlingNote = window.prompt(`请输入 ${item.id || "质控事件"} 的处理措施：`, item.action || "");
+
+      if (handlingNote === null) {
+        return;
+      }
+
+      if (!handlingNote.trim()) {
+        showToast("质控事件处理措施不能为空。");
+        return;
+      }
+
+      try {
+        await window.terryLisApi.handleQcEvent(item.eventId, { handlingNote: handlingNote.trim() });
+        showToast("质控事件已处理");
+        await hydrateQcDashboardData();
+      } catch (error) {
+        showToast(getErrorMessage(error));
+      }
     }
 
     function getSystemRuleConfigText(rule) {
@@ -5168,6 +5239,11 @@
 
     document.querySelectorAll("[data-quality-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.qualityAction === "确认质控事件") {
+          handleQualityEventWrite();
+          return;
+        }
+
         const currentQualityEvent = document.getElementById("qualityAiTitle").textContent;
         showToast(`模拟操作成功：${button.dataset.qualityAction}，当前质控事件：${currentQualityEvent}`);
       });
