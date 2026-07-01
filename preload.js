@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   rejectSampleReception: (sampleId, reason) => ipcRenderer.invoke('sampleReception:reject', sampleId, reason),
   createSampleRecollectionTask: (sampleId, reason) => ipcRenderer.invoke('sampleReception:createRecollectionTask', sampleId, reason),
   getAiPreReviewData: () => ipcRenderer.invoke('aiPreReview:getData'),
+  getInfectiousAlertsData: () => ipcRenderer.invoke('infectiousAlerts:getData'),
+  handleInfectiousAlert: (alertId, handling) => ipcRenderer.invoke('infectiousAlerts:handle', alertId, handling),
   getResultReviewData: () => ipcRenderer.invoke('resultReview:getData'),
   approveResultReview: (reviewId) => ipcRenderer.invoke('resultReview:approve', reviewId),
   rejectResultReview: (reviewId, reason) => ipcRenderer.invoke('resultReview:reject', reviewId, reason),
