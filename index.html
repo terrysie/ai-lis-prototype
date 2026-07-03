@@ -1155,6 +1155,7 @@
       </div>
       <div class="topbar-meta">
         <span class="meta-pill">当前角色：<strong>审核技师</strong></span>
+        <span class="meta-pill">默认操作员：<strong>demo_operator</strong></span>
         <span class="meta-pill">当前日期：<strong id="currentDate">--</strong></span>
       </div>
     </header>
@@ -1188,6 +1189,10 @@
           <span>AI 不替代最终医疗责任人；所有建议均需符合实验室规则、质控状态和人工审核流程。</span>
         </div>
       </section>
+
+      <p class="safety-note">
+        <strong>demo_operator 提示：</strong>当前原型默认操作员为 <code>demo_operator</code>，仅用于桌面 demo；它不是生产权限模型。UI gating 只是前端提示与确认，不等于真实安全认证。
+      </p>
 
       <section class="metrics" aria-label="首页核心指标">
         <article class="metric-card">
@@ -4635,6 +4640,177 @@
       return error?.message || String(error || "操作失败");
     }
 
+    const sensitiveActionGating = {
+      sampleReceptionConfirm: {
+        actionName: "样本签收确认",
+        suggestedRoles: ["technician", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: false,
+        demoOperatorAllowed: true,
+        confirmationMessage: "确认样本进入审核流程。"
+      },
+      sampleReceptionReject: {
+        actionName: "样本退样",
+        suggestedRoles: ["technician", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "退样会改变样本接收状态。"
+      },
+      sampleRecollectionCreate: {
+        actionName: "创建补采任务",
+        suggestedRoles: ["technician", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "补采任务会记录补采原因和当前样本状态。"
+      },
+      resultReviewApprove: {
+        actionName: "结果审核通过",
+        suggestedRoles: ["reviewer", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "审核通过会改变结果审核状态。"
+      },
+      resultReviewReject: {
+        actionName: "结果审核退回",
+        suggestedRoles: ["reviewer", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "退回会记录驳回原因。"
+      },
+      criticalValueNotify: {
+        actionName: "危急值通知记录",
+        suggestedRoles: ["technician", "lab_manager", "reviewer"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "危急值通知会进入闭环追踪。"
+      },
+      criticalValueAcknowledge: {
+        actionName: "危急值临床确认",
+        suggestedRoles: ["lab_manager", "reviewer"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "临床确认应在已通知后执行。"
+      },
+      criticalValueComplete: {
+        actionName: "危急值闭环确认",
+        suggestedRoles: ["lab_manager", "reviewer"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "完成闭环会关闭危急值流程。"
+      },
+      reportPublish: {
+        actionName: "报告发布",
+        suggestedRoles: ["reviewer", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "报告发布代表报告进入正式发布状态。"
+      },
+      reportExport: {
+        actionName: "报告导出",
+        suggestedRoles: ["reviewer", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "报告导出会生成本地 HTML 文件。"
+      },
+      reportPrint: {
+        actionName: "报告打印",
+        suggestedRoles: ["reviewer", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "打印应在报告状态和接收对象确认后执行。"
+      },
+      qcEventHandle: {
+        actionName: "质控事件处理",
+        suggestedRoles: ["technician", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "质控事件处理会记录处理措施和处理时间。"
+      },
+      reagentExpiryHandle: {
+        actionName: "试剂近效期预警处理",
+        suggestedRoles: ["technician", "lab_manager"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "试剂近效期预警处理会记录处置措施。"
+      },
+      infectiousAlertHandle: {
+        actionName: "传染病阳性预警处理",
+        suggestedRoles: ["lab_manager", "reviewer"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: true,
+        confirmationMessage: "传染病阳性预警处理应遵循院内复核和告知流程。"
+      },
+      systemRuleCreate: {
+        actionName: "系统规则新增",
+        suggestedRoles: ["system_admin"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: false,
+        confirmationMessage: "新增系统规则在真实系统中应仅由系统管理员执行。"
+      },
+      systemRuleEdit: {
+        actionName: "系统规则编辑",
+        suggestedRoles: ["system_admin"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: false,
+        confirmationMessage: "系统规则编辑可能影响自动放行、危急值或预警策略。"
+      },
+      systemRuleToggle: {
+        actionName: "系统规则启用 / 停用",
+        suggestedRoles: ["system_admin"],
+        requiresAuditLog: true,
+        requiresConfirmation: true,
+        demoOperatorAllowed: false,
+        confirmationMessage: "规则启停会影响系统规则是否生效。"
+      }
+    };
+
+    function confirmSensitiveAction(actionKey, contextText = "") {
+      const action = sensitiveActionGating[actionKey];
+      if (!action) {
+        return true;
+      }
+
+      if (!action.requiresConfirmation) {
+        return true;
+      }
+
+      const auditText = action.requiresAuditLog ? "该动作将写入审计记录。" : "该动作不一定写入审计记录。";
+      const demoText = action.demoOperatorAllowed
+        ? "demo_operator 仅用于当前桌面 demo，可在原型演示中继续。"
+        : "demo_operator 不是生产权限角色，在真实系统中不应直接执行此动作。";
+      const lines = [
+        `敏感操作：${action.actionName}`,
+        "",
+        "这是敏感操作。",
+        "当前为 demo_operator 原型演示模式。",
+        "该动作在真实系统中应受角色权限约束。",
+        auditText,
+        demoText,
+        `建议允许角色：${action.suggestedRoles.join("、")}`,
+        action.confirmationMessage,
+        contextText ? `当前操作：${contextText}` : "",
+        "",
+        "确认继续执行？"
+      ];
+
+      return window.confirm(lines.filter(Boolean).join("\n"));
+    }
+
     async function handleInfectiousAlertWrite() {
       const item = getSelectedPositiveAlert();
 
@@ -4667,6 +4843,10 @@
 
       if (!handlingNote.trim()) {
         showToast("传染病阳性预警处理措施不能为空。");
+        return;
+      }
+
+      if (!confirmSensitiveAction("infectiousAlertHandle", `${item.project || "传染病阳性预警"}：${handlingNote.trim()}`)) {
         return;
       }
 
@@ -4714,6 +4894,10 @@
         return;
       }
 
+      if (!confirmSensitiveAction("qcEventHandle", `${item.id || "质控事件"}：${handlingNote.trim()}`)) {
+        return;
+      }
+
       try {
         await window.terryLisApi.handleQcEvent(item.eventId, { handlingNote: handlingNote.trim() });
         showToast("质控事件已处理");
@@ -4755,6 +4939,10 @@
 
       if (!handlingNote.trim()) {
         showToast("试剂近效期预警处理措施不能为空。");
+        return;
+      }
+
+      if (!confirmSensitiveAction("reagentExpiryHandle", `${item.name || "试剂近效期预警"}：${handlingNote.trim()}`)) {
         return;
       }
 
@@ -4804,6 +4992,10 @@
         return;
       }
 
+      if (!confirmSensitiveAction("systemRuleEdit", `${rule.ruleName || "系统规则"} 配置值更新`)) {
+        return;
+      }
+
       try {
         await window.terryLisApi.updateSystemRule(rule.id, { rule_config_json: nextValue.trim() });
         showToast("系统规则已更新");
@@ -4828,7 +5020,7 @@
 
       const actionText = enabled ? "启用" : "暂停";
 
-      if (!window.confirm(`确认${actionText}系统规则：${rule.ruleName || rule.ruleType || rule.id}？`)) {
+      if (!confirmSensitiveAction("systemRuleToggle", `${actionText}系统规则：${rule.ruleName || rule.ruleType || rule.id}`)) {
         return;
       }
 
@@ -4865,6 +5057,10 @@
       if (!window.terryLisApi?.confirmSampleReception) {
         showToast("当前环境未提供样本签收写入接口。");
         updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!confirmSensitiveAction("sampleReceptionConfirm", `样本 ${sample.id}`)) {
         return;
       }
 
@@ -4924,6 +5120,11 @@
         return;
       }
 
+      if (!confirmSensitiveAction("sampleReceptionReject", `样本 ${sample.id}，原因：${rejectReason}`)) {
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
       isRejectingSampleReception = true;
       updateConfirmSampleReceptionButton();
 
@@ -4976,6 +5177,11 @@
       const recollectionReason = reason.trim();
       if (!recollectionReason) {
         showToast("补采原因不能为空。");
+        updateConfirmSampleReceptionButton();
+        return;
+      }
+
+      if (!confirmSensitiveAction("sampleRecollectionCreate", `样本 ${sample.id}，原因：${recollectionReason}`)) {
         updateConfirmSampleReceptionButton();
         return;
       }
@@ -5067,6 +5273,10 @@
         return;
       }
 
+      if (!confirmSensitiveAction("resultReviewApprove", `结果 ${item.id}`)) {
+        return;
+      }
+
       isApprovingResultReview = true;
       updateResultReviewActionButtons();
 
@@ -5112,6 +5322,11 @@
       const rejectReason = reason.trim();
       if (!rejectReason) {
         showToast("驳回原因不能为空。");
+        updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!confirmSensitiveAction("resultReviewReject", `结果 ${item.id}，原因：${rejectReason}`)) {
         updateResultReviewActionButtons();
         return;
       }
@@ -5193,6 +5408,10 @@
         return;
       }
 
+      if (!confirmSensitiveAction("reportExport", `结果 ${item.id}`)) {
+        return;
+      }
+
       isExportingReportHtml = true;
       updateResultReviewActionButtons();
 
@@ -5225,6 +5444,10 @@
       if (!window.terryLisApi?.publishReport) {
         showToast("当前环境未提供报告正式发布接口。");
         updateResultReviewActionButtons();
+        return;
+      }
+
+      if (!confirmSensitiveAction("reportPublish", `结果 ${item.id}`)) {
         return;
       }
 
@@ -5270,6 +5493,11 @@
         return;
       }
 
+      if (!confirmSensitiveAction("criticalValueNotify", `危急值 ${item.id}，通知说明：${remarkInput.trim() || "未填写"}`)) {
+        updateCriticalValueActionButtons();
+        return;
+      }
+
       isNotifyingCriticalValue = true;
       updateCriticalValueActionButtons();
 
@@ -5302,6 +5530,11 @@
 
       if (!window.terryLisApi?.acknowledgeCriticalValue) {
         showToast("当前环境未提供危急值确认写入接口。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!confirmSensitiveAction("criticalValueAcknowledge", `危急值 ${item.id}`)) {
         updateCriticalValueActionButtons();
         return;
       }
@@ -5351,6 +5584,11 @@
       const resolution = resolutionInput.trim();
       if (!resolution) {
         showToast("危急值处理说明不能为空。");
+        updateCriticalValueActionButtons();
+        return;
+      }
+
+      if (!confirmSensitiveAction("criticalValueComplete", `危急值 ${item.id}，处理说明：${resolution}`)) {
         updateCriticalValueActionButtons();
         return;
       }
@@ -5444,6 +5682,14 @@
 
     document.querySelectorAll("[data-settings-action]").forEach(button => {
       button.addEventListener("click", () => {
+        if (button.dataset.settingsAction === "新建规则") {
+          if (!confirmSensitiveAction("systemRuleCreate", "新建系统规则（当前为原型提示，未写入数据库）")) {
+            return;
+          }
+          showToast("模拟操作成功：新建规则。该操作仅用于静态原型展示，未连接后端或数据库。");
+          return;
+        }
+
         if (button.dataset.settingsAction === "修改规则值") {
           handleUpdateSystemRuleValue();
           return;
