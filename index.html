@@ -1084,6 +1084,36 @@
     .reagent-rule-table { min-width: 1220px; }
     .interface-table { min-width: 980px; }
     .settings-audit-table { min-width: 1220px; }
+    .sensitive-coverage-table { min-width: 1360px; }
+
+    .sensitive-coverage-summary {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .coverage-summary-card {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .coverage-summary-card strong {
+      display: block;
+      color: #263f52;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .coverage-summary-card span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
 
 
     .rule-note {
@@ -1111,7 +1141,7 @@
     }
 
     @media (max-width: 1180px) {
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .sensitive-coverage-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .section-grid, .queue-layout, .assistant, .receiving-layout, .risk-layout, .triage-grid, .review-workbench, .review-cards-grid, .critical-workbench, .critical-secondary-grid, .quality-workbench, .quality-secondary-grid, .settings-section-grid { grid-template-columns: 1fr; }
       .receiving-support-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .ai-card, .critical-detail-card, .quality-ai-card { position: static; }
@@ -1131,12 +1161,12 @@
       .sidebar-note { display: none; }
       main { padding: 16px; }
       .hero { grid-template-columns: 1fr; }
-      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .sensitive-coverage-summary, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
-      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: 1fr; }
+      .nav-list, .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .sensitive-coverage-summary, .critical-grid, .flow, .receiving-support-grid, .sample-action-row, .review-detail-grid, .review-actions, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: 1fr; }
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
@@ -2036,6 +2066,38 @@
         </section>
 
         <p class="settings-boundary-note"><strong>责任边界提示：</strong>系统设置中的规则仅为原型模拟。真实医疗系统中的自动放行、危急值、阳性预警、试剂预警和接口配置必须由医院制度、检验科负责人和信息科共同确认，并保留完整审计记录。AI 仅用于辅助解释、提醒和流程排序，不替代最终责任人。</p>
+
+        <section class="panel settings-panel" aria-label="敏感操作覆盖清单">
+          <div class="panel-header">
+            <div>
+              <h3 class="panel-title">敏感操作覆盖清单</h3>
+              <p class="panel-subtitle">Desktop demo 治理清单：UI gating 表示前端提示与二次确认，action guard 表示 main 层最小入口保护，audit log 表示现有写入动作应保留审计记录。</p>
+            </div>
+            <span class="badge badge-info">v0.5 治理</span>
+          </div>
+          <div class="panel-body">
+            <p class="rule-note"><strong>边界说明：</strong><code>demo_operator</code> 仅用于桌面 demo，不是生产权限角色；当前清单不是生产级认证系统，也不替代后续真实登录、角色校验或合规审计。</p>
+            <div class="sensitive-coverage-summary" id="sensitiveActionCoverageSummary"></div>
+            <div class="table-wrap">
+              <table class="sensitive-coverage-table">
+                <thead>
+                  <tr>
+                    <th>模块</th>
+                    <th>动作 Key</th>
+                    <th>敏感动作</th>
+                    <th>UI gating</th>
+                    <th>action guard</th>
+                    <th>audit log</th>
+                    <th>demo_operator</th>
+                    <th>后端状态</th>
+                    <th>说明</th>
+                  </tr>
+                </thead>
+                <tbody id="sensitiveActionCoverageTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
         <section class="panel settings-panel" aria-label="系统设置模拟操作按钮">
           <div class="panel-header">
@@ -4419,6 +4481,53 @@
       updateSystemRuleActionButtons();
     }
 
+    function getCoverageStatusClass(status) {
+      if (["已接入", "应写入", "demo 允许", "真实写入"].includes(status)) return "normal";
+      if (["已预留", "仅导出", "UI 预留", "仅预留"].includes(status)) return "watch";
+      if (["demo 提示但生产不允许", "当前无真实写入", "未接入"].includes(status)) return "warning";
+      return "gray";
+    }
+
+    function renderSensitiveActionCoverage() {
+      const summary = document.getElementById("sensitiveActionCoverageSummary");
+      const table = document.getElementById("sensitiveActionCoverageTable");
+      if (!summary || !table) return;
+
+      const total = sensitiveActionCoverageRows.length;
+      const uiGatingCount = sensitiveActionCoverageRows.filter(item => item.uiGatingStatus === "已接入").length;
+      const actionGuardCount = sensitiveActionCoverageRows.filter(item => item.actionGuardStatus === "已接入").length;
+      const auditLogCount = sensitiveActionCoverageRows.filter(item => item.auditLogStatus === "应写入").length;
+      const reservedOrNoBackendCount = sensitiveActionCoverageRows.filter(item => ["UI 预留", "未接入"].includes(item.backendStatus)).length;
+      const summaryCards = [
+        ["总敏感动作", total, "纳入 v0.5 覆盖清单"],
+        ["UI gating 已接入", uiGatingCount, "前端提示与确认"],
+        ["action guard 已接入", actionGuardCount, "main 层入口保护"],
+        ["audit log 覆盖", auditLogCount, "现有写入动作应留痕"],
+        ["预留/无后端", reservedOrNoBackendCount, "不新造写入动作"]
+      ];
+
+      summary.innerHTML = summaryCards.map(([label, value, note]) => `
+        <article class="coverage-summary-card">
+          <strong>${value}</strong>
+          <span>${label}<br />${note}</span>
+        </article>
+      `).join("");
+
+      table.innerHTML = sensitiveActionCoverageRows.map(item => `
+        <tr>
+          <td>${item.moduleName}</td>
+          <td><code>${item.actionKey}</code></td>
+          <td><strong>${item.actionName}</strong></td>
+          <td><span class="status-cell ${getCoverageStatusClass(item.uiGatingStatus)}">${item.uiGatingStatus}</span></td>
+          <td><span class="status-cell ${getCoverageStatusClass(item.actionGuardStatus)}">${item.actionGuardStatus}</span></td>
+          <td><span class="status-cell ${getCoverageStatusClass(item.auditLogStatus)}">${item.auditLogStatus}</span></td>
+          <td><span class="status-cell ${getCoverageStatusClass(item.demoOperatorStatus)}">${item.demoOperatorStatus}</span></td>
+          <td><span class="status-cell ${getCoverageStatusClass(item.backendStatus)}">${item.backendStatus}</span></td>
+          <td>${item.note}</td>
+        </tr>
+      `).join("");
+    }
+
     function getSelectedSystemRule() {
       return systemRules[selectedSystemRuleIndex] || null;
     }
@@ -4778,6 +4887,196 @@
         confirmationMessage: "规则启停会影响系统规则是否生效。"
       }
     };
+
+    const sensitiveActionCoverageRows = [
+      {
+        actionKey: "sampleReceptionConfirm",
+        moduleName: "样本接收",
+        actionName: "样本签收确认",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "确认待签收样本并写入 samples 与 audit_logs。"
+      },
+      {
+        actionKey: "sampleReceptionReject",
+        moduleName: "样本接收",
+        actionName: "样本退样",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "要求退样原因，写入拒收状态与审计记录。"
+      },
+      {
+        actionKey: "sampleRecollectionCreate",
+        moduleName: "样本接收",
+        actionName: "创建补采任务",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "生成补采任务并通过 audit_logs 追溯。"
+      },
+      {
+        actionKey: "resultReviewApprove",
+        moduleName: "结果审核",
+        actionName: "结果审核通过",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "审核通过前已有前端确认和 main 层 guard。"
+      },
+      {
+        actionKey: "resultReviewReject",
+        moduleName: "结果审核",
+        actionName: "结果审核退回",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "要求退回原因，写入审核状态与审计记录。"
+      },
+      {
+        actionKey: "criticalValueNotify",
+        moduleName: "危急值中心",
+        actionName: "危急值通知记录",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "确认已通知后进入危急值闭环追踪。"
+      },
+      {
+        actionKey: "criticalValueAcknowledge",
+        moduleName: "危急值中心",
+        actionName: "危急值临床确认",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "仅在已通知后允许临床确认。"
+      },
+      {
+        actionKey: "criticalValueComplete",
+        moduleName: "危急值中心",
+        actionName: "危急值闭环确认",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "完成闭环需填写处理说明。"
+      },
+      {
+        actionKey: "reportPublish",
+        moduleName: "报告发布",
+        actionName: "报告发布",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "正式发布报告会更新报告状态并留痕。"
+      },
+      {
+        actionKey: "reportExport",
+        moduleName: "报告输出",
+        actionName: "报告导出",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "仅导出",
+        note: "导出本地 HTML 文件，不新增打印或发布流程。"
+      },
+      {
+        actionKey: "reportPrint",
+        moduleName: "报告输出",
+        actionName: "报告打印",
+        uiGatingStatus: "已预留",
+        actionGuardStatus: "已预留",
+        auditLogStatus: "当前无真实写入",
+        demoOperatorStatus: "仅预留",
+        backendStatus: "未接入",
+        note: "当前没有真实后端打印动作，不新造打印写入。"
+      },
+      {
+        actionKey: "qcEventHandle",
+        moduleName: "质控看板",
+        actionName: "质控事件处理",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "处理措施、处理人和处理时间写入 qc_events。"
+      },
+      {
+        actionKey: "reagentExpiryHandle",
+        moduleName: "质控看板",
+        actionName: "试剂近效期预警处理",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "处理试剂近效期预警并写 audit_logs。"
+      },
+      {
+        actionKey: "infectiousAlertHandle",
+        moduleName: "AI 预审",
+        actionName: "传染病阳性预警处理",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 允许",
+        backendStatus: "真实写入",
+        note: "处理阳性预警，保留复核和通知相关留痕。"
+      },
+      {
+        actionKey: "systemRuleCreate",
+        moduleName: "系统设置",
+        actionName: "系统规则新增",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已预留",
+        auditLogStatus: "当前无真实写入",
+        demoOperatorStatus: "demo 提示但生产不允许",
+        backendStatus: "UI 预留",
+        note: "当前仅前端提示，不新增 system_rules 写入。"
+      },
+      {
+        actionKey: "systemRuleEdit",
+        moduleName: "系统设置",
+        actionName: "系统规则编辑",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 提示但生产不允许",
+        backendStatus: "真实写入",
+        note: "只允许修改规则配置值字段，真实模式需 system_admin。"
+      },
+      {
+        actionKey: "systemRuleToggle",
+        moduleName: "系统设置",
+        actionName: "系统规则启用 / 停用",
+        uiGatingStatus: "已接入",
+        actionGuardStatus: "已接入",
+        auditLogStatus: "应写入",
+        demoOperatorStatus: "demo 提示但生产不允许",
+        backendStatus: "真实写入",
+        note: "仅通过启停函数修改规则状态。"
+      }
+    ];
 
     function confirmSensitiveAction(actionKey, contextText = "") {
       const action = sensitiveActionGating[actionKey];
@@ -5730,6 +6029,7 @@
     hydrateQcDashboardData();
     renderSettingsUsers();
     renderRoleConfigs();
+    renderSensitiveActionCoverage();
     renderSystemRules();
     selectSystemRule(0);
     renderAutoReleaseRules();
