@@ -1,5 +1,78 @@
 # AI-LIS 第一版原型需求
 
+## 当前推荐下载版本 / Latest RC
+
+当前推荐试用版本为 **TERRY-LIS v0.5.0 RC 1**。
+
+- Release URL: [https://github.com/terrysie/ai-lis-prototype/releases/tag/v0.5.0-rc.1](https://github.com/terrysie/ai-lis-prototype/releases/tag/v0.5.0-rc.1)
+- Tag: `v0.5.0-rc.1`
+- Commit: `b1edb575915ddc9528006fa21ebc1749c8d94674`
+- 普通试用者建议下载 installer zip；需要免安装运行时下载 portable zip。
+- 下载后建议先计算 SHA256，确认匹配后再运行。
+
+| 资产 | 适用场景 | 大小 | SHA256 |
+|---|---|---:|---|
+| `TERRY-LIS-1.0.0-Windows-x64-installer.zip` | 推荐普通试用，解压后运行安装包 | 95,353,266 bytes | `EA757A5614111B8EE590EC7088BE324136DC977442A66FF34806E1F26B3FE3E6` |
+| `TERRY-LIS-1.0.0-Windows-x64-portable.zip` | 免安装运行，解压后直接打开 | 138,331,640 bytes | `3EFFBB6C158089EDADE8603957326311491F349FDCEC5C84DDAF791396138AD6` |
+
+## v0.5 RC 1 当前能力
+
+当前 v0.5 RC 1 已经不是单纯静态页面，而是 Electron Windows 桌面端 demo。它使用本地 SQLite 数据库驱动部分页面、统计和真实写入闭环，同时保留普通浏览器 / GitHub Pages 环境下的静态 fallback。
+
+已验证能力包括：
+
+- 样本接收写入闭环：确认签收、退样/拒收、补采任务创建和流转记录读取。
+- 结果审核写入闭环：审核通过、审核退回和 `audit_logs` 留痕。
+- 危急值闭环：通知、临床确认、完成闭环和审计记录。
+- 报告生成 / 导出 / 发布最小闭环：HTML 报告生成、本地 HTML 导出、正式发布和审计记录。
+- 系统规则编辑 / 启停：规则配置值修改、规则状态启停和审计记录。
+- 质控事件处理：处理措施、处理人、处理时间、状态和审计记录。
+- 试剂近效期预警处理：处理措施、状态更新和审计记录。
+- 传染病阳性预警处理：复核、通知、院感跟进、报告提示状态更新和审计记录。
+- v0.5 权限治理：UI gating、main action guard、敏感操作覆盖清单、`demo_operator` 边界提示。
+
+## v0.5 RC 1 验证状态
+
+已完成以下验证：
+
+- `db:reset` 通过。
+- `db:check` 通过。
+- 10 个 smoke 全部通过：
+  - `smoke:sample-reception`
+  - `smoke:result-review`
+  - `smoke:critical-values`
+  - `smoke:e2e-workflow`
+  - `smoke:report-output`
+  - `smoke:report-publish`
+  - `smoke:system-rules`
+  - `smoke:qc-events`
+  - `smoke:reagent-expiry-alerts`
+  - `smoke:infectious-alerts`
+- `node --check .\main.js` 通过。
+- Electron 开发模式人工检查通过。
+- 本地构建后的免安装版运行正常。
+- 本地构建后的安装包安装 / 运行正常。
+- GitHub Release 页面两个资产已确认。
+- 从 GitHub Release 下载两个 zip 后 SHA256 完全匹配。
+- 下载版 portable 解压 / 运行正常。
+- 下载版 installer 解压 / 安装 / 运行正常。
+
+## 重要限制
+
+- 当前仍是 desktop demo，不是生产级医疗 LIS。
+- 不用于真实患者生产环境。
+- 不连接真实医院 HIS / LIS / EMR。
+- 不连接真实检验仪器。
+- `demo_operator` 仅用于演示，不是生产权限角色。
+- UI gating 只是前端提示与确认，不等于真实安全认证。
+- main action guard 是 main 层最小入口保护，不等于完整生产授权体系。
+- `reportPrint` 当前无真实后端打印动作。
+- `systemRuleCreate` 当前只是 UI 预留，不新增真实写入。
+
+## 早期 V1 原型历史需求
+
+以下内容保留为早期 V1 原型需求记录；当前可试用版本请以上方 v0.5 RC 1 说明为准。
+
 这是一个 AI-LIS 实验室信息管理系统原型，面向单实验室 / 单院区。
 
 第一版先做静态前端原型，不接入真实医院系统，不使用真实患者信息，不需要后端和数据库。
@@ -42,7 +115,7 @@ v0.4 RC 是“报告与系统可用性阶段”的候选说明，对应 Windows 
 
 ## Windows 桌面端运行与打包说明
 
-本项目在保留现有 GitHub Pages 静态网页版本的基础上，新增 Electron Windows 桌面端演示版能力。桌面版与网页版共用 `index.html` 作为入口，不接入后端服务；当前页面仍然使用模拟数据，暂不从本地数据库读取，请勿录入或使用真实患者信息。
+本项目在保留现有 GitHub Pages 静态网页版本的基础上，提供 Electron Windows 桌面端演示版能力。桌面版与网页版共用 `index.html` 作为入口；当前桌面 demo 使用本地 SQLite 数据库驱动部分页面、统计和写入闭环，但仍不接入真实医院系统，不使用真实患者信息。
 
 ### 安装依赖
 
@@ -74,13 +147,14 @@ dist/
 
 ### 数据与部署说明
 
-- 当前桌面版仍然是静态演示原型，所有数据均为模拟数据。
-- 桌面版不接入后端服务；当前页面暂不从本地数据库读取。
+- 当前桌面 demo 使用本地 SQLite 数据库驱动部分页面、统计和写入闭环；普通浏览器 / GitHub Pages 环境继续使用静态 fallback。
+- 桌面版不接入真实医院 HIS / LIS / EMR，不接入真实检验仪器，不使用真实患者信息。
+- `dist` 是本地打包产物，不提交到 Git。
 - 现有 GitHub Pages 网页版本继续使用同一个 `index.html`，无需通过 Electron 即可作为静态页面部署。
 
 ## 本地 SQLite 数据库初始化
 
-TERRY-LIS 已新增本地 SQLite 数据库初始化能力，用于根据 `database/schema.sql` 和 `database/seed.sql` 生成桌面端可验证的本地数据库文件。当前页面数据仍然使用模拟数据，暂时不会从数据库读取。
+TERRY-LIS 已新增本地 SQLite 数据库初始化能力，用于根据 `database/schema.sql` 和 `database/seed.sql` 生成桌面端可验证的本地数据库文件。当前 Electron 桌面端会通过安全的 preload / IPC 桥接读取 SQLite，并驱动部分页面、统计和真实写入闭环；普通浏览器环境继续使用静态 fallback。
 
 ### 初始化数据库
 
@@ -132,7 +206,7 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 
 - 当前数据库仍然只使用原型模拟数据，不包含真实患者信息。
 - 请勿在本地数据库中录入或保存真实患者姓名、身份证号、电话、住址等敏感信息。
-- 下一步会逐步把页面中的模拟数据替换为数据库读取，但本次只新增数据库初始化能力。
+- 当前 Electron 桌面端已将部分页面、统计和写入动作接入本地 SQLite；未接入的按钮和普通浏览器环境仍使用静态 fallback 或原型提示。
 - GitHub Pages 网页版本继续使用静态 `index.html`，不依赖本地 SQLite 数据库。
 
 ## 样本签收页面数据库驱动
