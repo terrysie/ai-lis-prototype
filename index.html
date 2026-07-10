@@ -1155,6 +1155,23 @@
       line-height: 1.55;
     }
 
+    .demo-path-summary {
+      display: grid;
+      gap: 4px;
+      margin: 0 0 10px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--primary);
+      color: #294f63;
+      background: #f4fbfe;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .demo-path-summary strong {
+      color: var(--primary-dark);
+      font-size: 13px;
+    }
+
     .demo-path-step {
       display: grid;
       grid-template-columns: 28px minmax(0, 1fr) auto;
@@ -1193,7 +1210,23 @@
       line-height: 1.5;
     }
 
+    .demo-path-copy .demo-path-label {
+      margin: 0;
+      color: var(--primary-dark);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .demo-path-copy .demo-path-action {
+      margin-top: 6px;
+      color: #35566a;
+      font-weight: 700;
+    }
+
     .demo-step-link {
+      align-self: center;
       padding: 3px 0;
       border: 0;
       color: var(--primary-dark);
@@ -1203,6 +1236,7 @@
       font-weight: 760;
       text-decoration: underline;
       text-underline-offset: 3px;
+      white-space: nowrap;
     }
 
     .demo-step-link:hover {
@@ -1432,15 +1466,15 @@
 
           <section class="demo-guide-section" aria-labelledby="demoPathTitle">
             <h4 id="demoPathTitle">推荐体验流程</h4>
-            <p>按以下顺序可快速浏览完整的 Demo 路径。</p>
+            <p class="demo-path-summary"><strong>推荐体验顺序：1 → 7</strong><span>该顺序覆盖从样本进入实验室，到结果审核、报告发布、风险闭环和权限审计的核心 Demo 流程。</span></p>
             <ol class="demo-path-list">
-              <li class="demo-path-step"><span class="demo-path-number">1</span><span class="demo-path-copy"><strong>查看工作台概览</strong><span>了解模拟样本量、审核队列和风险摘要。</span></span><button class="demo-step-link" type="button" data-view-target="dashboard">查看</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">2</span><span class="demo-path-copy"><strong>确认待签收样本</strong><span>在样本签收中体验确认、拒收与补采任务。</span></span><button class="demo-step-link" type="button" data-view-target="receiving">前往</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">3</span><span class="demo-path-copy"><strong>审核或驳回结果</strong><span>在结果审核中查看权限提示和审计留痕。</span></span><button class="demo-step-link" type="button" data-view-target="review">前往</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">4</span><span class="demo-path-copy"><strong>体验报告流程</strong><span>在结果审核页生成、导出并发布 HTML 报告。</span></span><button class="demo-step-link" type="button" data-view-target="review">前往</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">5</span><span class="demo-path-copy"><strong>完成危急值闭环</strong><span>依次处理电话通知与临床确认。</span></span><button class="demo-step-link" type="button" data-view-target="critical">前往</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">6</span><span class="demo-path-copy"><strong>查看质控与预警处理</strong><span>浏览质控、试剂近效期和传染病阳性预警。</span></span><button class="demo-step-link" type="button" data-view-target="quality">前往</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">7</span><span class="demo-path-copy"><strong>查看权限覆盖视图</strong><span>在系统设置中查看敏感操作的提示与保护边界。</span></span><button class="demo-step-link" type="button" data-view-target="settings">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">1</span><span class="demo-path-copy"><span class="demo-path-label">Step 1 · Dashboard</span><strong>查看系统概览</strong><span>先了解当前 Demo 的核心模块、运行状态和风险摘要。</span><span class="demo-path-action">体验动作：查看样本流转、审核队列和风险提示。</span></span><button class="demo-step-link" type="button" data-view-target="dashboard" aria-label="回到工作台查看系统概览">回到工作台</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">2</span><span class="demo-path-copy"><span class="demo-path-label">Step 2 · 样本签收</span><strong>进入样本接收</strong><span>体验样本签收、拒收和补采任务的流程入口。</span><span class="demo-path-action">体验动作：确认一个待签收样本，并查看拒收与补采任务。</span></span><button class="demo-step-link" type="button" data-view-target="receiving" aria-label="进入样本签收">进入样本签收</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">3</span><span class="demo-path-copy"><span class="demo-path-label">Step 3 · 结果审核</span><strong>审核或驳回结果</strong><span>在权限提示下体验审核通过、驳回和审计留痕。</span><span class="demo-path-action">体验动作：选择一个结果，执行审核或驳回。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="进入结果审核">进入结果审核</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">4</span><span class="demo-path-copy"><span class="demo-path-label">Step 4 · 报告流程</span><strong>生成、导出并发布报告</strong><span>当前 Demo 没有独立报告页，可从结果审核进入报告流程。</span><span class="demo-path-action">体验动作：生成 HTML 报告、导出并正式发布。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="在结果审核中体验报告流程">体验报告流程</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">5</span><span class="demo-path-copy"><span class="demo-path-label">Step 5 · 危急值中心</span><strong>完成危急值闭环</strong><span>依次处理电话通知、临床确认与闭环完成状态。</span><span class="demo-path-action">体验动作：选择危急值并完成通知与确认。</span></span><button class="demo-step-link" type="button" data-view-target="critical" aria-label="进入危急值中心">进入危急值中心</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">6</span><span class="demo-path-copy"><span class="demo-path-label">Step 6 · 质控看板</span><strong>查看预警处理</strong><span>当前 Demo 将质控、试剂近效期和传染病阳性预警集中在质控看板。</span><span class="demo-path-action">体验动作：查看事件、预警状态和处理入口。</span></span><button class="demo-step-link" type="button" data-view-target="quality" aria-label="进入质控看板查看预警处理">进入质控看板</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">7</span><span class="demo-path-copy"><span class="demo-path-label">Step 7 · 系统设置</span><strong>查看权限与敏感操作覆盖</strong><span>在系统设置中查看 UI gating、action guard 和覆盖视图。</span><span class="demo-path-action">体验动作：查看敏感操作保护与审计边界。</span></span><button class="demo-step-link" type="button" data-view-target="settings" aria-label="进入系统设置查看敏感操作覆盖">查看权限覆盖</button></li>
             </ol>
           </section>
 
