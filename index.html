@@ -1099,6 +1099,64 @@
       gap: 8px;
     }
 
+    .demo-guide-dismiss {
+      padding: 7px 10px;
+      border: 1px solid #b9ddeb;
+      border-radius: 8px;
+      color: var(--primary-dark);
+      background: #fff;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 760;
+    }
+
+    .demo-guide-dismiss:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .demo-guide-dismiss:focus-visible,
+    .demo-guide-reopen-button:focus-visible {
+      outline: 3px solid rgba(11, 127, 171, 0.28);
+      outline-offset: 2px;
+    }
+
+    .demo-guide-reopen {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      border: 1px solid #b9ddeb;
+      border-left: 4px solid var(--primary);
+      border-radius: var(--radius-md);
+      background: #f4fbfe;
+    }
+
+    .demo-guide-reopen strong,
+    .demo-guide-reopen span {
+      display: block;
+    }
+
+    .demo-guide-reopen strong {
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .demo-guide-reopen span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .demo-guide-reopen-button {
+      flex: 0 0 auto;
+      border-radius: 8px;
+    }
+
     .demo-guide-body {
       display: grid;
       grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
@@ -1375,6 +1433,7 @@
       .panel-header { align-items: flex-start; flex-direction: column; }
       .demo-guide-tags { justify-content: flex-start; }
       .demo-guide-boundary { grid-template-columns: 1fr; }
+      .demo-guide-reopen { align-items: flex-start; flex-direction: column; }
     }
 
     @media (max-width: 520px) {
@@ -1435,7 +1494,7 @@
         </div>
       </section>
 
-      <section class="panel demo-guide" aria-labelledby="demoGuideTitle">
+      <section class="panel demo-guide" id="demoGuide" aria-labelledby="demoGuideTitle">
         <div class="panel-header">
           <div>
             <p class="eyebrow">● Demo Guide / 首次体验</p>
@@ -1446,6 +1505,7 @@
             <span class="badge badge-info">本地 Demo</span>
             <span class="badge badge-gray">示例数据</span>
             <span class="badge badge-b">非生产系统</span>
+            <button class="demo-guide-dismiss" id="dismissDemoGuideButton" type="button" aria-controls="demoGuide" aria-expanded="true">收起 Demo Guide</button>
           </div>
         </div>
         <div class="panel-body demo-guide-body">
@@ -1492,6 +1552,14 @@
             </ul>
           </aside>
         </div>
+      </section>
+
+      <section class="demo-guide-reopen" id="demoGuideReopen" aria-label="重新打开 Demo Guide" hidden>
+        <div>
+          <strong>Demo Guide 已收起</strong>
+          <span>可随时重新打开，查看推荐体验顺序和 Demo 边界说明。</span>
+        </div>
+        <button class="btn secondary demo-guide-reopen-button" id="reopenDemoGuideButton" type="button" aria-controls="demoGuide">重新打开 Demo Guide</button>
       </section>
 
       <p class="safety-note">
@@ -6285,6 +6353,46 @@
     document.querySelectorAll("[data-view-target]").forEach(item => {
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
+
+    const demoGuideStorageKey = "terry-lis-demo-guide-hidden";
+    const demoGuide = document.getElementById("demoGuide");
+    const demoGuideReopen = document.getElementById("demoGuideReopen");
+    const dismissDemoGuideButton = document.getElementById("dismissDemoGuideButton");
+    const reopenDemoGuideButton = document.getElementById("reopenDemoGuideButton");
+
+    function getDemoGuideHiddenPreference() {
+      try {
+        return window.localStorage.getItem(demoGuideStorageKey) === "true";
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function persistDemoGuideHiddenPreference(hidden) {
+      try {
+        if (hidden) {
+          window.localStorage.setItem(demoGuideStorageKey, "true");
+        } else {
+          window.localStorage.removeItem(demoGuideStorageKey);
+        }
+      } catch (error) {
+        // Keep the guide usable when localStorage is unavailable.
+      }
+    }
+
+    function setDemoGuideVisibility(hidden, persist = false) {
+      demoGuide.hidden = hidden;
+      demoGuideReopen.hidden = !hidden;
+      dismissDemoGuideButton.setAttribute("aria-expanded", String(!hidden));
+
+      if (persist) {
+        persistDemoGuideHiddenPreference(hidden);
+      }
+    }
+
+    dismissDemoGuideButton.addEventListener("click", () => setDemoGuideVisibility(true, true));
+    reopenDemoGuideButton.addEventListener("click", () => setDemoGuideVisibility(false, true));
+    setDemoGuideVisibility(getDemoGuideHiddenPreference());
 
     document.getElementById("currentDate").textContent = formatDate(new Date());
     renderSamples();
