@@ -15,6 +15,14 @@
 | `TERRY-LIS-1.0.0-Windows-x64-installer.zip` | 推荐普通试用，解压后运行安装包 | 95,353,266 bytes | `EA757A5614111B8EE590EC7088BE324136DC977442A66FF34806E1F26B3FE3E6` |
 | `TERRY-LIS-1.0.0-Windows-x64-portable.zip` | 免安装运行，解压后直接打开 | 138,331,640 bytes | `3EFFBB6C158089EDADE8603957326311491F349FDCEC5C84DDAF791396138AD6` |
 
+## v0.6 Roadmap
+
+TERRY-LIS v0.6 正在规划中。
+
+定位：试用反馈版 / Demo Guide / 首次打开体验优化。
+
+详细范围见 [docs/v0.6-roadmap-scope.md](docs/v0.6-roadmap-scope.md)。
+
 ## v0.5 RC 1 当前能力
 
 当前 v0.5 RC 1 已经不是单纯静态页面，而是 Electron Windows 桌面端 demo。它使用本地 SQLite 数据库驱动部分页面、统计和真实写入闭环，同时保留普通浏览器 / GitHub Pages 环境下的静态 fallback。
