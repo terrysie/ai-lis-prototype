@@ -23,6 +23,8 @@ TERRY-LIS v0.6 正在规划中。
 
 详细范围见 [docs/v0.6-roadmap-scope.md](docs/v0.6-roadmap-scope.md)。
 
+Demo onboarding 指南见 [docs/v0.6-demo-onboarding.md](docs/v0.6-demo-onboarding.md)。
+
 ## v0.5 RC 1 当前能力
 
 当前 v0.5 RC 1 已经不是单纯静态页面，而是 Electron Windows 桌面端 demo。它使用本地 SQLite 数据库驱动部分页面、统计和真实写入闭环，同时保留普通浏览器 / GitHub Pages 环境下的静态 fallback。

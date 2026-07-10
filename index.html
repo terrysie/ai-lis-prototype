@@ -1075,6 +1075,181 @@
       margin-bottom: 18px;
     }
 
+    .demo-guide {
+      margin-bottom: 20px;
+      border-color: #b9ddeb;
+    }
+
+    .demo-guide .panel-header {
+      align-items: flex-start;
+      background: linear-gradient(90deg, #f1fafd, #ffffff);
+    }
+
+    .demo-guide-title {
+      margin: 0;
+      color: var(--ink);
+      font-size: 20px;
+      font-weight: 780;
+    }
+
+    .demo-guide-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .demo-guide-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+      gap: 24px;
+    }
+
+    .demo-guide-section h4,
+    .demo-guide-boundary h4 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    .demo-guide-section > p {
+      margin: 6px 0 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .demo-capability-list,
+    .demo-boundary-list,
+    .demo-path-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .demo-capability-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 20px;
+    }
+
+    .demo-capability-list li {
+      padding: 11px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .demo-capability-list strong,
+    .demo-capability-list span {
+      display: block;
+    }
+
+    .demo-capability-list strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .demo-capability-list span {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .demo-path-step {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .demo-path-number {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      color: var(--primary-dark);
+      background: var(--primary-soft);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .demo-path-copy strong,
+    .demo-path-copy span {
+      display: block;
+    }
+
+    .demo-path-copy strong {
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .demo-path-copy span {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .demo-step-link {
+      padding: 3px 0;
+      border: 0;
+      color: var(--primary-dark);
+      background: transparent;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 760;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .demo-step-link:hover {
+      color: var(--primary);
+    }
+
+    .demo-guide-boundary {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(180px, 0.32fr) minmax(0, 1fr);
+      gap: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #f0cf89;
+    }
+
+    .demo-guide-boundary p {
+      margin: 6px 0 0;
+      color: #6d4a06;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .demo-boundary-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 20px;
+    }
+
+    .demo-boundary-list li {
+      position: relative;
+      padding-left: 15px;
+      color: #6d4a06;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .demo-boundary-list li::before {
+      position: absolute;
+      top: 0.5em;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #c78314;
+      content: "";
+    }
+
     .settings-panel { margin-bottom: 18px; }
     .role-table { min-width: 1180px; }
     .auto-release-table { min-width: 1320px; }
@@ -1149,6 +1324,7 @@
       .flow { grid-template-columns: repeat(4, minmax(0, 1fr)); }
       .flow-step::after { display: none; }
       .guardrail { width: auto; }
+      .demo-guide-body { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 820px) {
@@ -1163,6 +1339,8 @@
       .hero { grid-template-columns: 1fr; }
       .metrics, .precheck-metrics, .review-metrics, .critical-center-metrics, .quality-metrics, .settings-metrics, .sensitive-coverage-summary, .critical-grid, .flow, .receiving-support-grid, .review-detail-grid, .critical-detail-grid, .critical-actions, .quality-actions, .settings-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .panel-header { align-items: flex-start; flex-direction: column; }
+      .demo-guide-tags { justify-content: flex-start; }
+      .demo-guide-boundary { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 520px) {
@@ -1170,6 +1348,9 @@
       .metric-value { font-size: 26px; }
       .hero h2 { font-size: 23px; }
       .critical-item { grid-template-columns: 1fr; }
+      .demo-capability-list, .demo-boundary-list { grid-template-columns: 1fr; }
+      .demo-path-step { grid-template-columns: 28px minmax(0, 1fr); }
+      .demo-step-link { grid-column: 2 / -1; justify-self: start; }
     }
   </style>
 </head>
@@ -1217,6 +1398,65 @@
         <div class="guardrail">
           <strong>医疗责任边界</strong>
           <span>AI 不替代最终医疗责任人；所有建议均需符合实验室规则、质控状态和人工审核流程。</span>
+        </div>
+      </section>
+
+      <section class="panel demo-guide" aria-labelledby="demoGuideTitle">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">● Demo Guide / 首次体验</p>
+            <h3 class="demo-guide-title" id="demoGuideTitle">从一个本地 Demo 了解实验室信息系统工作流</h3>
+            <p class="panel-subtitle">TERRY-LIS 用于演示样本接收、结果审核、报告发布、危急值闭环、质控与预警处理，以及带有权限提示的敏感操作流程。</p>
+          </div>
+          <div class="demo-guide-tags" aria-label="Demo 属性">
+            <span class="badge badge-info">本地 Demo</span>
+            <span class="badge badge-gray">示例数据</span>
+            <span class="badge badge-b">非生产系统</span>
+          </div>
+        </div>
+        <div class="panel-body demo-guide-body">
+          <section class="demo-guide-section" aria-labelledby="demoCapabilitiesTitle">
+            <h4 id="demoCapabilitiesTitle">当前可以体验什么</h4>
+            <p>每个模块都以示例数据展示流程、状态和留痕；其中已接入的桌面端写入动作仍只用于本地演示。</p>
+            <ul class="demo-capability-list">
+              <li><strong>样本接收</strong><span>签收、拒收和补采任务</span></li>
+              <li><strong>结果审核</strong><span>审核通过、驳回和权限提示</span></li>
+              <li><strong>报告流程</strong><span>HTML 报告生成、导出和正式发布</span></li>
+              <li><strong>危急值闭环</strong><span>电话通知、临床确认和闭环完成</span></li>
+              <li><strong>质控事件</strong><span>事件处理与处理记录</span></li>
+              <li><strong>试剂近效期预警</strong><span>预警查看与处理</span></li>
+              <li><strong>传染病阳性预警</strong><span>预警复核、通知和跟进</span></li>
+              <li><strong>权限与安全</strong><span>UI gating、action guard 和敏感操作覆盖视图</span></li>
+            </ul>
+          </section>
+
+          <section class="demo-guide-section" aria-labelledby="demoPathTitle">
+            <h4 id="demoPathTitle">推荐体验流程</h4>
+            <p>按以下顺序可快速浏览完整的 Demo 路径。</p>
+            <ol class="demo-path-list">
+              <li class="demo-path-step"><span class="demo-path-number">1</span><span class="demo-path-copy"><strong>查看工作台概览</strong><span>了解模拟样本量、审核队列和风险摘要。</span></span><button class="demo-step-link" type="button" data-view-target="dashboard">查看</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">2</span><span class="demo-path-copy"><strong>确认待签收样本</strong><span>在样本签收中体验确认、拒收与补采任务。</span></span><button class="demo-step-link" type="button" data-view-target="receiving">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">3</span><span class="demo-path-copy"><strong>审核或驳回结果</strong><span>在结果审核中查看权限提示和审计留痕。</span></span><button class="demo-step-link" type="button" data-view-target="review">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">4</span><span class="demo-path-copy"><strong>体验报告流程</strong><span>在结果审核页生成、导出并发布 HTML 报告。</span></span><button class="demo-step-link" type="button" data-view-target="review">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">5</span><span class="demo-path-copy"><strong>完成危急值闭环</strong><span>依次处理电话通知与临床确认。</span></span><button class="demo-step-link" type="button" data-view-target="critical">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">6</span><span class="demo-path-copy"><strong>查看质控与预警处理</strong><span>浏览质控、试剂近效期和传染病阳性预警。</span></span><button class="demo-step-link" type="button" data-view-target="quality">前往</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">7</span><span class="demo-path-copy"><strong>查看权限覆盖视图</strong><span>在系统设置中查看敏感操作的提示与保护边界。</span></span><button class="demo-step-link" type="button" data-view-target="settings">前往</button></li>
+            </ol>
+          </section>
+
+          <aside class="demo-guide-boundary" aria-labelledby="demoBoundaryTitle">
+            <div>
+              <h4 id="demoBoundaryTitle">Demo 边界</h4>
+              <p>体验流程用于理解原型能力与限制，不用于任何真实医疗场景。</p>
+            </div>
+            <ul class="demo-boundary-list">
+              <li>当前系统是本地 Demo / 原型系统</li>
+              <li>当前数据均为示例数据</li>
+              <li>不连接真实医院系统或检验仪器</li>
+              <li>不处理真实患者隐私数据</li>
+              <li>不作为真实诊疗、真实检验报告或医院生产系统使用</li>
+            </ul>
+          </aside>
         </div>
       </section>
 
