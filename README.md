@@ -17,13 +17,17 @@
 
 ## v0.6 Roadmap
 
-TERRY-LIS v0.6 正在规划中。
+TERRY-LIS v0.6 已进入收口候选阶段。
 
 定位：试用反馈版 / Demo Guide / 首次打开体验优化。
 
 详细范围见 [docs/v0.6-roadmap-scope.md](docs/v0.6-roadmap-scope.md)。
 
 Demo onboarding 指南见 [docs/v0.6-demo-onboarding.md](docs/v0.6-demo-onboarding.md)。
+
+约 10 分钟推荐体验路线见 [docs/v0.6-demo-walkthrough.md](docs/v0.6-demo-walkthrough.md)。
+
+试用反馈模板见 [docs/v0.6-demo-feedback.md](docs/v0.6-demo-feedback.md)。
 
 ## v0.5 RC 1 当前能力
 
