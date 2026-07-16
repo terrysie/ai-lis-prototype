@@ -1230,6 +1230,20 @@
       font-size: 13px;
     }
 
+    .demo-entry-hint {
+      margin: 12px 0 0;
+      padding: 9px 11px;
+      border-left: 3px solid var(--primary);
+      color: #35566a;
+      background: #f4fbfe;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .demo-entry-hint strong {
+      color: var(--primary-dark);
+    }
+
     .demo-path-step {
       display: grid;
       grid-template-columns: 28px minmax(0, 1fr) auto;
@@ -1299,6 +1313,13 @@
 
     .demo-step-link:hover {
       color: var(--primary);
+    }
+
+    .demo-step-links {
+      display: grid;
+      align-self: center;
+      gap: 6px;
+      justify-items: end;
     }
 
     .demo-guide-boundary {
@@ -1444,6 +1465,8 @@
       .demo-capability-list, .demo-boundary-list { grid-template-columns: 1fr; }
       .demo-path-step { grid-template-columns: 28px minmax(0, 1fr); }
       .demo-step-link { grid-column: 2 / -1; justify-self: start; }
+      .demo-step-links { grid-column: 2 / -1; justify-items: start; }
+      .demo-step-links .demo-step-link { grid-column: auto; }
     }
   </style>
 </head>
@@ -1525,16 +1548,16 @@
           </section>
 
           <section class="demo-guide-section" aria-labelledby="demoPathTitle">
-            <h4 id="demoPathTitle">推荐体验流程</h4>
-            <p class="demo-path-summary"><strong>推荐体验顺序：1 → 7</strong><span>该顺序覆盖从样本进入实验室，到结果审核、报告发布、风险闭环和权限审计的核心 Demo 流程。</span></p>
+            <h4 id="demoPathTitle">约 10 分钟推荐演示路线</h4>
+            <p class="demo-path-summary"><strong>推荐体验顺序：1 → 7（约 10 分钟）</strong><span>按状态选择现有示例记录：从待签收、待审核，到报告、风险闭环与权限覆盖；不依赖固定记录 ID。</span></p>
             <ol class="demo-path-list">
-              <li class="demo-path-step"><span class="demo-path-number">1</span><span class="demo-path-copy"><span class="demo-path-label">Step 1 · Dashboard</span><strong>查看系统概览</strong><span>先了解当前 Demo 的核心模块、运行状态和风险摘要。</span><span class="demo-path-action">体验动作：查看样本流转、审核队列和风险提示。</span></span><button class="demo-step-link" type="button" data-view-target="dashboard" aria-label="回到工作台查看系统概览">回到工作台</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">2</span><span class="demo-path-copy"><span class="demo-path-label">Step 2 · 样本签收</span><strong>进入样本接收</strong><span>体验样本签收、拒收和补采任务的流程入口。</span><span class="demo-path-action">体验动作：确认一个待签收样本，并查看拒收与补采任务。</span></span><button class="demo-step-link" type="button" data-view-target="receiving" aria-label="进入样本签收">进入样本签收</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">3</span><span class="demo-path-copy"><span class="demo-path-label">Step 3 · 结果审核</span><strong>审核或驳回结果</strong><span>在权限提示下体验审核通过、驳回和审计留痕。</span><span class="demo-path-action">体验动作：选择一个结果，执行审核或驳回。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="进入结果审核">进入结果审核</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">4</span><span class="demo-path-copy"><span class="demo-path-label">Step 4 · 报告流程</span><strong>生成、导出并发布报告</strong><span>当前 Demo 没有独立报告页，可从结果审核进入报告流程。</span><span class="demo-path-action">体验动作：生成 HTML 报告、导出并正式发布。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="在结果审核中体验报告流程">体验报告流程</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">5</span><span class="demo-path-copy"><span class="demo-path-label">Step 5 · 危急值中心</span><strong>完成危急值闭环</strong><span>依次处理电话通知、临床确认与闭环完成状态。</span><span class="demo-path-action">体验动作：选择危急值并完成通知与确认。</span></span><button class="demo-step-link" type="button" data-view-target="critical" aria-label="进入危急值中心">进入危急值中心</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">6</span><span class="demo-path-copy"><span class="demo-path-label">Step 6 · 质控看板</span><strong>查看预警处理</strong><span>当前 Demo 将质控、试剂近效期和传染病阳性预警集中在质控看板。</span><span class="demo-path-action">体验动作：查看事件、预警状态和处理入口。</span></span><button class="demo-step-link" type="button" data-view-target="quality" aria-label="进入质控看板查看预警处理">进入质控看板</button></li>
-              <li class="demo-path-step"><span class="demo-path-number">7</span><span class="demo-path-copy"><span class="demo-path-label">Step 7 · 系统设置</span><strong>查看权限与敏感操作覆盖</strong><span>在系统设置中查看 UI gating、action guard 和覆盖视图。</span><span class="demo-path-action">体验动作：查看敏感操作保护与审计边界。</span></span><button class="demo-step-link" type="button" data-view-target="settings" aria-label="进入系统设置查看敏感操作覆盖">查看权限覆盖</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">1</span><span class="demo-path-copy"><span class="demo-path-label">Step 1 · Dashboard</span><strong>查看系统概览</strong><span>先了解当前 Demo 的核心模块、运行状态和风险摘要。</span><span class="demo-path-action">建议观察：样本流转、审核队列和风险提示；此步不需要操作数据。</span></span><button class="demo-step-link" type="button" data-view-target="dashboard" aria-label="回到工作台查看系统概览">回到工作台</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">2</span><span class="demo-path-copy"><span class="demo-path-label">Step 2 · 样本签收</span><strong>进入样本接收</strong><span>体验样本签收、拒收和补采任务的流程入口。</span><span class="demo-path-action">推荐演示：选择状态为“待签收”的记录并确认签收；预期状态与流转记录刷新。</span></span><button class="demo-step-link" type="button" data-view-target="receiving" aria-label="进入样本签收">进入样本签收</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">3</span><span class="demo-path-copy"><span class="demo-path-label">Step 3 · 结果审核</span><strong>审核或驳回结果</strong><span>在权限提示下体验审核通过、驳回和审计留痕。</span><span class="demo-path-action">推荐演示：选择状态为“待审核”的结果并审核通过；预期审核状态与留痕更新。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="进入结果审核">进入结果审核</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">4</span><span class="demo-path-copy"><span class="demo-path-label">Step 4 · 报告流程</span><strong>生成、导出并发布报告</strong><span>当前 Demo 没有独立报告页，可从结果审核进入报告流程。</span><span class="demo-path-action">推荐演示：选择已审核结果（可承接上一步），生成、导出并发布 HTML 报告；预期看到各动作反馈。</span></span><button class="demo-step-link" type="button" data-view-target="review" aria-label="在结果审核中体验报告流程">体验报告流程</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">5</span><span class="demo-path-copy"><span class="demo-path-label">Step 5 · 危急值中心</span><strong>完成危急值闭环</strong><span>依次处理电话通知、临床确认与闭环完成状态。</span><span class="demo-path-action">推荐演示：选择已通知且详情存在待确认通知的危急值，完成临床确认与闭环；预期时间轴和留痕更新。</span></span><button class="demo-step-link" type="button" data-view-target="critical" aria-label="进入危急值中心">进入危急值中心</button></li>
+              <li class="demo-path-step"><span class="demo-path-number">6</span><span class="demo-path-copy"><span class="demo-path-label">Step 6 · 风险预警</span><strong>处理质控、试剂与传染病预警</strong><span>质控和试剂近效期在质控看板；传染病阳性预警在 AI 预审工作台。</span><span class="demo-path-action">推荐演示：先查看处理中质控事件和未关闭近效期预警，再处理待复核的阳性预警；观察状态与审计反馈。</span></span><span class="demo-step-links"><button class="demo-step-link" type="button" data-view-target="quality" aria-label="进入质控看板查看质控和试剂预警">质控与试剂</button><button class="demo-step-link" type="button" data-view-target="precheck" aria-label="进入 AI 预审查看传染病阳性预警">传染病预警</button></span></li>
+              <li class="demo-path-step"><span class="demo-path-number">7</span><span class="demo-path-copy"><span class="demo-path-label">Step 7 · 系统设置</span><strong>查看权限与敏感操作覆盖</strong><span>在系统设置中查看 UI gating、action guard 和覆盖视图。</span><span class="demo-path-action">建议观察：敏感操作覆盖清单中的前端提示、主进程保护和审计留痕边界；不需要修改配置。</span></span><button class="demo-step-link" type="button" data-view-target="settings" aria-label="进入系统设置查看敏感操作覆盖">查看权限覆盖</button></li>
             </ol>
           </section>
 
@@ -1727,6 +1750,7 @@
             <p class="eyebrow">● 样本签收工作台</p>
             <h2>把前处理风险拦截在进入检测流程之前</h2>
             <p>面向检验科前处理 / 签收人员，集中展示今日待签收样本、异常提醒、退样模板、补采任务和签收记录。所有内容均为模拟数据，用于验证岗位任务台流程。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>在“待签收样本列表”选择状态为“待签收”的示例记录，确认签收后查看流转记录。</p>
           </div>
           <div class="guardrail">
             <strong>签收安全边界</strong>
@@ -1876,6 +1900,7 @@
             <p class="eyebrow">● AI 预审工作台</p>
             <h2>把检验结果分流为自动放行、快速复核与重点复核</h2>
             <p>AI 预审工作台集中展示结果分级、命中规则、风险标签和建议动作，并把传染病阳性预警、试剂近效期预警作为岗位入口前置给审核技师。所有队列均为模拟数据，不包含真实患者信息。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>在“传染病阳性预警”中选择仍待复核或待通知的示例记录，观察处理后的预警状态与审计反馈。</p>
           </div>
           <div class="guardrail">
             <strong>AI 使用边界</strong>
@@ -2011,6 +2036,7 @@
             <p class="eyebrow">● 危急值中心</p>
             <h2>从识别、通知、确认、催办到闭环留痕的一屏任务台</h2>
             <p>危急值中心集中展示今日危急值总览、待处理队列、详情判断、闭环时间轴、通知催办记录与岗位操作按钮。所有内容均为模拟数据，不包含真实患者信息。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>选择已通知且详情存在待确认通知的危急值，依次体验临床确认与闭环完成，并查看时间轴。</p>
           </div>
           <div class="guardrail">
             <strong>闭环优先</strong>
@@ -2128,6 +2154,7 @@
             <p class="eyebrow">● 结果审核工作台</p>
             <h2>面向审核技师的人工确认、AI 辅助判断与发布留痕</h2>
             <p>集中展示待审核结果队列、AI 三段式建议、历史结果趋势、Delta Check、项目间逻辑冲突和人工审核操作。所有内容均为模拟数据，不包含真实患者信息。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>选择状态为“待审核”的结果并审核通过；状态成为可生成报告后，可继续体验 HTML 报告生成、导出和发布。</p>
           </div>
           <div class="guardrail">
             <strong>结果审核边界</strong>
@@ -2227,6 +2254,7 @@
             <p class="eyebrow">● 质控看板</p>
             <h2>面向质控岗位的一屏式仪器、试剂、规则和处理任务台</h2>
             <p>集中展示今日质控状态、仪器运行风险、试剂批次与近效期风险、Westgard 规则命中、失控处理记录和 AI 质控建议。所有数据均为模拟数据，不包含真实患者信息。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>优先选择仍在处理中的质控事件和未关闭的近效期预警，观察处理动作与审计记录。</p>
           </div>
           <div class="guardrail">
             <strong>质控责任边界</strong>
@@ -2389,6 +2417,7 @@
             <p class="eyebrow">● 系统设置 / 规则配置中心</p>
             <h2>面向系统管理员与科室负责人的规则、权限和接口治理台</h2>
             <p>集中展示角色权限、自动放行、AI 预审、危急值、传染病阳性预警、试剂近效期预警、仪器接口配置和审计日志。所有配置与记录均为静态原型模拟数据。</p>
+            <p class="demo-entry-hint"><strong>推荐演示：</strong>查看“敏感操作覆盖清单”，了解 UI gating、action guard 与 audit log 的 Demo 范围；不需要修改任何规则。</p>
           </div>
           <div class="guardrail">
             <strong>规则治理边界</strong>
