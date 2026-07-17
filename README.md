@@ -29,6 +29,8 @@ Demo onboarding 指南见 [docs/v0.6-demo-onboarding.md](docs/v0.6-demo-onboardi
 
 试用反馈模板见 [docs/v0.6-demo-feedback.md](docs/v0.6-demo-feedback.md)。
 
+v1.0 正式验收范围与收口路线见 [docs/v1.0-acceptance-scope.md](docs/v1.0-acceptance-scope.md)。
+
 ## v0.5 RC 1 当前能力
 
 当前 v0.5 RC 1 已经不是单纯静态页面，而是 Electron Windows 桌面端 demo。它使用本地 SQLite 数据库驱动部分页面、统计和真实写入闭环，同时保留普通浏览器 / GitHub Pages 环境下的静态 fallback。
