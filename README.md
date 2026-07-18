@@ -31,6 +31,14 @@ Demo onboarding 指南见 [docs/v0.6-demo-onboarding.md](docs/v0.6-demo-onboardi
 
 v1.0 正式验收范围与收口路线见 [docs/v1.0-acceptance-scope.md](docs/v1.0-acceptance-scope.md)。
 
+v1.0 RC 执行清单见 [docs/v1.0-rc-checklist.md](docs/v1.0-rc-checklist.md)。
+
+v1.0 Release notes 草案见 [docs/v1.0-release-notes-draft.md](docs/v1.0-release-notes-draft.md)。
+
+v1.0 用户运行与 reset 指南见 [docs/v1.0-user-guide.md](docs/v1.0-user-guide.md)。
+
+v1.0 产物与 GitHub Release 计划见 [docs/v1.0-artifact-release-plan.md](docs/v1.0-artifact-release-plan.md)。
+
 ## v0.5 RC 1 当前能力
 
 当前 v0.5 RC 1 已经不是单纯静态页面，而是 Electron Windows 桌面端 demo。它使用本地 SQLite 数据库驱动部分页面、统计和真实写入闭环，同时保留普通浏览器 / GitHub Pages 环境下的静态 fallback。
