@@ -83,3 +83,35 @@ INSERT INTO audit_logs (id, user_id, module_name, operation_type, target_table, 
   (3, 2, '危急值中心', 'notify_critical_value', 'critical_notifications', 1, '{"confirm_status":"pending"}', '{"confirm_status":"confirmed","confirmed_at":"2026-06-12 09:16:00"}', '危急值电话通知并记录确认。', '2026-06-12 09:16:05'),
   (4, 4, '质控看板', 'handle_qc_event', 'qc_events', 1, '{"event_status":"open"}', '{"event_status":"handling","handled_by":4}', '质控负责人开始处理 Westgard 警告。', '2026-06-12 09:10:10'),
   (5, 1, '系统设置', 'approve_rule', 'system_rules', 4, '{"status":"draft"}', '{"status":"active","approved_by":4}', '启用试剂近效期预警规则。', '2026-06-01 10:00:10');
+
+-- Synthetic/capability-proof profiles only. No real clinical endpoint or patient data is used.
+INSERT INTO interface_adapters (adapter_id, adapter_name, adapter_type, protocol, direction, enabled, connection_config_json, parser_name, formatter_name, health_status, retry_policy_json, capability_label, created_at, updated_at) VALUES
+  ('his-local', 'HIS Local Simulator', 'external-system', 'HL7v2/HTTP', 'bidirectional', 1, '{"endpoint":"http://127.0.0.1:17771/hl7","mode":"simulator"}', 'hl7', 'hl7', 'online', '{"maxAttempts":3,"strategy":"exponential","delaySeconds":1}', 'simulator capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('emr-local', 'EMR Local Simulator', 'external-system', 'internal-mock', 'outbound', 1, '{"mode":"simulator"}', 'json', 'hl7', 'online', '{"maxAttempts":3,"strategy":"fixed","delaySeconds":1}', 'simulator capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('exam-local', 'Examination Local Simulator', 'external-system', 'file-drop', 'bidirectional', 1, '{"directory":"interface-drop/exam","mode":"simulator"}', 'json', 'json', 'online', '{"maxAttempts":3,"strategy":"fixed","delaySeconds":1}', 'simulator capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('billing-local', 'Billing Local Simulator', 'external-system', 'REST/HTTP', 'bidirectional', 1, '{"endpoint":"http://127.0.0.1:17771/billing","mode":"simulator"}', 'json', 'json', 'online', '{"maxAttempts":3,"strategy":"exponential","delaySeconds":1}', 'simulator capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('cbc-synthetic', 'Hematology Synthetic Instrument', 'instrument', 'ASTM/TCP', 'bidirectional', 1, '{"host":"127.0.0.1","port":17772,"mode":"synthetic-profile"}', 'astm', 'astm', 'online', '{"maxAttempts":4,"strategy":"fixed","delaySeconds":1}', 'synthetic profile capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('bio-synthetic', 'Chemistry Synthetic Instrument', 'instrument', 'HL7v2/internal-mock', 'bidirectional', 1, '{"mode":"synthetic-profile"}', 'hl7', 'hl7', 'online', '{"maxAttempts":4,"strategy":"fixed","delaySeconds":1}', 'synthetic profile capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('immuno-synthetic', 'Immunoassay Synthetic Instrument', 'instrument', 'file-drop', 'bidirectional', 1, '{"directory":"interface-drop/immuno","mode":"synthetic-profile"}', 'json', 'json', 'online', '{"maxAttempts":4,"strategy":"fixed","delaySeconds":1}', 'synthetic profile capability proof', '2026-06-12 08:00:00', '2026-06-12 08:00:00');
+
+INSERT INTO interface_mappings (adapter_id, field_key, external_field, local_field, transform_json, enabled)
+SELECT id, 'patient_id', 'PID.3', 'samples.external_patient_id', '{}', 1 FROM interface_adapters WHERE adapter_id = 'his-local'
+UNION ALL SELECT id, 'order_no', 'ORC.2', 'laboratory_orders.external_order_no', '{}', 1 FROM interface_adapters WHERE adapter_id = 'his-local'
+UNION ALL SELECT id, 'sample_barcode', 'OBR.3', 'samples.sample_no', '{}', 1 FROM interface_adapters WHERE adapter_id = 'his-local'
+UNION ALL SELECT id, 'test_code', 'OBR.4.1', 'laboratory_order_items.local_item_code', '{"codeMap":{"POTASSIUM":"K","GLUCOSE":"GLU","WBC":"WBC","HBSAG":"HBSAG"}}', 1 FROM interface_adapters WHERE adapter_id = 'his-local'
+UNION ALL SELECT id, 'result_value', 'OBX.5', 'test_results.result_value', '{}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'unit', 'OBX.6', 'test_results.unit', '{}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'reference_range', 'OBX.7', 'test_results.reference_range', '{}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'abnormal_flag', 'OBX.8', 'test_results.abnormal_flag', '{"codeMap":{"H":"high","L":"low","N":"normal"}}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'result_time', 'OBX.14', 'test_results.reported_at', '{}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'instrument_id', 'MSH.3', 'instruments.instrument_code', '{}', 1 FROM interface_adapters WHERE adapter_id = 'bio-synthetic'
+UNION ALL SELECT id, 'external_status', 'ORC.5', 'samples.external_status_code', '{}', 1 FROM interface_adapters WHERE adapter_id = 'his-local';
+
+INSERT INTO simulator_scenarios (simulator_id, simulator_type, transport, profile_json, fault_mode, connection_status, deterministic_rule, created_at, updated_at) VALUES
+  ('his-simulator', 'HIS', 'HL7v2/HTTP', '{"capabilities":["create-order","receive-ack"]}', 'success', 'connected', 'order and sample numbers derive from scenario key', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('emr-simulator', 'EMR/EHR', 'internal-mock', '{"capabilities":["receive-report","return-ack"]}', 'success', 'connected', 'ACK outcome follows selected fault mode', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('exam-simulator', 'health-check', 'file-drop', '{"capabilities":["create-order","receive-result"]}', 'success', 'connected', 'order and ACK are deterministic', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('billing-simulator', 'billing', 'REST/HTTP', '{"capabilities":["receive-charge","success","reject","timeout"]}', 'success', 'connected', 'response follows selected fault mode', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('cbc-synthetic', 'hematology-instrument', 'ASTM/TCP', '{"items":["WBC"],"instrumentCode":"CBC-900-01"}', 'success', 'connected', 'WBC=7.1 normal, 18.4 abnormal, 35.2 critical by scenario', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('bio-synthetic', 'chemistry-instrument', 'HL7v2/internal-mock', '{"items":["K","GLU"],"instrumentCode":"BIO-8000-01"}', 'success', 'connected', 'K=4.2 normal, 5.9 abnormal, 6.8 critical by scenario', '2026-06-12 08:00:00', '2026-06-12 08:00:00'),
+  ('immuno-synthetic', 'immunoassay-instrument', 'file-drop', '{"items":["HBSAG"],"instrumentCode":"IMM-6000-01"}', 'success', 'connected', 'HBsAg=0.2 normal, 1.4 abnormal, 18.6 critical demonstration by scenario', '2026-06-12 08:00:00', '2026-06-12 08:00:00');

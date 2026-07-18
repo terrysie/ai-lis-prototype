@@ -317,3 +317,9 @@ GitHub Pages 网页版和普通浏览器环境没有 Electron API，也没有本
 当前版本支持 `system_rules` 规则配置值修改和规则启停写入，并会记录 `audit_logs`；用户新增、权限修改、提交审核、查看变更记录、导出审计日志、测试接口连接等操作仍为原型演示交互。
 
 `npm run smoke:system-rules` 用于验证系统设置规则写入、非法更新失败、`audit_logs` 记录规则更新；当前 schema 支持 `status` 启停字段，因此 smoke 也会验证规则启停。该脚本不修改 `database/schema.sql` 或 `database/seed.sql`，后续执行 `npm run db:reset` 会恢复基线数据。
+
+## v1.0 接口与可靠通信内核
+
+Electron 桌面版新增“接口中心”，提供数据库驱动的适配器管理、字段映射、可靠消息队列、处理历史、trace 搜索、重试、取消、dead-letter 重处理、故障注入和一键闭环演示。内置 HIS、EMR/EHR、体检、计费四类本地模拟端，以及血液、生化、免疫三类 synthetic instrument profile；本地 HTTP、TCP、file-drop、HL7 v2 必要子集、ASTM-like 能力证明和 internal mock 均不连接外网。
+
+运行 `npm run test:interface-protocols`、`npm run test:interface-core` 和 `npm run smoke:interface-e2e` 可验证协议、适配器、映射、幂等、重试/dead-letter、HIS 申请、仪器结果、报告 ACK 和完整 trace 闭环。架构、演示路径和非生产边界见 [`docs/v1.0-interface-core.md`](docs/v1.0-interface-core.md)。

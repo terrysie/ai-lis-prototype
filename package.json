@@ -19,7 +19,10 @@
     "smoke:system-rules": "node scripts/smoke-system-rules.js",
     "smoke:qc-events": "node scripts/smoke-qc-events.js",
     "smoke:reagent-expiry-alerts": "node scripts/smoke-reagent-expiry-alerts.js",
-    "smoke:infectious-alerts": "node scripts/smoke-infectious-alerts.js"
+    "smoke:infectious-alerts": "node scripts/smoke-infectious-alerts.js",
+    "test:interface-protocols": "node scripts/test-interface-protocols.js",
+    "test:interface-core": "node scripts/test-interface-core.js",
+    "smoke:interface-e2e": "node scripts/smoke-interface-e2e.js"
   },
   "build": {
     "appId": "com.terrylis.desktop.demo",
@@ -34,7 +37,8 @@
       "package.json",
       "database/schema.sql",
       "database/seed.sql",
-      "src/database/**/*"
+      "src/database/**/*",
+      "src/interface/**/*"
     ],
     "win": {
       "target": "nsis",

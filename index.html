@@ -156,6 +156,15 @@
       box-shadow: inset 3px 0 0 var(--primary);
     }
 
+    .interface-toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .interface-toolbar input, .interface-toolbar select { min-height:38px; border:1px solid var(--line); border-radius:8px; padding:0 10px; background:#fff; color:var(--text); font:inherit; }
+    .interface-grid { display:grid; grid-template-columns:minmax(0, 1.35fr) minmax(300px, .65fr); gap:18px; margin-top:18px; }
+    .interface-detail { white-space:pre-wrap; word-break:break-word; max-height:300px; overflow:auto; background:#0f2636; color:#d9f3ff; padding:14px; border-radius:10px; font:12px/1.55 Consolas, monospace; }
+    .interface-table button { white-space:nowrap; margin:2px; }
+    .interface-simulator-row { display:grid; grid-template-columns:minmax(180px,1fr) 150px auto; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+    .interface-simulator-row:last-child { border-bottom:0; }
+    @media (max-width: 1100px) { .interface-grid { grid-template-columns:1fr; } .interface-simulator-row { grid-template-columns:1fr; } }
+
     .nav-icon {
       display: grid;
       place-items: center;
@@ -1496,6 +1505,7 @@
         <li class="nav-item" data-view-target="review"><span class="nav-icon">✓</span>结果审核</li>
         <li class="nav-item" data-view-target="critical"><span class="nav-icon">!</span>危急值中心</li>
         <li class="nav-item" data-view-target="quality"><span class="nav-icon">◈</span>质控看板</li>
+        <li class="nav-item" data-view-target="interface"><span class="nav-icon">⇄</span>接口中心</li>
         <li class="nav-item" data-view-target="settings"><span class="nav-icon">⚙</span>系统设置</li>
       </ul>
       <div class="sidebar-note">
@@ -2206,6 +2216,7 @@
             <div class="decision-block"><h4>结论</h4><p id="reviewAiConclusion">--</p></div>
             <div class="decision-block"><h4>命中规则</h4><ul id="reviewAiRules"></ul></div>
             <div class="decision-block"><h4>建议动作</h4><p id="reviewAiAction">--</p></div>
+            <div class="decision-block"><h4>外部报告投递</h4><p id="reviewExternalDelivery">尚未通过接口中心发送。正式发布后将创建 outbound message，并在此显示状态与 trace id。</p></div>
             <div class="action-row review-actions">
               <button class="btn" id="approveResultReviewButton" data-review-action="审核通过">审核通过</button>
               <button class="btn secondary" data-review-action="转重点复核">转重点复核</button>
@@ -2546,6 +2557,57 @@
           <div class="panel-header"><div><h3 class="panel-title">审计日志</h3><p class="panel-subtitle">记录规则配置、权限调整、接口测试和审核流转的模拟审计记录。</p></div><span class="badge badge-info">完整留痕</span></div>
           <div class="panel-body table-wrap"><table class="settings-audit-table"><thead><tr><th>时间</th><th>操作人</th><th>操作模块</th><th>操作内容</th><th>修改前</th><th>修改后</th><th>审核状态</th><th>备注</th></tr></thead><tbody id="settingsAuditTable"></tbody></table></div>
         </section>
+      </div>
+
+
+      <div class="view" id="interfaceView">
+        <section class="hero" aria-label="接口与可靠通信中心说明">
+          <div class="hero-card">
+            <p class="eyebrow">● Interface Center / 本地能力证明</p>
+            <h2>接口、消息、模拟器和业务闭环统一追踪</h2>
+            <p>所有适配器均为 simulator、synthetic profile 或 capability proof。消息、重试、故障和审计记录真实写入本地 SQLite，不连接真实医院或厂商系统。</p>
+          </div>
+          <div class="guardrail"><strong>非生产边界</strong><span>仅用于 Windows 本地能力证明；不包含真实患者数据，不声明兼容任何厂商私有协议。</span></div>
+        </section>
+
+        <section class="metrics" aria-label="接口中心指标">
+          <article class="metric-card"><div class="metric-label">适配器 <span class="badge badge-info">Registry</span></div><div class="metric-value" id="interfaceAdapterTotal">0</div><div class="metric-trend" id="interfaceAdapterHealth">在线 0 / 离线 0</div></article>
+          <article class="metric-card"><div class="metric-label">今日入站 <span class="badge badge-a">Inbound</span></div><div class="metric-value" id="interfaceInboundTotal">0</div><div class="metric-trend">持久化接收消息</div></article>
+          <article class="metric-card"><div class="metric-label">今日出站 <span class="badge badge-info">Outbound</span></div><div class="metric-value" id="interfaceOutboundTotal">0</div><div class="metric-trend">持久化发送消息</div></article>
+          <article class="metric-card"><div class="metric-label">成功 <span class="badge badge-a">Succeeded</span></div><div class="metric-value" id="interfaceSucceededTotal">0</div><div class="metric-trend">已完成处理</div></article>
+          <article class="metric-card"><div class="metric-label">重试 <span class="badge badge-b">Retry</span></div><div class="metric-value" id="interfaceRetryTotal">0</div><div class="metric-trend">等待再次处理</div></article>
+          <article class="metric-card"><div class="metric-label">Dead-letter <span class="badge badge-c">DLQ</span></div><div class="metric-value" id="interfaceDeadTotal">0</div><div class="metric-trend">可人工重处理</div></article>
+        </section>
+
+        <section class="panel" style="margin-top:18px" aria-label="适配器管理">
+          <div class="panel-header"><div><h3 class="panel-title">Adapter Management</h3><p class="panel-subtitle">统一注册、启停、健康检查、连接配置与基础字段映射。</p></div><span class="badge badge-info">本地注册表</span></div>
+          <div class="panel-body table-wrap"><table class="interface-table"><thead><tr><th>适配器</th><th>类型</th><th>协议 / 方向</th><th>能力标签</th><th>健康</th><th>最近通信</th><th>操作</th></tr></thead><tbody id="interfaceAdapterTable"></tbody></table></div>
+        </section>
+
+        <div class="interface-grid">
+          <section class="panel" aria-label="消息中心">
+            <div class="panel-header"><div><h3 class="panel-title">Message Center</h3><p class="panel-subtitle">筛选、trace 搜索、raw / normalized payload、处理历史、retry、cancel 与 dead-letter reprocess。</p></div></div>
+            <div class="panel-body">
+              <div class="interface-toolbar"><select id="interfaceDirectionFilter"><option value="">全部方向</option><option value="inbound">inbound</option><option value="outbound">outbound</option></select><select id="interfaceStatusFilter"><option value="">全部状态</option></select><input id="interfaceTraceFilter" placeholder="输入 trace id" /><button class="btn secondary" id="interfaceFilterButton" type="button">筛选</button></div>
+              <div class="table-wrap" style="margin-top:12px"><table class="interface-table"><thead><tr><th>ID / Trace</th><th>方向</th><th>来源 → 目标</th><th>协议 / 类型</th><th>状态</th><th>尝试</th><th>操作</th></tr></thead><tbody id="interfaceMessageTable"></tbody></table></div>
+            </div>
+          </section>
+          <section class="panel" aria-label="消息详情">
+            <div class="panel-header"><div><h3 class="panel-title">单条消息追踪</h3><p class="panel-subtitle" id="interfaceMessageDetailTitle">请选择消息</p></div></div>
+            <div class="panel-body"><h4>Raw / Normalized</h4><pre class="interface-detail" id="interfaceMessagePayload">--</pre><h4>Processing Attempts</h4><div id="interfaceAttemptList" class="timeline">暂无记录</div></div>
+          </section>
+        </div>
+
+        <div class="interface-grid">
+          <section class="panel" aria-label="字段映射">
+            <div class="panel-header"><div><h3 class="panel-title">Field Mapping</h3><p class="panel-subtitle" id="interfaceMappingTitle">选择适配器查看映射</p></div></div>
+            <div class="panel-body table-wrap"><table class="interface-table"><thead><tr><th>字段</th><th>外部字段</th><th>本地字段</th><th>状态</th><th>操作</th></tr></thead><tbody id="interfaceMappingTable"></tbody></table></div>
+          </section>
+          <section class="panel" aria-label="模拟器实验室">
+            <div class="panel-header"><div><h3 class="panel-title">Simulator Lab</h3><p class="panel-subtitle">HIS、EMR、体检、计费与三类 synthetic instrument profile；故障注入会写入审计日志。</p></div><button class="btn" id="interfaceFullDemoButton" type="button">一键执行完整闭环</button></div>
+            <div class="panel-body"><div class="interface-toolbar"><select id="interfaceDemoInstrument"><option value="bio-synthetic">生化 · HL7/internal</option><option value="cbc-synthetic">血液 · ASTM/TCP</option><option value="immuno-synthetic">免疫 · file-drop</option></select><select id="interfaceDemoResult"><option value="normal">正常结果</option><option value="abnormal">异常结果</option><option value="critical" selected>危急值结果</option></select></div><div id="interfaceSimulatorList" style="margin-top:12px"></div><pre class="interface-detail" id="interfaceDemoResultPanel">等待执行本地闭环演示。</pre></div>
+          </section>
+        </div>
       </div>
 
 
@@ -4088,6 +4150,7 @@
       document.getElementById("reviewAiConclusion").textContent = item.ai.conclusion;
       document.getElementById("reviewAiRules").innerHTML = item.ai.rules.map(rule => `<li>${rule}</li>`).join("");
       document.getElementById("reviewAiAction").textContent = item.ai.action;
+      document.getElementById("reviewExternalDelivery").textContent = item.externalDelivery ? `状态：${item.externalDelivery.deliveryStatus} · ACK：${item.externalDelivery.ackCode || "--"} · Trace：${item.externalDelivery.traceId}` : "尚未通过接口中心发送。正式发布后将创建 outbound message，并在此显示状态与 trace id。";
       document.getElementById("reviewHistoryList").innerHTML = item.history.map(record => `
         <div class="trend-item"><strong>${record.date} · ${record.item}</strong><br />结果：${record.result} ${record.unit} · 与上次变化：${record.change}<div class="trend-bar" aria-hidden="true"><span style="width:${record.width}%"></span></div></div>
       `).join("");
@@ -5046,6 +5109,56 @@
       `).join("");
     }
 
+    let interfaceCenterState = { adapters: [], mappings: [], messages: [], attempts: [], simulators: [], stats: {}, messageStatuses: [], faultModes: [] };
+    let selectedInterfaceMessageId = null;
+    let selectedInterfaceAdapterId = null;
+
+    const interfaceStatusClass = status => ({ succeeded: "badge-a", online: "badge-a", connected: "badge-a", retrying: "badge-b", queued: "badge-info", received: "badge-info", processing: "badge-info", failed: "badge-c", "dead-letter": "badge-c", cancelled: "badge-gray", disabled: "badge-gray", disconnected: "badge-c" }[status] || "badge-gray");
+    const interfacePretty = value => JSON.stringify(value, null, 2);
+
+    function renderInterfaceCenter() {
+      const stats = interfaceCenterState.stats || {};
+      document.getElementById("interfaceAdapterTotal").textContent = stats.totalAdapters || 0;
+      document.getElementById("interfaceAdapterHealth").textContent = `在线 ${stats.onlineAdapters || 0} / 离线 ${stats.offlineAdapters || 0}`;
+      document.getElementById("interfaceInboundTotal").textContent = stats.todayInbound || 0;
+      document.getElementById("interfaceOutboundTotal").textContent = stats.todayOutbound || 0;
+      document.getElementById("interfaceSucceededTotal").textContent = stats.succeeded || 0;
+      document.getElementById("interfaceRetryTotal").textContent = (stats.retrying || 0) + (stats.failed || 0);
+      document.getElementById("interfaceDeadTotal").textContent = stats["dead-letter"] || 0;
+
+      document.getElementById("interfaceAdapterTable").innerHTML = interfaceCenterState.adapters.map(adapter => `
+        <tr><td><strong>${adapter.name}</strong><br><small>${adapter.adapterId}</small></td><td>${adapter.type}</td><td>${adapter.protocol}<br><small>${adapter.direction}</small></td><td>${adapter.capabilityLabel}</td><td><span class="badge ${interfaceStatusClass(adapter.healthStatus)}">${adapter.healthStatus}</span></td><td>${adapter.lastCommunicationAt || "--"}</td><td><button class="btn secondary" type="button" data-interface-action="mapping" data-adapter-id="${adapter.adapterId}">映射</button><button class="btn secondary" type="button" data-interface-action="test" data-adapter-id="${adapter.adapterId}">测试</button><button class="btn" type="button" data-interface-action="toggle" data-adapter-id="${adapter.adapterId}" data-enabled="${adapter.enabled}">${adapter.enabled ? "停用" : "启用"}</button></td></tr>
+      `).join("");
+
+      const statusFilter = document.getElementById("interfaceStatusFilter");
+      if (statusFilter.options.length === 1) interfaceCenterState.messageStatuses.forEach(status => statusFilter.insertAdjacentHTML("beforeend", `<option value="${status}">${status}</option>`));
+      document.getElementById("interfaceMessageTable").innerHTML = interfaceCenterState.messages.map(message => `
+        <tr class="${message.id === selectedInterfaceMessageId ? "selected-row" : ""}"><td><strong>#${message.id}</strong><br><small>${message.traceId}</small></td><td>${message.direction}</td><td>${message.source}<br><small>→ ${message.destination}</small></td><td>${message.protocol}<br><small>${message.messageType}</small></td><td><span class="badge ${interfaceStatusClass(message.status)}">${message.status}</span>${message.lastError ? `<br><small>${message.lastError}</small>` : ""}</td><td>${message.attempts} / ${message.maxAttempts}</td><td><button class="btn secondary" type="button" data-interface-message-action="detail" data-message-id="${message.id}">详情</button>${["retrying","failed","dead-letter"].includes(message.status) ? `<button class="btn" type="button" data-interface-message-action="retry" data-message-id="${message.id}">${message.status === "dead-letter" ? "重处理" : "重试"}</button>` : ""}${!["succeeded","cancelled"].includes(message.status) ? `<button class="btn secondary" type="button" data-interface-message-action="cancel" data-message-id="${message.id}">取消</button>` : ""}</td></tr>
+      `).join("") || '<tr><td colspan="7">暂无符合条件的持久化消息。</td></tr>';
+
+      const selected = interfaceCenterState.messages.find(message => message.id === selectedInterfaceMessageId);
+      document.getElementById("interfaceMessageDetailTitle").textContent = selected ? `#${selected.id} · ${selected.traceId}` : "请选择消息";
+      document.getElementById("interfaceMessagePayload").textContent = selected ? `RAW\n${selected.rawPayload}\n\nNORMALIZED\n${interfacePretty(selected.normalizedPayload)}` : "--";
+      const attempts = selected ? interfaceCenterState.attempts.filter(attempt => attempt.message_id === selected.id) : [];
+      document.getElementById("interfaceAttemptList").innerHTML = attempts.map(attempt => `<div class="timeline-item"><strong>Attempt ${attempt.attempt_no} · ${attempt.status}</strong><span>${attempt.started_at} → ${attempt.completed_at || "处理中"}</span><span>${attempt.error_message || attempt.response_payload || "--"}</span></div>`).join("") || "暂无记录";
+
+      const currentAdapter = interfaceCenterState.adapters.find(adapter => adapter.adapterId === selectedInterfaceAdapterId);
+      document.getElementById("interfaceMappingTitle").textContent = currentAdapter ? `${currentAdapter.name} · 可编辑基础映射` : "选择适配器查看映射";
+      document.getElementById("interfaceMappingTable").innerHTML = interfaceCenterState.mappings.filter(mapping => !currentAdapter || mapping.adapterId === currentAdapter.id).map(mapping => `<tr><td>${mapping.fieldKey}</td><td>${mapping.externalField}</td><td>${mapping.localField}</td><td><span class="badge ${mapping.enabled ? "badge-a" : "badge-gray"}">${mapping.enabled ? "enabled" : "disabled"}</span></td><td><button class="btn secondary" type="button" data-interface-mapping-id="${mapping.id}">编辑</button></td></tr>`).join("") || '<tr><td colspan="5">请选择有字段映射的适配器。</td></tr>';
+
+      document.getElementById("interfaceSimulatorList").innerHTML = interfaceCenterState.simulators.map(simulator => `<div class="interface-simulator-row"><div><strong>${simulator.simulatorId}</strong><br><small>${simulator.type} · ${simulator.transport}</small></div><select data-simulator-fault="${simulator.simulatorId}">${interfaceCenterState.faultModes.map(mode => `<option value="${mode}" ${mode === simulator.faultMode ? "selected" : ""}>${mode}</option>`).join("")}</select><span class="badge ${interfaceStatusClass(simulator.connectionStatus)}">${simulator.connectionStatus}</span></div>`).join("");
+    }
+
+    async function hydrateInterfaceCenterData() {
+      if (!window.terryLisApi?.getInterfaceCenterData) return;
+      try {
+        const filters = { direction: document.getElementById("interfaceDirectionFilter")?.value || "", status: document.getElementById("interfaceStatusFilter")?.value || "", traceId: document.getElementById("interfaceTraceFilter")?.value.trim() || "" };
+        interfaceCenterState = await window.terryLisApi.getInterfaceCenterData(filters);
+        if (selectedInterfaceMessageId && !interfaceCenterState.messages.some(item => item.id === selectedInterfaceMessageId)) selectedInterfaceMessageId = null;
+        renderInterfaceCenter();
+      } catch (error) { showToast(`接口中心读取失败：${getErrorMessage(error)}`); }
+    }
+
     function switchView(target) {
       document.getElementById("dashboardView").classList.toggle("active", target === "dashboard");
       document.getElementById("receivingView").classList.toggle("active", target === "receiving");
@@ -5053,6 +5166,7 @@
       document.getElementById("reviewView").classList.toggle("active", target === "review");
       document.getElementById("criticalView").classList.toggle("active", target === "critical");
       document.getElementById("qualityView").classList.toggle("active", target === "quality");
+      document.getElementById("interfaceView").classList.toggle("active", target === "interface");
       document.getElementById("settingsView").classList.toggle("active", target === "settings");
 
       document.querySelectorAll("[data-view-target]").forEach(item => {
@@ -5086,6 +5200,10 @@
 
       if (target === "settings") {
         hydrateSystemSettingsData();
+      }
+
+      if (target === "interface") {
+        hydrateInterfaceCenterData();
       }
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -6125,9 +6243,12 @@
       updateResultReviewActionButtons();
 
       try {
-        await window.terryLisApi.publishReport(item.resultId);
-        showToast(`报告已正式发布：${item.id}`);
+        const published = await window.terryLisApi.publishReport(item.resultId);
+        item.externalDelivery = published.externalDelivery;
+        document.getElementById("reviewExternalDelivery").textContent = `状态：${published.externalDelivery.deliveryStatus} · ACK：${published.externalDelivery.ackCode || "--"} · Trace：${published.externalDelivery.traceId}`;
+        showToast(`报告已正式发布并投递：${item.id} · ${published.externalDelivery.traceId}`);
         await hydrateResultReviewData(item.reviewId);
+        document.getElementById("reviewExternalDelivery").textContent = `状态：${published.externalDelivery.deliveryStatus} · ACK：${published.externalDelivery.ackCode || "--"} · Trace：${published.externalDelivery.traceId}`;
       } catch (error) {
         showToast(`报告发布失败：${getErrorMessage(error)}`);
       } finally {
@@ -6383,6 +6504,57 @@
       item.addEventListener("click", () => switchView(item.dataset.viewTarget));
     });
 
+    document.getElementById("interfaceFilterButton").addEventListener("click", hydrateInterfaceCenterData);
+    document.getElementById("interfaceTraceFilter").addEventListener("keydown", event => { if (event.key === "Enter") hydrateInterfaceCenterData(); });
+    document.getElementById("interfaceView").addEventListener("click", async event => {
+      const adapterButton = event.target.closest("[data-interface-action]");
+      const messageButton = event.target.closest("[data-interface-message-action]");
+      const mappingButton = event.target.closest("[data-interface-mapping-id]");
+      try {
+        if (adapterButton) {
+          const adapterId = adapterButton.dataset.adapterId;
+          if (adapterButton.dataset.interfaceAction === "mapping") { selectedInterfaceAdapterId = adapterId; renderInterfaceCenter(); return; }
+          if (adapterButton.dataset.interfaceAction === "test") { const result = await window.terryLisApi.testInterfaceConnection(adapterId); showToast(`${adapterId} 本地连接测试：${result.status}`); }
+          if (adapterButton.dataset.interfaceAction === "toggle") { const enabled = adapterButton.dataset.enabled !== "true"; if (!window.confirm(`确认${enabled ? "启用" : "停用"}适配器 ${adapterId}？该操作会写入审计日志。`)) return; await window.terryLisApi.setInterfaceAdapterEnabled(adapterId, enabled); showToast(`${adapterId} 已${enabled ? "启用" : "停用"}`); }
+          await hydrateInterfaceCenterData(); return;
+        }
+        if (messageButton) {
+          const messageId = Number(messageButton.dataset.messageId); const action = messageButton.dataset.interfaceMessageAction;
+          if (action === "detail") { selectedInterfaceMessageId = messageId; renderInterfaceCenter(); return; }
+          if (!window.confirm(`确认对消息 #${messageId} 执行${action === "retry" ? "重试/重处理" : "取消"}？该操作会写入审计日志。`)) return;
+          if (action === "retry") await window.terryLisApi.retryInterfaceMessage(messageId);
+          if (action === "cancel") await window.terryLisApi.cancelInterfaceMessage(messageId);
+          selectedInterfaceMessageId = messageId; await hydrateInterfaceCenterData(); return;
+        }
+        if (mappingButton) {
+          const mappingId = Number(mappingButton.dataset.interfaceMappingId); const mapping = interfaceCenterState.mappings.find(item => item.id === mappingId); if (!mapping) return;
+          const externalField = window.prompt("外部字段路径", mapping.externalField); if (externalField === null) return;
+          const localField = window.prompt("本地字段路径", mapping.localField); if (localField === null) return;
+          if (!externalField.trim() || !localField.trim()) { showToast("映射字段不能为空。"); return; }
+          await window.terryLisApi.updateInterfaceMapping(mappingId, { externalField: externalField.trim(), localField: localField.trim(), enabled: true });
+          showToast(`映射 ${mapping.fieldKey} 已写入 SQLite`); await hydrateInterfaceCenterData();
+        }
+      } catch (error) { showToast(`接口操作失败：${getErrorMessage(error)}`); }
+    });
+
+    document.getElementById("interfaceView").addEventListener("change", async event => {
+      const simulatorId = event.target.dataset.simulatorFault; if (!simulatorId) return;
+      try { await window.terryLisApi.setSimulatorFault(simulatorId, event.target.value); showToast(`${simulatorId} 故障模式已设为 ${event.target.value}`); await hydrateInterfaceCenterData(); }
+      catch (error) { showToast(`故障注入失败：${getErrorMessage(error)}`); }
+    });
+
+    document.getElementById("interfaceFullDemoButton").addEventListener("click", async () => {
+      const button = document.getElementById("interfaceFullDemoButton"); button.disabled = true; button.textContent = "闭环执行中…";
+      try {
+        const scenario = { scenarioKey: `UI-${Date.now()}`, instrument: document.getElementById("interfaceDemoInstrument").value, resultMode: document.getElementById("interfaceDemoResult").value, destination: "emr-simulator" };
+        const result = await window.terryLisApi.runInterfaceFullDemo(scenario);
+        document.getElementById("interfaceDemoResultPanel").textContent = interfacePretty(result);
+        document.getElementById("interfaceTraceFilter").value = result.traceId; selectedInterfaceMessageId = result.reportMessageId;
+        showToast(`完整闭环成功：${result.traceId}`); await hydrateInterfaceCenterData();
+      } catch (error) { document.getElementById("interfaceDemoResultPanel").textContent = getErrorMessage(error); showToast(`闭环演示失败：${getErrorMessage(error)}`); }
+      finally { button.disabled = false; button.textContent = "一键执行完整闭环"; }
+    });
+
     const demoGuideStorageKey = "terry-lis-demo-guide-hidden";
     const demoGuide = document.getElementById("demoGuide");
     const demoGuideReopen = document.getElementById("demoGuideReopen");
@@ -6439,6 +6611,7 @@
     renderQualityRecords();
     hydrateQcDashboardData();
     renderSettingsUsers();
+    hydrateInterfaceCenterData();
     renderRoleConfigs();
     renderSensitiveActionCoverage();
     renderSystemRules();

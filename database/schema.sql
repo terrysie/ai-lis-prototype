@@ -39,6 +39,10 @@ CREATE TABLE IF NOT EXISTS samples (
   status TEXT NOT NULL DEFAULT 'pending_receive',
   priority TEXT NOT NULL DEFAULT 'routine',
   reject_reason TEXT,
+  external_patient_id TEXT,
+  external_order_no TEXT,
+  external_status_code TEXT,
+  interface_trace_id TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -96,6 +100,7 @@ CREATE TABLE IF NOT EXISTS test_results (
   qc_status TEXT NOT NULL DEFAULT 'passed',
   result_status TEXT NOT NULL DEFAULT 'pending_review',
   reported_at TEXT,
+  interface_message_id INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (sample_id) REFERENCES samples(id),
@@ -260,6 +265,153 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Interface & Reliable Communication Core (local capability proof only).
+CREATE TABLE IF NOT EXISTS laboratory_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  external_order_no TEXT NOT NULL UNIQUE,
+  patient_code TEXT NOT NULL,
+  source_system TEXT NOT NULL,
+  sample_id INTEGER,
+  order_status TEXT NOT NULL DEFAULT 'received',
+  priority TEXT NOT NULL DEFAULT 'routine',
+  trace_id TEXT NOT NULL,
+  ordered_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (sample_id) REFERENCES samples(id)
+);
+
+CREATE TABLE IF NOT EXISTS laboratory_order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  external_item_code TEXT NOT NULL,
+  local_item_code TEXT NOT NULL,
+  instrument_item_code TEXT,
+  status TEXT NOT NULL DEFAULT 'ordered',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (order_id, local_item_code),
+  FOREIGN KEY (order_id) REFERENCES laboratory_orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS interface_adapters (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  adapter_id TEXT NOT NULL UNIQUE,
+  adapter_name TEXT NOT NULL,
+  adapter_type TEXT NOT NULL,
+  protocol TEXT NOT NULL,
+  direction TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  connection_config_json TEXT NOT NULL DEFAULT '{}',
+  parser_name TEXT NOT NULL,
+  formatter_name TEXT NOT NULL,
+  health_status TEXT NOT NULL DEFAULT 'unknown',
+  last_communication_at TEXT,
+  retry_policy_json TEXT NOT NULL DEFAULT '{"maxAttempts":3,"strategy":"fixed","delaySeconds":1}',
+  capability_label TEXT NOT NULL DEFAULT 'capability proof',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS interface_mappings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  adapter_id INTEGER NOT NULL,
+  field_key TEXT NOT NULL,
+  external_field TEXT NOT NULL,
+  local_field TEXT NOT NULL,
+  transform_json TEXT NOT NULL DEFAULT '{}',
+  enabled INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (adapter_id, field_key),
+  FOREIGN KEY (adapter_id) REFERENCES interface_adapters(id)
+);
+
+CREATE TABLE IF NOT EXISTS interface_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  direction TEXT NOT NULL,
+  status TEXT NOT NULL,
+  trace_id TEXT NOT NULL,
+  source TEXT NOT NULL,
+  destination TEXT NOT NULL,
+  protocol TEXT NOT NULL,
+  message_type TEXT NOT NULL,
+  raw_payload TEXT NOT NULL,
+  normalized_payload_json TEXT,
+  processing_attempts INTEGER NOT NULL DEFAULT 0,
+  max_attempts INTEGER NOT NULL DEFAULT 3,
+  retry_strategy TEXT NOT NULL DEFAULT 'fixed',
+  retry_delay_seconds INTEGER NOT NULL DEFAULT 1,
+  last_error TEXT,
+  next_retry_at TEXT,
+  related_sample_id INTEGER,
+  related_order_id INTEGER,
+  related_report_id INTEGER,
+  idempotency_key TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  processed_at TEXT,
+  FOREIGN KEY (related_sample_id) REFERENCES samples(id),
+  FOREIGN KEY (related_order_id) REFERENCES laboratory_orders(id),
+  FOREIGN KEY (related_report_id) REFERENCES test_results(id)
+);
+
+CREATE TABLE IF NOT EXISTS interface_message_attempts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  message_id INTEGER NOT NULL,
+  attempt_no INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  error_message TEXT,
+  response_payload TEXT,
+  started_at TEXT NOT NULL,
+  completed_at TEXT,
+  FOREIGN KEY (message_id) REFERENCES interface_messages(id)
+);
+
+CREATE TABLE IF NOT EXISTS interface_connections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  adapter_id INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  local_endpoint TEXT,
+  connected_at TEXT,
+  disconnected_at TEXT,
+  last_heartbeat_at TEXT,
+  error_message TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (adapter_id) REFERENCES interface_adapters(id)
+);
+
+CREATE TABLE IF NOT EXISTS simulator_scenarios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  simulator_id TEXT NOT NULL UNIQUE,
+  simulator_type TEXT NOT NULL,
+  transport TEXT NOT NULL,
+  profile_json TEXT NOT NULL,
+  fault_mode TEXT NOT NULL DEFAULT 'success',
+  connection_status TEXT NOT NULL DEFAULT 'connected',
+  deterministic_rule TEXT NOT NULL,
+  last_run_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS external_report_deliveries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  result_id INTEGER NOT NULL,
+  destination_adapter_id INTEGER NOT NULL,
+  message_id INTEGER,
+  trace_id TEXT NOT NULL,
+  delivery_status TEXT NOT NULL DEFAULT 'queued',
+  ack_code TEXT,
+  ack_payload TEXT,
+  delivered_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (result_id, destination_adapter_id, trace_id),
+  FOREIGN KEY (result_id) REFERENCES test_results(id),
+  FOREIGN KEY (destination_adapter_id) REFERENCES interface_adapters(id),
+  FOREIGN KEY (message_id) REFERENCES interface_messages(id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_role_id ON users(role_id);
 CREATE INDEX IF NOT EXISTS idx_samples_status_priority ON samples(status, priority);
 CREATE INDEX IF NOT EXISTS idx_samples_received_at ON samples(received_at);
@@ -274,3 +426,12 @@ CREATE INDEX IF NOT EXISTS idx_reagent_expiry_alerts_status ON reagent_expiry_al
 CREATE INDEX IF NOT EXISTS idx_infectious_alerts_status ON infectious_alerts(review_status, notify_status);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_target ON audit_logs(target_table, target_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at);
+CREATE INDEX IF NOT EXISTS idx_laboratory_orders_trace ON laboratory_orders(trace_id, order_status);
+CREATE INDEX IF NOT EXISTS idx_interface_adapters_health ON interface_adapters(enabled, health_status);
+CREATE INDEX IF NOT EXISTS idx_interface_mappings_adapter ON interface_mappings(adapter_id, enabled);
+CREATE INDEX IF NOT EXISTS idx_interface_messages_queue ON interface_messages(status, next_retry_at, created_at);
+CREATE INDEX IF NOT EXISTS idx_interface_messages_trace ON interface_messages(trace_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_interface_messages_related ON interface_messages(related_sample_id, related_order_id, related_report_id);
+CREATE INDEX IF NOT EXISTS idx_interface_attempts_message ON interface_message_attempts(message_id, attempt_no);
+CREATE INDEX IF NOT EXISTS idx_interface_connections_adapter ON interface_connections(adapter_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_external_deliveries_result ON external_report_deliveries(result_id, delivery_status);

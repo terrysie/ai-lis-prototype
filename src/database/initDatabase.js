@@ -24,7 +24,16 @@ const CORE_TABLES = [
   'reagent_expiry_alerts',
   'infectious_alerts',
   'system_rules',
-  'audit_logs'
+  'audit_logs',
+  'laboratory_orders',
+  'laboratory_order_items',
+  'interface_adapters',
+  'interface_mappings',
+  'interface_messages',
+  'interface_message_attempts',
+  'interface_connections',
+  'simulator_scenarios',
+  'external_report_deliveries'
 ];
 
 let sqlPromise;
