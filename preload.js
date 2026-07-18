@@ -30,5 +30,14 @@ contextBridge.exposeInMainWorld('terryLisApi', {
   getSystemSettingsData: () => ipcRenderer.invoke('systemSettings:getData'),
   getSystemRulesData: () => ipcRenderer.invoke('systemRules:getData'),
   updateSystemRule: (ruleId, updates) => ipcRenderer.invoke('systemRules:update', ruleId, updates),
-  toggleSystemRule: (ruleId, enabled) => ipcRenderer.invoke('systemRules:toggle', ruleId, enabled)
+  toggleSystemRule: (ruleId, enabled) => ipcRenderer.invoke('systemRules:toggle', ruleId, enabled),
+  getInterfaceCenterData: (filters) => ipcRenderer.invoke('interfaceCenter:getData', filters),
+  getInterfaceMappings: (adapterId) => ipcRenderer.invoke('interfaceCenter:getMappings', adapterId),
+  setInterfaceAdapterEnabled: (adapterId, enabled) => ipcRenderer.invoke('interfaceCenter:setAdapterEnabled', adapterId, enabled),
+  updateInterfaceMapping: (mappingId, updates) => ipcRenderer.invoke('interfaceCenter:updateMapping', mappingId, updates),
+  testInterfaceConnection: (adapterId) => ipcRenderer.invoke('interfaceCenter:testConnection', adapterId),
+  retryInterfaceMessage: (messageId) => ipcRenderer.invoke('interfaceCenter:retryMessage', messageId),
+  cancelInterfaceMessage: (messageId) => ipcRenderer.invoke('interfaceCenter:cancelMessage', messageId),
+  setSimulatorFault: (simulatorId, faultMode) => ipcRenderer.invoke('interfaceCenter:setFault', simulatorId, faultMode),
+  runInterfaceFullDemo: (scenario) => ipcRenderer.invoke('interfaceCenter:runFullDemo', scenario)
 });

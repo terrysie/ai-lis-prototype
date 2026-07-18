@@ -32,6 +32,21 @@ const {
   updateSystemRule,
   toggleSystemRule
 } = require('./src/database/systemSettings');
+const {
+  getInterfaceCenterData,
+  getMappings,
+  setAdapterEnabled,
+  updateMapping,
+  testAdapterConnection,
+  retryMessage,
+  cancelMessage,
+  setSimulatorFault,
+  runFullDemo,
+  deliverPublishedReport
+} = require('./src/interface/interfaceCore');
+const { InterfaceRuntime } = require('./src/interface/interfaceRuntime');
+
+let interfaceRuntime;
 
 // Desktop demo context only; this is not production authentication or authorization.
 const defaultActionGuardContext = {
@@ -301,11 +316,13 @@ ipcMain.handle('reportPublish:getPreview', async (_event, resultId) => getReport
 ));
 ipcMain.handle('reportPublish:publish', async (_event, resultId) => {
   guardSensitiveAction('reportPublish');
-  return publishReport(
+  const published = await publishReport(
     resultId,
     { userId: 2, username: 'chen.review' },
     { electronApp: app }
   );
+  const delivery = await deliverPublishedReport(resultId, 'emr-simulator', { electronApp: app });
+  return { ...published, externalDelivery: delivery };
 });
 ipcMain.handle('criticalValues:getData', async () => getCriticalValuesData({ electronApp: app }));
 ipcMain.handle('criticalValues:notify', async (_event, notificationId, remark) => {
@@ -375,6 +392,15 @@ ipcMain.handle('systemRules:toggle', async (_event, ruleId, enabled) => {
     { electronApp: app }
   );
 });
+ipcMain.handle('interfaceCenter:getData', async (_event, filters) => getInterfaceCenterData(filters || {}, { electronApp: app }));
+ipcMain.handle('interfaceCenter:getMappings', async (_event, adapterId) => getMappings(adapterId, { electronApp: app }));
+ipcMain.handle('interfaceCenter:setAdapterEnabled', async (_event, adapterId, enabled) => setAdapterEnabled(adapterId, enabled, { electronApp: app }));
+ipcMain.handle('interfaceCenter:updateMapping', async (_event, mappingId, updates) => updateMapping(mappingId, updates, { electronApp: app }));
+ipcMain.handle('interfaceCenter:testConnection', async (_event, adapterId) => testAdapterConnection(adapterId, { electronApp: app }));
+ipcMain.handle('interfaceCenter:retryMessage', async (_event, messageId) => retryMessage(messageId, { electronApp: app }));
+ipcMain.handle('interfaceCenter:cancelMessage', async (_event, messageId) => cancelMessage(messageId, { electronApp: app }));
+ipcMain.handle('interfaceCenter:setFault', async (_event, simulatorId, faultMode) => setSimulatorFault(simulatorId, faultMode, { electronApp: app }));
+ipcMain.handle('interfaceCenter:runFullDemo', async (_event, scenario) => runFullDemo(scenario || {}, { electronApp: app }));
 
 app.whenReady().then(async () => {
   try {
@@ -385,6 +411,11 @@ app.whenReady().then(async () => {
   }
 
   createMainWindow();
+  interfaceRuntime = new InterfaceRuntime({
+    databaseOptions: { electronApp: app },
+    dataDirectory: path.join(app.getPath('userData'), 'data')
+  });
+  console.log('TERRY-LIS local interface runtime:', interfaceRuntime.start());
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -394,6 +425,7 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => {
+  interfaceRuntime?.stop();
   if (process.platform !== 'darwin') {
     app.quit();
   }
